@@ -8,16 +8,17 @@
 import React, { useState } from "react";
 import { Search, Plus, Filter, ShieldAlert, Edit2, Trash2, X, AlertTriangle, CheckCircle } from "lucide-react";
 
-type RiskLevel = "Low" | "Medium" | "High" | "Critical";
-type ThreatStatus = "Open" | "Mitigated" | "Accepted";
+type ScaleLevel = "Very Low" | "Low" | "Medium" | "High" | "Very High";
+type RiskLevel = "Very Low" | "Low" | "Medium" | "High" | "Critical";
+type ThreatStatus = "Open" | "Mitigated" | "Remediated" | "Accepted";
 
 interface Threat {
   id: string;
   title: string;
   description: string;
   stride: string;
-  likelihood: "Low" | "Medium" | "High";
-  impact: "Low" | "Medium" | "High";
+  likelihood: ScaleLevel;
+  impact: ScaleLevel;
   risk: RiskLevel;
   status: ThreatStatus;
   mitigation: string;
@@ -51,7 +52,7 @@ const initialThreats: Threat[] = [
     title: "Brute Force of Admin Login",
     description: "Automated credential stuffing against the administrative portal.",
     stride: "Spoofing",
-    likelihood: "High",
+    likelihood: "Very High",
     impact: "High",
     risk: "Critical",
     status: "Open",
@@ -62,26 +63,98 @@ const initialThreats: Threat[] = [
     title: "Information Disclosure via Stack Traces",
     description: "Unhandled exceptions leaking internal network paths and database versions.",
     stride: "Information Disclosure",
-    likelihood: "Low",
+    likelihood: "Very Low",
     impact: "Low",
-    risk: "Low",
+    risk: "Very Low",
     status: "Accepted",
     mitigation: "Risk accepted for internal dev environments. To be fixed in Prod."
   }
 ];
 
 const riskStyles: Record<RiskLevel, string> = {
-  Low: "bg-blue-100 text-blue-700",
-  Medium: "bg-orange-100 text-orange-700",
-  High: "bg-red-100 text-red-700",
-  Critical: "bg-purple-100 text-purple-700"
+  "Very Low": "bg-slate-100 text-slate-700",
+  "Low": "bg-blue-100 text-blue-700",
+  "Medium": "bg-orange-100 text-orange-700",
+  "High": "bg-red-100 text-red-700",
+  "Critical": "bg-purple-100 text-purple-700"
 };
 
 const statusStyles: Record<ThreatStatus, string> = {
   Open: "bg-red-50 text-red-700 border-red-200",
-  Mitigated: "bg-green-50 text-green-700 border-green-200",
+  Mitigated: "bg-yellow-50 text-yellow-700 border-yellow-200",
+  Remediated: "bg-green-50 text-green-700 border-green-200",
   Accepted: "bg-slate-50 text-slate-600 border-slate-200"
 };
+
+// Standard 5x5 Risk Matrix Calculator
+const calculateRisk = (likelihood: ScaleLevel, impact: ScaleLevel): RiskLevel => {
+  const scores = { "Very Low": 1, "Low": 2, "Medium": 3, "High": 4, "Very High": 5 };
+  const score = scores[likelihood] * scores[impact];
+  
+  if (score >= 16) return "Critical";
+  if (score >= 10) return "High";
+  if (score >= 5) return "Medium";
+  if (score >= 3) return "Low";
+  return "Very Low";
+};
+
+const RISK_CELL_STYLES: Record<RiskLevel, string> = {
+  "Very Low": "bg-slate-100 text-slate-600 hover:bg-slate-200",
+  "Low": "bg-blue-100 text-blue-700 hover:bg-blue-200",
+  "Medium": "bg-orange-100 text-orange-700 hover:bg-orange-200",
+  "High": "bg-red-100 text-red-700 hover:bg-red-200",
+  "Critical": "bg-purple-100 text-purple-700 hover:bg-purple-200"
+};
+
+function RiskMatrix({ threats }: { threats: Threat[] }) {
+  const levels: ScaleLevel[] = ["Very High", "High", "Medium", "Low", "Very Low"];
+  const impacts: ScaleLevel[] = ["Very Low", "Low", "Medium", "High", "Very High"];
+
+  return (
+    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
+      <h3 className="text-sm font-bold text-slate-800 mb-4 w-full">Risk Matrix</h3>
+      <div className="flex gap-4">
+        {/* Y Axis Label */}
+        <div className="flex items-center justify-center">
+          <span className="text-xs font-semibold text-slate-500 -rotate-90 whitespace-nowrap transform translate-x-3">
+            Likelihood
+          </span>
+        </div>
+        
+        {/* Matrix Grid */}
+        <div>
+          <div className="grid grid-cols-5 gap-1 mb-1">
+            {levels.map((likelihood) => (
+              <React.Fragment key={likelihood}>
+                {impacts.map((impact) => {
+                  const riskLevel = calculateRisk(likelihood, impact);
+                  const cellThreats = threats.filter(t => t.likelihood === likelihood && t.impact === impact && t.status !== "Closed");
+                  const count = cellThreats.length;
+                  
+                  return (
+                    <div 
+                      key={`${likelihood}-${impact}`}
+                      className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-sm transition-colors ${RISK_CELL_STYLES[riskLevel]} ${count > 0 ? 'ring-2 ring-white shadow-sm font-bold' : 'opacity-50'}`}
+                      title={`Likelihood: ${likelihood}, Impact: ${impact} - ${count} Threats`}
+                    >
+                      {count > 0 ? count : ""}
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </div>
+          {/* X Axis Label */}
+          <div className="flex items-center justify-between px-2 pt-2 border-t border-slate-200 mt-1">
+            <span className="text-[10px] font-semibold text-slate-400">Very Low</span>
+            <span className="text-xs font-semibold text-slate-500">Impact</span>
+            <span className="text-[10px] font-semibold text-slate-400">Very High</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export function ThreatRegister() {
   const [threats, setThreats] = useState<Threat[]>(initialThreats);
@@ -121,21 +194,12 @@ export function ThreatRegister() {
     setIsModalOpen(true);
   };
 
-  // Basic Risk Calculator (Mock Logic)
-  const calculateRisk = (likelihood: string, impact: string): RiskLevel => {
-    if (likelihood === "High" && impact === "High") return "Critical";
-    if (likelihood === "High" || impact === "High") return "High";
-    if (likelihood === "Medium" && impact === "Medium") return "Medium";
-    if (likelihood === "Low" && impact === "Low") return "Low";
-    return "Medium";
-  };
-
   const handleSaveThreat = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const likelihood = formData.get("likelihood") as "Low" | "Medium" | "High";
-    const impact = formData.get("impact") as "Low" | "Medium" | "High";
+    const likelihood = formData.get("likelihood") as ScaleLevel;
+    const impact = formData.get("impact") as ScaleLevel;
     
     const newThreat: Threat = {
       id: editingThreat ? editingThreat.id : `TR-${String(threats.length + 1).padStart(3, '0')}`,
@@ -160,34 +224,42 @@ export function ThreatRegister() {
 
   return (
     <div className="flex flex-col h-full bg-slate-50">
-      {/* Stats Header */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center">
-            <AlertTriangle size={24} />
+      {/* Top Section: Stats & Matrix */}
+      <div className="flex flex-col lg:flex-row gap-6 mb-6">
+        {/* Stats */}
+        <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0">
+              <AlertTriangle size={24} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">{highCriticalOpen}</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">Critical/High Risks</p>
+            </div>
           </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-800">{highCriticalOpen}</p>
-            <p className="text-xs font-semibold uppercase text-slate-500">Critical/High Risks</p>
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0">
+              <ShieldAlert size={24} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">{totalOpen}</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">Total Open Threats</p>
+            </div>
+          </div>
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
+              <CheckCircle size={24} />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-slate-800">{mitigated}</p>
+              <p className="text-xs font-semibold uppercase text-slate-500">Mitigated Threats</p>
+            </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center">
-            <ShieldAlert size={24} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-800">{totalOpen}</p>
-            <p className="text-xs font-semibold uppercase text-slate-500">Total Open Threats</p>
-          </div>
-        </div>
-        <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-          <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center">
-            <CheckCircle size={24} />
-          </div>
-          <div>
-            <p className="text-2xl font-bold text-slate-800">{mitigated}</p>
-            <p className="text-xs font-semibold uppercase text-slate-500">Mitigated Threats</p>
-          </div>
+
+        {/* Matrix */}
+        <div className="shrink-0 flex justify-center">
+          <RiskMatrix threats={threats} />
         </div>
       </div>
 
@@ -216,6 +288,7 @@ export function ThreatRegister() {
                 <option value="All">All Statuses</option>
                 <option value="Open">Open</option>
                 <option value="Mitigated">Mitigated</option>
+                <option value="Remediated">Remediated</option>
                 <option value="Accepted">Accepted</option>
               </select>
             </div>
@@ -364,6 +437,7 @@ export function ThreatRegister() {
                     >
                       <option value="Open">Open</option>
                       <option value="Mitigated">Mitigated</option>
+                      <option value="Remediated">Remediated</option>
                       <option value="Accepted">Accepted</option>
                     </select>
                   </div>
@@ -378,9 +452,11 @@ export function ThreatRegister() {
                       defaultValue={editingThreat?.likelihood || "Medium"}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
+                      <option value="Very Low">Very Low</option>
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
                       <option value="High">High</option>
+                      <option value="Very High">Very High</option>
                     </select>
                   </div>
                   <div>
@@ -391,9 +467,11 @@ export function ThreatRegister() {
                       defaultValue={editingThreat?.impact || "Medium"}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
+                      <option value="Very Low">Very Low</option>
                       <option value="Low">Low</option>
                       <option value="Medium">Medium</option>
                       <option value="High">High</option>
+                      <option value="Very High">Very High</option>
                     </select>
                   </div>
                   <div className="col-span-2">
