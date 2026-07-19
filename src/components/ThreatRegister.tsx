@@ -111,31 +111,35 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
   const impacts: ScaleLevel[] = ["Very Low", "Low", "Medium", "High", "Very High"];
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center">
-      <h3 className="text-sm font-bold text-slate-800 mb-4 w-full">Risk Matrix</h3>
-      <div className="flex gap-4">
+    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center h-full min-w-[300px]">
+      <h3 className="text-sm font-bold text-slate-800 mb-6 w-full text-center">Risk Matrix</h3>
+      <div className="flex gap-1">
         {/* Y Axis Label */}
-        <div className="flex items-center justify-center">
-          <span className="text-xs font-semibold text-slate-500 -rotate-90 whitespace-nowrap transform translate-x-3">
+        <div className="flex flex-col items-center justify-center w-6 mr-1">
+          <span className="text-xs font-semibold text-slate-500 -rotate-90 whitespace-nowrap">
             Likelihood
           </span>
         </div>
+        <div className="flex flex-col justify-between items-end py-2 pr-2">
+          <span className="text-[10px] font-semibold text-slate-400 leading-none">High</span>
+          <span className="text-[10px] font-semibold text-slate-400 leading-none">Low</span>
+        </div>
         
         {/* Matrix Grid */}
-        <div>
-          <div className="grid grid-cols-5 gap-1 mb-1">
+        <div className="flex flex-col">
+          <div className="grid grid-cols-5 gap-1">
             {levels.map((likelihood) => (
               <React.Fragment key={likelihood}>
                 {impacts.map((impact) => {
                   const riskLevel = calculateRisk(likelihood, impact);
-                  const cellThreats = threats.filter(t => t.likelihood === likelihood && t.impact === impact && t.status !== "Closed");
+                  const cellThreats = threats.filter(t => t.likelihood === likelihood && t.impact === impact && t.status !== "Accepted" && t.status !== "Mitigated" && t.status !== "Remediated");
                   const count = cellThreats.length;
                   
                   return (
                     <div 
                       key={`${likelihood}-${impact}`}
-                      className={`w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-sm transition-colors ${RISK_CELL_STYLES[riskLevel]} ${count > 0 ? 'ring-2 ring-white shadow-sm font-bold' : 'opacity-50'}`}
-                      title={`Likelihood: ${likelihood}, Impact: ${impact} - ${count} Threats`}
+                      className={`w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-sm transition-colors cursor-help ${RISK_CELL_STYLES[riskLevel]} ${count > 0 ? 'ring-1 ring-slate-900/10 shadow-sm font-bold text-slate-900 scale-105' : 'opacity-50 hover:opacity-100'}`}
+                      title={`Likelihood: ${likelihood}, Impact: ${impact} - ${count} Open Threats`}
                     >
                       {count > 0 ? count : ""}
                     </div>
@@ -145,10 +149,10 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
             ))}
           </div>
           {/* X Axis Label */}
-          <div className="flex items-center justify-between px-2 pt-2 border-t border-slate-200 mt-1">
-            <span className="text-[10px] font-semibold text-slate-400">Very Low</span>
+          <div className="flex justify-between items-center pt-3">
+            <span className="text-[10px] font-semibold text-slate-400">Low</span>
             <span className="text-xs font-semibold text-slate-500">Impact</span>
-            <span className="text-[10px] font-semibold text-slate-400">Very High</span>
+            <span className="text-[10px] font-semibold text-slate-400">High</span>
           </div>
         </div>
       </div>
@@ -160,6 +164,8 @@ export function ThreatRegister() {
   const [threats, setThreats] = useState<Threat[]>(initialThreats);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ThreatStatus | "All">("All");
+  const [strideFilter, setStrideFilter] = useState<string | "All">("All");
+  const [riskFilter, setRiskFilter] = useState<RiskLevel | "All">("All");
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -175,7 +181,9 @@ export function ThreatRegister() {
     const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
                           t.id.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === "All" || t.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesStride = strideFilter === "All" || t.stride === strideFilter;
+    const matchesRisk = riskFilter === "All" || t.risk === riskFilter;
+    return matchesSearch && matchesStatus && matchesStride && matchesRisk;
   });
 
   const handleDelete = (id: string) => {
@@ -285,11 +293,40 @@ export function ThreatRegister() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as ThreatStatus | "All")}
               >
-                <option value="All">All Statuses</option>
+                <option value="All">Status: All</option>
                 <option value="Open">Open</option>
                 <option value="Mitigated">Mitigated</option>
                 <option value="Remediated">Remediated</option>
                 <option value="Accepted">Accepted</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+              <select 
+                className="text-sm border-none bg-transparent focus:outline-none text-slate-600 font-medium"
+                value={strideFilter}
+                onChange={(e) => setStrideFilter(e.target.value)}
+              >
+                <option value="All">STRIDE: All</option>
+                <option value="Spoofing">Spoofing</option>
+                <option value="Tampering">Tampering</option>
+                <option value="Repudiation">Repudiation</option>
+                <option value="Information Disclosure">Information Disclosure</option>
+                <option value="Denial of Service">Denial of Service</option>
+                <option value="Elevation of Privilege">Elevation of Privilege</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+              <select 
+                className="text-sm border-none bg-transparent focus:outline-none text-slate-600 font-medium"
+                value={riskFilter}
+                onChange={(e) => setRiskFilter(e.target.value as RiskLevel | "All")}
+              >
+                <option value="All">Risk: All</option>
+                <option value="Critical">Critical</option>
+                <option value="High">High</option>
+                <option value="Medium">Medium</option>
+                <option value="Low">Low</option>
+                <option value="Very Low">Very Low</option>
               </select>
             </div>
           </div>

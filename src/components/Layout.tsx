@@ -31,6 +31,7 @@ export function Layout() {
   const analysisLinks = [
     { name: "Application Context", path: `/analysis/${analysisId}/context`, icon: FileText },
     { name: "Architecture Model", path: `/analysis/${analysisId}/architecture`, icon: Component },
+    { name: "STRIDE Analysis", path: `/analysis/${analysisId}/stride`, icon: Shield },
     { name: "ASVS Workspace", path: `/analysis/${analysisId}/asvs`, icon: Lock },
     { name: "Threat Register", path: `/analysis/${analysisId}/threats`, icon: AlertTriangle },
     { name: "Findings & Gaps", path: `/analysis/${analysisId}/findings`, icon: CheckCircle },
@@ -131,7 +132,7 @@ export function Layout() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2 text-blue-600">
                 <HelpCircle size={20} />
-                <h2 className="text-lg font-bold text-slate-800">ATAP v1.0 Help & Guide</h2>
+                <h2 className="text-lg font-bold text-slate-800">ATAP v1.0 Help & Documentation</h2>
               </div>
               <button 
                 onClick={() => setIsHelpOpen(false)}
@@ -143,26 +144,27 @@ export function Layout() {
             <div className="p-6 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600">
               <section>
                 <h3 className="font-bold text-slate-800 text-base mb-2">Welcome to Application Threat Analysis Platform (ATAP)</h3>
-                <p>ATAP v1.0 is designed to streamline the threat modeling and security verification process using the OWASP ASVS framework.</p>
+                <p>ATAP v1.0 is designed to streamline the threat modeling and security verification process using the OWASP ASVS 5.0 framework.</p>
               </section>
               
               <section>
                 <h3 className="font-bold text-slate-800 text-base mb-2">Analysis Lifecycle</h3>
                 <ul className="list-disc pl-5 space-y-2">
                   <li><strong>Application Context:</strong> Define the business purpose, data classification, and regulatory requirements of the target system.</li>
-                  <li><strong>Architecture Model:</strong> Upload or draw component diagrams and map out data flows and trust boundaries.</li>
-                  <li><strong>ASVS Workspace:</strong> Evaluate the application against specific ASVS controls. You can filter by ASVS level and search for specific requirements.</li>
-                  <li><strong>Threat Register:</strong> Manage identified threats, applying frameworks like STRIDE, and link them directly to ASVS controls for mitigation.</li>
-                  <li><strong>Findings & Gaps:</strong> Track residual risks, security gaps, and verified vulnerabilities.</li>
+                  <li><strong>Architecture Model:</strong> Detail the system components, data flows, and trust boundaries that form your attack surface.</li>
+                  <li><strong>STRIDE Analysis:</strong> Utilize the Microsoft STRIDE reference dashboard to systematically identify Spoofing, Tampering, Repudiation, Information Disclosure, DoS, and EoP threats based on your architecture.</li>
+                  <li><strong>ASVS Workspace:</strong> Evaluate the application against the full OWASP ASVS 5.0 standard. Features all 17 chapters and 350+ controls. Use the sidebar to navigate chapters, filter by target level (L1-L3), and track implementation status.</li>
+                  <li><strong>Threat Register:</strong> Manage identified threats, applying STRIDE categorizations, and prioritize them using the interactive 5x5 Risk Matrix based on Likelihood and Impact.</li>
+                  <li><strong>Findings & Gaps:</strong> Automatically cross-reference your architecture and ASVS workspace to auto-generate security gap tickets. This turns missing/partial compliance requirements into actionable development tasks.</li>
                 </ul>
               </section>
 
               <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">Tips for ASVS Workspace</h3>
+                <h3 className="font-bold text-slate-800 text-base mb-2">Tips for Analysis & Reporting</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li>Use the <strong>Target Level</strong> dropdown to automatically filter out requirements that exceed the application's risk profile.</li>
-                  <li>Link specific architectural components to ASVS controls using the traceability features.</li>
-                  <li>Document evidence and rationale when marking a control as "N/A" to maintain a solid audit trail.</li>
+                  <li>In the <strong>ASVS Workspace</strong>, use the <em>Target Level</em> dropdown to automatically filter out requirements that exceed the application's required risk profile.</li>
+                  <li>In the <strong>Threat Register</strong>, click on the numbers within the Risk Matrix grid to visually highlight threats corresponding to specific likelihood/impact clusters.</li>
+                  <li>Clicking <strong>Generate Gap Analysis</strong> under Findings & Gaps will instantly poll your ASVS workspace for any controls marked as "Missing" or "Partial", translating them into formal gaps with severities.</li>
                 </ul>
               </section>
             </div>

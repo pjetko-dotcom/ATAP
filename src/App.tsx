@@ -19,6 +19,7 @@ import { NewAnalysis } from "./components/NewAnalysis.tsx";
 import { ThreatRegister } from "./components/ThreatRegister.tsx";
 import { ApplicationContext } from "./components/ApplicationContext.tsx";
 import { ArchitectureModel } from "./components/ArchitectureModel.tsx";
+import { StrideModel } from "./components/StrideModel.tsx";
 import { FindingsAndGaps } from "./components/FindingsAndGaps.tsx";
 import { Export } from "./components/Export.tsx";
 import { AuditTrail } from "./components/AuditTrail.tsx";
@@ -39,6 +40,7 @@ export default function App() {
           <Route path="analysis/:id" element={<AnalysisLayout />}>
             <Route path="context" element={<ApplicationContext />} />
             <Route path="architecture" element={<ArchitectureModel />} />
+            <Route path="stride" element={<StrideModel />} />
             <Route path="asvs" element={<ASVSWorkspace />} />
             <Route path="threats" element={<ThreatRegister />} />
             <Route path="findings" element={<FindingsAndGaps />} />
