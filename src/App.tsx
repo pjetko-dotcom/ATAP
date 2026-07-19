@@ -16,6 +16,12 @@ import { Dashboard } from "./components/Dashboard.tsx";
 import { AnalysisLayout } from "./components/AnalysisLayout.tsx";
 import { ASVSWorkspace } from "./components/ASVSWorkspace.tsx";
 import { NewAnalysis } from "./components/NewAnalysis.tsx";
+import { ThreatRegister } from "./components/ThreatRegister.tsx";
+import { ApplicationContext } from "./components/ApplicationContext.tsx";
+import { ArchitectureModel } from "./components/ArchitectureModel.tsx";
+import { FindingsAndGaps } from "./components/FindingsAndGaps.tsx";
+import { Export } from "./components/Export.tsx";
+import { AuditTrail } from "./components/AuditTrail.tsx";
 
 /**
  * Main App Component.
@@ -31,13 +37,13 @@ export default function App() {
           <Route index element={<Dashboard />} />
           <Route path="analysis/new" element={<NewAnalysis />} />
           <Route path="analysis/:id" element={<AnalysisLayout />}>
-            <Route path="context" element={<div className="p-8">Application Context (Work in progress)</div>} />
-            <Route path="architecture" element={<div className="p-8">Architecture Model (Work in progress)</div>} />
+            <Route path="context" element={<ApplicationContext />} />
+            <Route path="architecture" element={<ArchitectureModel />} />
             <Route path="asvs" element={<ASVSWorkspace />} />
-            <Route path="threats" element={<div className="p-8">Threat Register (Work in progress)</div>} />
-            <Route path="findings" element={<div className="p-8">Findings & Gaps (Work in progress)</div>} />
-            <Route path="export" element={<div className="p-8">XLSX Export (Work in progress)</div>} />
-            <Route path="audit" element={<div className="p-8">Audit Trail (Work in progress)</div>} />
+            <Route path="threats" element={<ThreatRegister />} />
+            <Route path="findings" element={<FindingsAndGaps />} />
+            <Route path="export" element={<Export />} />
+            <Route path="audit" element={<AuditTrail />} />
           </Route>
           <Route path="*" element={<div className="p-8">Work in progress...</div>} />
         </Route>
