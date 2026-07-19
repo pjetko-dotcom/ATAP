@@ -10,7 +10,8 @@
     "start": "node dist/server.cjs",
     "clean": "rm -rf dist server.cjs",
     "lint": "tsc --noEmit",
-    "deploy:pages": "npm run build:pages && gh-pages -d dist"
+    "deploy:pages": "npm run build:pages && gh-pages -d dist",
+    "publish:pages": "npm run deploy:pages"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",
