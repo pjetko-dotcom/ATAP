@@ -1,0 +1,6 @@
+{
+  "name": "ATAP - Threat Analysis Platform",
+  "description": "Application Threat Analysis Platform. A security modeling workspace based on the OWASP ASVS framework for tracking compliance, traceability, and generating reports.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
