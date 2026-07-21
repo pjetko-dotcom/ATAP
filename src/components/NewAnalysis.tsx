@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Shield } from "lucide-react";
+import { useAnalyses } from "../hooks/useAnalyses";
 
 /**
  * New Analysis Component.
@@ -18,6 +19,7 @@ import { ArrowLeft, ArrowRight, Shield } from "lucide-react";
  */
 export function NewAnalysis() {
   const navigate = useNavigate();
+  const { saveAnalysis } = useAnalyses();
   // Tracks the current step in the wizard (1 or 2)
   const [step, setStep] = useState(1);
   
@@ -40,9 +42,8 @@ export function NewAnalysis() {
     if (step < 2) {
       setStep(step + 1);
     } else {
-      // In a real app, we'd save this via API
-      // Then navigate to the newly created analysis
-      navigate("/analysis/2/asvs");
+      const newAnalysis = saveAnalysis(formData);
+      navigate(`/analysis/${newAnalysis.id}/asvs`);
     }
   };
 

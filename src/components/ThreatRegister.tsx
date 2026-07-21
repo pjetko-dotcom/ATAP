@@ -5,8 +5,10 @@
  * 
  * @module ThreatRegister
  */
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { Search, Plus, Filter, ShieldAlert, Edit2, Trash2, X, AlertTriangle, CheckCircle } from "lucide-react";
+import { HelpTooltip } from "./HelpTooltip";
 
 type ScaleLevel = "Very Low" | "Low" | "Medium" | "High" | "Very High";
 type RiskLevel = "Very Low" | "Low" | "Medium" | "High" | "Critical";
@@ -161,7 +163,25 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
 }
 
 export function ThreatRegister() {
-  const [threats, setThreats] = useState<Threat[]>(initialThreats);
+  const { id: analysisId } = useParams<{ id: string }>();
+  const storageKey = `atap_threats_${analysisId || "default"}`;
+
+  const [threats, setThreats] = useState<Threat[]>(() => {
+    const saved = localStorage.getItem(storageKey);
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {
+        return initialThreats;
+      }
+    }
+    return initialThreats;
+  });
+
+  useEffect(() => {
+    localStorage.setItem(storageKey, JSON.stringify(threats));
+  }, [threats, storageKey]);
+
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<ThreatStatus | "All">("All");
   const [strideFilter, setStrideFilter] = useState<string | "All">("All");
@@ -347,8 +367,16 @@ export function ThreatRegister() {
               <tr>
                 <th className="px-6 py-3 border-b border-slate-100 w-24">ID</th>
                 <th className="px-6 py-3 border-b border-slate-100 min-w-[250px]">Threat Details</th>
-                <th className="px-6 py-3 border-b border-slate-100 w-32">STRIDE</th>
-                <th className="px-6 py-3 border-b border-slate-100 w-32">Risk Level</th>
+                <th className="px-6 py-3 border-b border-slate-100 w-32">
+                  <div className="flex items-center">
+                    STRIDE <HelpTooltip text="Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, or Elevation of Privilege." position="bottom" />
+                  </div>
+                </th>
+                <th className="px-6 py-3 border-b border-slate-100 w-32">
+                  <div className="flex items-center">
+                    Risk Level <HelpTooltip text="Calculated based on Likelihood and Impact." position="bottom" />
+                  </div>
+                </th>
                 <th className="px-6 py-3 border-b border-slate-100 w-48">Mitigation (ASVS)</th>
                 <th className="px-6 py-3 border-b border-slate-100 w-32">Status</th>
                 <th className="px-6 py-3 border-b border-slate-100 w-20 text-right">Actions</th>

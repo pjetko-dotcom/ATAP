@@ -1,6 +1,8 @@
 import React, { useState } from "react";
+import { useParams } from "react-router-dom";
 import { FileText, ShieldAlert, CheckCircle, RefreshCw, AlertTriangle, ArrowRight } from "lucide-react";
-import { asvsRequirements, asvsChapters } from "../data/asvsData";
+import { asvsRequirements, asvsChapters, ASVSRequirement } from "../data/asvsData";
+import { HelpTooltip } from "./HelpTooltip";
 
 /**
  * Represents a security finding or compliance gap identified within the application.
@@ -42,6 +44,7 @@ const statusColors = {
  * @returns {JSX.Element} The rendered Findings and Gaps dashboard.
  */
 export function FindingsAndGaps() {
+  const { id: analysisId } = useParams<{ id: string }>();
   const [findings, setFindings] = useState<Finding[]>(initialFindings);
   const [isGenerating, setIsGenerating] = useState(false);
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);
@@ -61,18 +64,29 @@ export function FindingsAndGaps() {
       let findingCounter = findings.length + 1;
       
       // 2. Identify missing or partial ASVS requirements from the workspace data
-      const gaps = asvsRequirements.filter(r => r.status === "Missing" || r.status === "Partial");
+      const asvsKey = `atap_asvs_${analysisId || "default"}`;
+      let activeReqs: ASVSRequirement[] = asvsRequirements;
+      const stored = localStorage.getItem(asvsKey);
+      if (stored) {
+        try {
+          activeReqs = JSON.parse(stored);
+        } catch (e) {
+          activeReqs = asvsRequirements;
+        }
+      }
+
+      const gaps = activeReqs.filter(r => r.status === "Missing" || r.status === "Partial");
       
       // 3. Fallback/Demonstration Logic:
       // If the user hasn't explicitly marked any gaps in the ASVS Workspace yet,
       // we generate a predefined set of simulated gaps to demonstrate the functionality.
       if (gaps.length === 0) {
         const simulatedGaps = [
-          { req: asvsRequirements.find(r => r.id === "V3.1") || asvsRequirements[20], severity: "High" as const },
-          { req: asvsRequirements.find(r => r.id === "V5.1") || asvsRequirements[50], severity: "Medium" as const },
-          { req: asvsRequirements.find(r => r.id === "V7.1") || asvsRequirements[70], severity: "Low" as const },
-          { req: asvsRequirements.find(r => r.id === "V9.1") || asvsRequirements[90], severity: "Medium" as const },
-          { req: asvsRequirements.find(r => r.id === "V14.1") || asvsRequirements[140], severity: "High" as const }
+          { req: activeReqs.find(r => r.id === "V3.1") || activeReqs[20], severity: "High" as const },
+          { req: activeReqs.find(r => r.id === "V5.1") || activeReqs[50], severity: "Medium" as const },
+          { req: activeReqs.find(r => r.id === "V7.1") || activeReqs[70], severity: "Low" as const },
+          { req: activeReqs.find(r => r.id === "V9.1") || activeReqs[90], severity: "Medium" as const },
+          { req: activeReqs.find(r => r.id === "V14.1") || activeReqs[140], severity: "High" as const }
         ];
         
         simulatedGaps.forEach(gap => {
@@ -126,27 +140,30 @@ export function FindingsAndGaps() {
               Last generated: {lastGenerated.toLocaleTimeString()}
             </span>
           )}
-          <button 
-            onClick={generateGapAnalysis}
-            disabled={isGenerating}
-            className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-all ${
-              isGenerating 
-                ? 'bg-blue-100 text-blue-600 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700'
-            }`}
-          >
-            {isGenerating ? (
-              <>
-                <RefreshCw size={16} className="animate-spin" />
-                Analyzing Architecture...
-              </>
-            ) : (
-              <>
-                <ShieldAlert size={16} />
-                Generate Gap Analysis
-              </>
-            )}
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={generateGapAnalysis}
+              disabled={isGenerating}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-all ${
+                isGenerating 
+                  ? 'bg-blue-100 text-blue-600 cursor-not-allowed' 
+                  : 'bg-blue-600 text-white hover:bg-blue-700'
+              }`}
+            >
+              {isGenerating ? (
+                <>
+                  <RefreshCw size={16} className="animate-spin" />
+                  Analyzing Architecture...
+                </>
+              ) : (
+                <>
+                  <ShieldAlert size={16} />
+                  Generate Gap Analysis
+                </>
+              )}
+            </button>
+            <HelpTooltip text="Automatically cross-references your ASVS Workspace selections to generate a consolidated list of missing or partial security controls." position="bottom" />
+          </div>
           <button 
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-md shadow-sm hover:bg-slate-700 transition-colors"
           >
@@ -204,9 +221,17 @@ export function FindingsAndGaps() {
               <tr>
                 <th className="px-6 py-4 w-24">ID</th>
                 <th className="px-6 py-4">Finding & Description</th>
-                <th className="px-6 py-4 w-32">Severity</th>
+                <th className="px-6 py-4 w-32">
+                  <div className="flex items-center">
+                    Severity <HelpTooltip text="Derived from the ASVS requirement level. L3 = High, L2 = Medium, L1 = Low." position="bottom" />
+                  </div>
+                </th>
                 <th className="px-6 py-4 w-32">Status</th>
-                <th className="px-6 py-4 w-32">ASVS Ref</th>
+                <th className="px-6 py-4 w-32">
+                  <div className="flex items-center">
+                    ASVS Ref <HelpTooltip text="The specific ASVS control that is missing or partially implemented." position="bottom" />
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">

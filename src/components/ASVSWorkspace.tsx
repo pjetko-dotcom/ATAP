@@ -4,9 +4,12 @@
  * 
  * @module ASVSWorkspace
  */
-import React, { useState } from "react";
-import { ChevronDown, ChevronRight, Download, BookOpen } from "lucide-react";
-import { asvsChapters, asvsRequirements, ASVSRequirement } from "../data/asvsData";
+import React, { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { ChevronDown, ChevronUp, ChevronRight, Download, BookOpen } from "lucide-react";
+import { asvsChapters, ASVSRequirement } from "../data/asvsData";
+import { useWorkspaceState } from "../hooks/useWorkspaceState";
+import { HelpTooltip } from "./HelpTooltip";
 
 const statusStyles: Record<string, string> = {
   "Implemented": "bg-green-100 text-green-700",
@@ -25,12 +28,22 @@ const statusStyles: Record<string, string> = {
  * @returns {JSX.Element} The rendered ASVS workspace component.
  */
 export function ASVSWorkspace() {
-  const [reqs, setReqs] = useState<ASVSRequirement[]>(asvsRequirements);
+  const { id: analysisId } = useParams<{ id: string }>();
+  const {
+    reqs,
+    updateRequirementStatus,
+    updateRequirementNote,
+    toggleRequirementTraceability,
+    selectActiveRequirement,
+    components: TRACE_COMPONENTS
+  } = useWorkspaceState(analysisId);
+
   const [activeChapterId, setActiveChapterId] = useState<number>(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [targetLevel, setTargetLevel] = useState<number | "all">(3);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false);
 
   // 1. Dynamic Filtering based on selected chapter
   const filteredRequirements = reqs.filter(req => {
@@ -54,12 +67,24 @@ export function ASVSWorkspace() {
   const findingsCount = reqs.filter(r => r.status === "Missing" || r.status === "Partial").length;
   const notRelevantCount = reqs.filter(r => r.status === "N/A").length;
 
+  // Cleanup on unmount or navigation
+  useEffect(() => {
+    return () => {
+      selectActiveRequirement(null);
+    };
+  }, []);
+
   // Row Expand Handler (4. Expandable Details)
   const toggleRow = (id: string) => {
     setExpandedRows(prev => {
       const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
+      if (next.has(id)) {
+        next.delete(id);
+        selectActiveRequirement(null);
+      } else {
+        next.add(id);
+        selectActiveRequirement(id);
+      }
       return next;
     });
   };
@@ -82,19 +107,14 @@ export function ASVSWorkspace() {
     }
   };
 
-  // Status/Note Updaters (2. Interactive Status)
-  const updateStatus = (id: string, status: string) => {
-    setReqs(prev => prev.map(r => r.id === id ? { ...r, status: status as any } : r));
-  };
-
-  const updateNote = (id: string, notes: string) => {
-    setReqs(prev => prev.map(r => r.id === id ? { ...r, notes } : r));
-  };
-
   const handleBulkStatus = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const status = e.target.value;
     if (!status) return;
-    setReqs(prev => prev.map(r => selectedIds.has(r.id) ? { ...r, status: status as any } : r));
+    reqs.forEach(r => {
+      if (selectedIds.has(r.id)) {
+        updateRequirementStatus(r.id, status);
+      }
+    });
     setSelectedIds(new Set()); // Clear selection
     e.target.value = ""; // Reset dropdown
   };
@@ -139,8 +159,23 @@ export function ASVSWorkspace() {
       </div>
 
       <div className="flex-1 flex flex-col h-full min-w-0">
+        {/* Dynamic Progress Stats Toggle */}
+        <div className="flex items-center justify-between mb-2 lg:hidden">
+          <h3 className="text-sm font-bold text-slate-700">Workspace Summary</h3>
+          <button 
+            onClick={() => setIsSummaryOpen(!isSummaryOpen)}
+            className="flex items-center gap-1 text-xs text-blue-600 font-medium hover:text-blue-800"
+          >
+            {isSummaryOpen ? (
+              <><ChevronUp size={14} /> Hide</>
+            ) : (
+              <><ChevronDown size={14} /> Show</>
+            )}
+          </button>
+        </div>
+
         {/* Dynamic Progress Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6 ${isSummaryOpen ? 'block' : 'hidden lg:grid'}`}>
           <div className="bg-white p-4 rounded-lg border border-slate-200 shadow-sm">
             <p className="text-xs text-slate-500 uppercase font-bold mb-1">Total Coverage</p>
             <p className="text-2xl font-bold text-slate-800">{coverage}%</p>
@@ -199,16 +234,19 @@ export function ASVSWorkspace() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
-              <select 
-                className="px-3 py-1 text-xs border border-slate-200 rounded"
-                value={targetLevel}
-                onChange={(e) => setTargetLevel(e.target.value === "all" ? "all" : parseInt(e.target.value, 10))}
-              >
-                <option value="all">All Levels</option>
-                <option value={1}>Level 1 Only</option>
-                <option value={2}>Level 2 (L1 + L2)</option>
-                <option value={3}>Level 3 (All)</option>
-              </select>
+              <div className="flex items-center gap-1.5">
+                <select 
+                  className="px-3 py-1 text-xs border border-slate-200 rounded"
+                  value={targetLevel}
+                  onChange={(e) => setTargetLevel(e.target.value === "all" ? "all" : parseInt(e.target.value, 10))}
+                >
+                  <option value="all">All Levels</option>
+                  <option value={1}>Level 1 Only</option>
+                  <option value={2}>Level 2 (L1 + L2)</option>
+                  <option value={3}>Level 3 (All)</option>
+                </select>
+                <HelpTooltip text="Filters requirements based on the application's risk profile. L1 is for basic apps, L2 for most apps, L3 for high value/critical apps." position="left" />
+              </div>
               {/* 5. CSV Export */}
               <button 
                 onClick={handleExport}
@@ -233,10 +271,22 @@ export function ASVSWorkspace() {
                     />
                   </th>
                   <th className="px-2 py-3 border-b border-slate-100 w-10"></th>
-                  <th className="px-2 py-3 border-b border-slate-100 w-20">ID</th>
-                  <th className="px-6 py-3 border-b border-slate-100">Requirement</th>
+                  <th className="px-2 py-3 border-b border-slate-100 w-20">
+                    <div className="flex items-center">
+                      ID <HelpTooltip text="The official OWASP ASVS 5.0 requirement identifier." position="bottom" />
+                    </div>
+                  </th>
+                  <th className="px-6 py-3 border-b border-slate-100">
+                    <div className="flex items-center">
+                      Requirement <HelpTooltip text="The security control description and its level applicability." position="bottom" />
+                    </div>
+                  </th>
                   <th className="px-4 py-3 border-b border-slate-100 w-16 text-center">Lvl</th>
-                  <th className="px-6 py-3 border-b border-slate-100 w-40">Status</th>
+                  <th className="px-6 py-3 border-b border-slate-100 w-40">
+                    <div className="flex items-center">
+                      Status <HelpTooltip text="Set to Implemented, Partial, Missing, or N/A to track compliance." position="bottom" />
+                    </div>
+                  </th>
                   <th className="px-6 py-3 border-b border-slate-100 w-32">Traceability</th>
                 </tr>
               </thead>
@@ -279,7 +329,7 @@ export function ASVSWorkspace() {
                           <div className="relative">
                             <select 
                               value={req.status}
-                              onChange={(e) => updateStatus(req.id, e.target.value)}
+                              onChange={(e) => updateRequirementStatus(req.id, e.target.value)}
                               className={`appearance-none pl-3 pr-6 py-1 ${statusStyles[req.status] || 'bg-slate-100 text-slate-700'} text-[10px] font-bold rounded-full uppercase focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer w-full max-w-[120px]`}
                             >
                               <option value="Implemented">Implemented</option>
@@ -308,20 +358,52 @@ export function ASVSWorkspace() {
                                 <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Analysis Notes & Evidence</label>
                                 <textarea 
                                   value={req.notes}
-                                  onChange={(e) => updateNote(req.id, e.target.value)}
+                                  onChange={(e) => updateRequirementNote(req.id, e.target.value)}
                                   placeholder="Add justification, evidence links, or implementation details..."
                                   className="w-full h-24 px-3 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white resize-none"
                                 />
                               </div>
-                              <div className="w-64 pt-6">
+                              <div className="w-64">
                                 <div className="p-3 bg-white border border-slate-200 rounded-md shadow-sm">
                                   <h4 className="text-xs font-bold text-slate-700 mb-2">Linked Artifacts</h4>
-                                  <button className="w-full py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition-colors">
+                                  <button className="w-full py-1.5 text-xs font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 rounded transition-colors cursor-pointer">
                                     + Link JIRA Ticket
                                   </button>
-                                  <button className="w-full py-1.5 mt-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded transition-colors">
+                                  <button className="w-full py-1.5 mt-2 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded transition-colors cursor-pointer">
                                     + Upload Evidence
                                   </button>
+                                </div>
+
+                                <div className="p-3 bg-white border border-slate-200 rounded-md shadow-sm mt-3">
+                                  <div className="flex items-center gap-1 mb-2">
+                                    <h4 className="text-xs font-bold text-slate-700">Traceability Mapping</h4>
+                                    <HelpTooltip text="Link this security requirement to specific architectural components that implement it." position="top" />
+                                  </div>
+                                  <p className="text-[10px] text-slate-400 mb-2">Select architectural components that implement this control:</p>
+                                  <div className="flex flex-col gap-1.5">
+                                    {TRACE_COMPONENTS.map((comp) => {
+                                      const isLinked = (req.traceability || []).some(t => t.id === comp.id);
+                                      return (
+                                        <button
+                                          key={comp.id}
+                                          type="button"
+                                          onClick={() => toggleRequirementTraceability(req.id, comp.id, comp.color)}
+                                          className={`w-full flex items-center justify-between text-left px-2 py-1 rounded text-[11px] transition-all border cursor-pointer ${
+                                            isLinked 
+                                              ? "bg-blue-50 border-blue-200 text-blue-700 font-medium" 
+                                              : "bg-slate-50 border-slate-100 text-slate-600 hover:bg-slate-100"
+                                          }`}
+                                        >
+                                          <span>{comp.id}</span>
+                                          <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center shrink-0 ${
+                                            isLinked ? "border-blue-500 bg-blue-500 text-white" : "border-slate-300 bg-white"
+                                          }`}>
+                                            {isLinked && <span className="text-[9px] font-bold">✓</span>}
+                                          </div>
+                                        </button>
+                                      );
+                                    })}
+                                  </div>
                                 </div>
                               </div>
                             </div>
