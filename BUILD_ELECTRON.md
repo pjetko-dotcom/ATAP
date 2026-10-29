@@ -9,7 +9,7 @@ Tento dokument obsahuje podrobný návod krok za krokom (**Step-by-Step**) na pr
 Pred spustením buidovacieho procesu sa uistite, že máte na počítači s Windows 11 nainštalované nasledujúce nástroje:
 
 ### A. Node.js a NPM (Hostiteľské / Build Prostredie)
-* **Aktuálna LTS verzia:** Node.js **26.13.0 LTS „Lithium“** (prechod do Active LTS: 28. októbra 2026, plánovaná podpora až do **konca apríla 2029**). Projekt je kompatibilný s `node: >= 20.0.0` (zahŕňa v22.x, v24.x aj najnovší v26.x).
+* **Aktuálna LTS verzia:** Node.js **26.13.0 LTS**. Projekt vyžaduje `node: >= 22.12.0`; použiť možno podporovanú LTS verziu Node.js.
 * **⚠️ Kľúčový architektonický rozdiel (Host Node vs. Electron Runtime):**
   > **DÔLEŽITÉ UPOZORNENIE:** Výsledná Electron aplikácia **NEPOUŽÍVA externý Node.js** nainštalovaný vo Windows 11. 
   > Desktopový framework **Electron 45** (aktuálna verzia `45.1.0`) v sebe integruje **vlastný vstavaný Node.js 24.22.x** a vlastné Chromium jadro.
@@ -23,7 +23,7 @@ Pred spustením buidovacieho procesu sa uistite, že máte na počítači s Wind
 * **Overenie inštalácie** v termináli (PowerShell alebo CMD):
   ```powershell
   node -v
-  # Vypíše napr. v26.13.0 (alebo v24.x / v22.x)
+  # Vypíše napr. v26.13.0 (alebo podporovanú LTS verziu >=22.12.0)
   npm -v
   # Vypíše verziu npm (10.9.x alebo novšiu)
   ```
@@ -33,13 +33,13 @@ Pre zachovanie prehľadu uvádzame porovnanie základných verzií projektu s na
 
 | Komponent | Verzia v projekte | Aktuálna stabilná verzia | Architektonický kontext a zhodnotenie |
 | :--- | :--- | :--- | :--- |
-| **Node.js LTS** | `>= 20.0.0` | **26.13.0 LTS („Lithium“)** | LTS od 28.10.2026 do 04/2029. Relevantný pre build, tooling, CI a Express server. |
-| **Electron** | `^43.3.0` / `45.x` | **45.1.0** | Electron 45 integruje Chromium a vlastný interný Node.js 24.22.x (nezávislý od hostiteľa). |
+| **Node.js LTS** | `>= 22.12.0` | **26.13.0 LTS** | Relevantný pre build, tooling, CI a Express server. |
+| **Electron** | `^45.1.0` | **45.1.0** | Electron integruje Chromium a vlastný Node.js runtime, nezávislý od hostiteľa. |
 | **React** | `^19.3.1` | **19.3.x (19.3.1)** | Aktuálna stabilná vetva React 19 so zlepšenou podporou pre akcie a hooky. |
-| **TypeScript** | `~5.8.2` | **7.0.2** (7.1 beta) | TS 6 a 7 sú vydané; TS 7 prináša nový rýchly natívny kompilátor. Typové rozhrania projektu sú plne kompatibilné. |
-| **Vite** | `^6.2.3` | **8.3.x (8.3.5)** | Vite 8 je najnovšia generácia bundleru. Konfigurácia projektu je pripravená na moderný bundling. |
-| **Tailwind CSS** | `^4.1.14` | **v4.3.x (4.3.3)** | CSS v4 bez starého JS konfiguračného súboru s priamym importom vo Vite. |
-| **Express** | `^4.21.2` | **Express 5.3.x** | Express 5 je aktuálna major verzia s natívnou podporou Promise v routoch. |
+| **TypeScript** | `^7.0.2` | **7.0.2** | Aktuálna stabilná verzia TypeScriptu. |
+| **Vite** | `^8.3.5` | **8.3.5** | Vite 8 je aktuálna major generácia bundleru. |
+| **Tailwind CSS** | `^4.3.3` | **4.3.3** | CSS v4 s priamou integráciou cez `@tailwindcss/vite`. |
+| **Express** | `^5.3.0` | **5.3.0** | Express 5 s natívnou podporou Promise v routoch. |
 
 ### C. Git pre Windows
 * **Stiahnutie:** [git-scm.com](https://git-scm.com/download/win) alebo:
@@ -69,7 +69,7 @@ Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 2. **Inštalácia závislostí:**
    Spustite čistú inštaláciu balíčkov definovaných v `package.json`:
    ```powershell
-   npm install
+   npm ci
    ```
    *(Poznámka: Balíčky zahŕňajú `electron` aj `electron-builder`, nie je potrebné ich inštalovať globálne).*
 

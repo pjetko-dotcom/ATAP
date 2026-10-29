@@ -14,12 +14,17 @@
     "isolatedModules": true,
     "moduleDetection": "force",
     "allowJs": true,
+    "strict": false,
     "jsx": "react-jsx",
     "paths": {
       "@/*": [
         "./*"
       ]
     },
+    "types": [
+      "node",
+      "vite/client"
+    ],
     "allowImportingTsExtensions": true,
     "noEmit": true
   }

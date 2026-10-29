@@ -84,7 +84,7 @@ async function startServer() {
     app.use(express.static(distPath));
     app.use('/assets', express.static(assetsPath));
     app.use('/analysis/:id/assets', express.static(assetsPath));
-    app.get('*', (req, res) => {
+    app.get('/{*path}', (_req, res) => {
       res.sendFile(path.join(distPath, 'index.html'));
     });
   }

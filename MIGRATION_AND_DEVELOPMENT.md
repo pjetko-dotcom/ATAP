@@ -33,7 +33,7 @@ cd atap-threat-modeling
 cp .env.example .env
 
 # 3. Inštalácia všetkých závislostí
-npm install
+npm ci
 
 # 4. Kontrola typovej integrity kódu
 npm run lint
@@ -54,8 +54,8 @@ Aplikácia bude dostupná na `http://localhost:3000` (alebo v natívnom Electron
 | Komponent | Minimálna verzia | Odporúčaná verzia | Poznámka |
 | :--- | :--- | :--- | :--- |
 | **Operačný systém** | Windows 10/11, macOS 12+, Ubuntu 20.04+ | Windows 11 (64-bit) | Podporuje cross-platform build a lokálne balíčkovanie |
-| **Node.js (Host / Build)**| `>= 20.0.0` | **`26.13.0 LTS („Lithium“)`** | Prechod do Active LTS: 28.10.2026, podpora do 30.04.2029. Relevantný pre tooling, CI a Express server. |
-| **Electron Runtime** | `43.x` | **`45.1.0`** | **Obsahuje vlastný vstavaný Node.js 24.22.x.** Koncový používateľ nepotrebuje inštalovať Node.js. |
+| **Node.js (Host / Build)**| `>= 22.12.0` | **`26.13.0 LTS`** | Relevantný pre tooling, CI a Express server. |
+| **Electron Runtime** | `^45.1.0` | **`45.1.0`** | Obsahuje vlastný Node.js runtime. Koncový používateľ nepotrebuje inštalovať Node.js. |
 | **NPM** | `>= 10.0.0` | `10.9+` | Dodávané automaticky s Node.js |
 | **Git** | `>= 2.30.0` | Najnovšia stabilná | Pre správu verzií |
 | **RAM** | 4 GB | 8 GB+ | Pre plynulý build s Electron Builderom a bundling assetov |
@@ -111,16 +111,16 @@ Nasledujúci prehľad uvádza technický stack aplikácie spolu so zhodnotením 
 
 | Komponent | Verzia v projekte | Aktuálna stabilná verzia | Hodnotenie a architektonický kontext |
 | :--- | :--- | :--- | :--- |
-| **Node.js LTS** | `>= 20.0.0` | **26.13.0 LTS („Lithium“)** | Node 26.13.0 prešiel do LTS 28. októbra 2026 s podporou do apríla 2029. Relevantný pre host/build a server. |
-| **Electron** | `^43.3.0` (kompatibilné s 45.x) | **45.1.0** | Electron 45 integruje Chromium a vlastný vstavaný Node.js 24.22.x. Nezávislý od externého Node 26. |
+| **Node.js LTS** | `>= 22.12.0` | **26.13.0 LTS** | Relevantný pre host/build a server. |
+| **Electron** | `^45.1.0` | **45.1.0** | Electron 45 integruje Chromium a vlastný Node.js runtime. |
 | **React** | `^19.3.1` | **19.3.x (19.3.1)** | Najnovšia stabilná verzia React 19 s modernou správou stavu a hookmi. |
-| **TypeScript** | `~5.8.2` (kompatibilné s TS 7) | **7.0.2** (7.1 beta) | TS 6 a 7 sú vydané; TS 7 prináša nový rýchly natívny kompilátor. Typové rozhrania projektu sú pripravené. |
-| **Vite** | `^6.2.3` | **8.3.x (8.3.5)** | Vite 8 je súčasná major generácia pre ultra-rýchly HMR vývoj a bundling. |
-| **Tailwind CSS** | `^4.1.14` | **v4.3.x (4.3.3)** | CSS v4 architektúra s priamou integráciou cez `@tailwindcss/vite`. |
-| **Express** | `^4.21.2` (kompatibilné s Express 5) | **Express 5.3.x** | Express 5 je súčasná major verzia (Express 4 je legacy vetva). |
+| **TypeScript** | `^7.0.2` | **7.0.2** | Aktuálna stabilná verzia TypeScriptu. |
+| **Vite** | `^8.3.5` | **8.3.5** | Vite 8 je súčasná major generácia bundleru. |
+| **Tailwind CSS** | `^4.3.3` | **4.3.3** | CSS v4 s priamou integráciou cez `@tailwindcss/vite`. |
+| **Express** | `^5.3.0` | **5.3.0** | Express 5 je aktuálna major verzia. |
 | **Smerovanie (Routing)** | `react-router-dom` 7.x | `7.x` | Podpora pre `HashRouter` (Electron) aj `BrowserRouter` (Web). |
 | **Export a Reporting** | `exceljs` 4.x, `file-saver` 2.x | Aktuálne stabilné | Generovanie binárnych zošitov Excel (.xlsx) a CSV reportov. |
-| **Databázová vrstva** | Drizzle ORM + `postgres` / `pg` | Aktuálne stabilné | Voliteľná vrstva pre pripojenie k PostgreSQL databáze. |
+| **Databázová vrstva** | Drizzle ORM + `pg` | Aktuálne stabilné | Voliteľná vrstva pre pripojenie k PostgreSQL databáze. |
 
 ---
 

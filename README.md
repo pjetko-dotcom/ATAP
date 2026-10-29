@@ -26,12 +26,12 @@ V repozitári sú pripravené podrobné sprievodcovské dokumenty:
 ## 🚀 Rýchly Štart (Quick Start)
 
 > **Požiadavka na prostredie:**
-> * **Host / Build / Dev:** Odporúčaná verzia je **Node.js 26.13.0 LTS („Lithium“)** (podpora do 30.04.2029, kompatibilné s `>= 20.0.0`) a NPM 10+. Slúži pre Vite, TypeScript, Express backend a balíčkovanie.
-> * **Desktop Runtime:** Electron aplikácia beží autonómne vďaka **vstavanému Node.js 24.22.x** v balíčku Electron 45. Koncový používateľ vo Windows 11 nepotrebuje Node.js.
+> * **Host / Build / Dev:** Projekt vyžaduje Node.js `>= 22.12.0`; odporúčaná je najnovšia LTS verzia, aktuálne **Node.js 26.13.0**, a npm 10 alebo novší.
+> * **Desktop Runtime:** Electron 45 obsahuje vlastný Node.js runtime. Koncový používateľ vo Windows 11 nepotrebuje Node.js.
 
 ### 1. Inštalácia závislostí
 ```bash
-npm install
+npm ci
 ```
 
 ### 2. Spustenie vo vývojovom režime
