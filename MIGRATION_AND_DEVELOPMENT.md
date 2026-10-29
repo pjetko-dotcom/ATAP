@@ -16,7 +16,8 @@ Tento dokument slúži ako kompletný manuál pre vývojárov, systémových adm
 8. [Štruktúra priečinkov a súborov](#8-štruktúra-priečinkov-a-súborov)
 9. [Prehľad všetkých NPM skriptov](#9-prehľad-všetkých-npm-skriptov)
 10. [Bezpečnostné štandardy a pravidlá kódu](#10-bezpečnostné-štandardy-a-pravidlá-kódu)
-11. [Časté otázky a riešenie problémov pri migrácii](#11-časté-otázky-a-riešenie-problémov-pri-migrácii)
+11. [Responzívne GUI a verzovanie vydaní](#11-responzívne-gui-a-verzovanie-vydaní)
+12. [Časté otázky a riešenie problémov pri migrácii](#12-časté-otázky-a-riešenie-problémov-pri-migrácii)
 
 ---
 
@@ -272,9 +273,18 @@ atap-threat-modeling/
    * Aplikácia neodosiela žiadne telemetrické dáta, analytiku ani záznamy o hrozbách na externé servery.
    * Dáta o bezpečnostných slabinách sú prísne dôverné a zostávajú na počítači používateľa.
 
+## 11. Responzívne GUI a verzovanie vydaní
+
+* Verzia **5.2.0** opravuje zalamovanie hlavičky analýzy, presúva sekundárne akcie do ponuky na menších obrazovkách a zobrazuje ASVS kontroly ako karty pod 1280 px.
+* ASVS triážne bannery sú rozbaľovacie; detail metodiky v kartovom pohľade obsahuje stav, poznámku/dôkaz a mapovanie na systémové komponenty.
+* Produkčné fonty používajú systémové zásobníky bez vzdialeného načítania Google Fonts.
+* Vite HMR má explicitný websocket port `24678`; vývojová CSP ho povoľuje iba v development režime. `frame-ancestors` sa posiela cez HTTP hlavičku, nie HTML meta tag.
+* GUI/branding, `package.json`, `package-lock.json`, Electron About a installer názvy musia zostať v rovnakej app verzii.
+* Predošlé binárky 5.1.0 ponechajte ako rollback artefakt, ak politika distribúcie umožňuje. Neprepisujte ich novými súbormi s iným obsahom pod rovnakým názvom.
+
 ---
 
-## 11. Časté otázky a riešenie problémov pri migrácii
+## 12. Časté otázky a riešenie problémov pri migrácii
 
 ### Otázka 1: "Chcem projekt preniesť do nového Git repozitára. Ako na to?"
 Postup:
@@ -298,7 +308,7 @@ Všetky základné závislosti v projekte sú čistý JavaScript/TypeScript. Ak 
 
 ### Otázka 3: "Ako zmeniť verziu alebo názov aplikácie v inštalátore?"
 V súbore `package.json` upravte polia:
-* `"version": "5.1.0"` (zmeňte na vami požadované číslo verzie)
+* `"version": "5.2.0"` (zmeňte na vami požadované číslo verzie)
 * `"build": { "productName": "Váš Názov Aplikácie" }`
 
 ---

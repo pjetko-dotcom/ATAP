@@ -13,7 +13,7 @@ export default defineConfig(() => {
       {
         name: 'atap-content-security-policy',
         transformIndexHtml(html, context) {
-          const policy = getContentSecurityPolicy(context.bundle === undefined);
+          const policy = getContentSecurityPolicy(context.bundle === undefined, false);
           const meta = `<meta http-equiv="Content-Security-Policy" content="${policy}">`;
           return html.replace('</head>', `  ${meta}\n  </head>`);
         },
@@ -27,7 +27,9 @@ export default defineConfig(() => {
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
-      hmr: process.env.DISABLE_HMR !== 'true',
+      hmr: process.env.DISABLE_HMR === 'true'
+        ? false
+        : { host: '127.0.0.1', port: 24678, clientPort: 24678 },
       // Disable file watching when DISABLE_HMR is true to save CPU during agent edits.
       watch: process.env.DISABLE_HMR === 'true' ? null : {},
     },

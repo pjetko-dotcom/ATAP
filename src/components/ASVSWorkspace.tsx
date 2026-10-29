@@ -97,6 +97,7 @@ export function ASVSWorkspace() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isChaptersOpen, setIsChaptersOpen] = useState(false);
+  const [expandedTriageQuestionId, setExpandedTriageQuestionId] = useState<string | null>(null);
   const [isTriageModalOpen, setIsTriageModalOpen] = useState(false);
   const [triageModalInitialTab, setTriageModalInitialTab] = useState<"chapters" | "categorization">("chapters");
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
@@ -327,7 +328,7 @@ export function ASVSWorkspace() {
       {/* Mobile Chapters Overlay */}
       {isChaptersOpen && (
         <div 
-          className="fixed inset-0 bg-slate-900/50 z-40 xl:hidden"
+          className="fixed inset-x-0 top-[122px] bottom-0 bg-slate-900/50 z-40 md:top-16 xl:hidden"
           onClick={() => setIsChaptersOpen(false)}
         />
       )}
@@ -335,7 +336,7 @@ export function ASVSWorkspace() {
       {/* Sidebar for Chapters & Sections */}
       <div className={`
         ${isChaptersOpen 
-          ? "fixed inset-y-0 left-0 z-50 w-80 max-w-[85vw] shadow-2xl flex" 
+          ? "fixed inset-x-0 top-[122px] bottom-0 z-50 w-80 max-w-[85vw] shadow-2xl flex md:top-16"
           : "hidden xl:flex"
         }
         xl:static xl:z-auto xl:w-72 xl:shadow-xs bg-white border border-slate-200 rounded-lg flex flex-col h-full max-h-[calc(100vh-140px)] xl:sticky xl:top-0 shrink-0 min-h-0 overflow-hidden
@@ -614,7 +615,7 @@ export function ASVSWorkspace() {
           </div>
         </div>
 {/* Dynamic Progress Stats */}
-        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4 ${isSummaryOpen ? 'block' : 'hidden lg:grid'}`}>
+        <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4 ${isSummaryOpen ? 'grid' : 'hidden xl:grid'}`}>
           <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs">
             <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">Pokrytie požiadaviek</p>
             <p className="text-2xl font-bold text-slate-800">{coverage}%</p>
@@ -658,7 +659,7 @@ export function ASVSWorkspace() {
               return (
                 <div
                   key={triageQ.id}
-                  className={`border rounded-lg p-3.5 flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs transition-colors ${
+                  className={`border rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-2 shadow-xs transition-colors ${
                     answer === false
                       ? "bg-slate-50/90 border-slate-300"
                       : answer === true
@@ -666,7 +667,7 @@ export function ASVSWorkspace() {
                         : "bg-gradient-to-r from-blue-50/90 to-indigo-50/70 border-blue-200"
                   }`}
                 >
-                  <div className="flex items-start gap-2.5">
+                  <div className="flex items-start gap-2.5 min-w-0">
                     <div
                       className={`p-1.5 rounded-md mt-0.5 shrink-0 ${
                         answer === false
@@ -678,7 +679,7 @@ export function ASVSWorkspace() {
                     >
                       <Target size={16} />
                     </div>
-                    <div>
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-blue-800 bg-blue-100 px-1.5 py-0.2 rounded">
                           Triage otázka pre V{activeChapterId}
@@ -691,20 +692,26 @@ export function ASVSWorkspace() {
                         <span className="text-xs text-blue-900 font-semibold">
                           {triageQ.category}
                         </span>
-                        <span className="text-[10px] text-slate-500 font-medium">
-                          ({triageQ.affectsLabel})
-                        </span>
+                        <span className="text-[10px] text-slate-500 font-medium">({triageQ.affectsLabel})</span>
                       </div>
-                      <p className="text-xs text-slate-700 font-medium mt-1">
-                        {triageQ.question}
-                      </p>
-                      <p className="text-[11px] text-slate-500 mt-0.5">
-                        {triageQ.description}
-                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setExpandedTriageQuestionId(expandedTriageQuestionId === triageQ.id ? null : triageQ.id)}
+                        aria-expanded={expandedTriageQuestionId === triageQ.id}
+                        className="mt-1 flex w-full items-start justify-between gap-2 text-left text-xs font-medium text-slate-700"
+                      >
+                        <span>{triageQ.question}</span>
+                        {expandedTriageQuestionId === triageQ.id
+                          ? <ChevronUp size={14} className="shrink-0" />
+                          : <ChevronDown size={14} className="shrink-0" />}
+                      </button>
+                      {expandedTriageQuestionId === triageQ.id && (
+                        <p className="text-[11px] text-slate-500 mt-1">{triageQ.description}</p>
+                      )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2 shrink-0 self-end md:self-center">
+                  <div className="flex items-center gap-2 flex-wrap shrink-0 self-end md:self-center">
                     {answer === false ? (
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-md border border-slate-300 flex items-center gap-1 shadow-xs">
@@ -910,6 +917,7 @@ export function ASVSWorkspace() {
           )}
           {/* Data Table */}
           <div className="flex-1 overflow-auto relative custom-scrollbar">
+            <div className="hidden xl:block">
             <table className="w-full text-left border-collapse min-w-[920px]">
               <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold sticky top-0 z-10 shadow-xs">
                 <tr>
@@ -1190,6 +1198,142 @@ export function ASVSWorkspace() {
                 )}
               </tbody>
             </table>
+            </div>
+
+            <div className="xl:hidden divide-y divide-slate-200">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-slate-50 px-4 py-2 text-xs text-slate-600">
+                <label className="flex items-center gap-2 font-semibold">
+                  <input
+                    type="checkbox"
+                    className="rounded border-slate-300 text-blue-600"
+                    checked={filteredRequirements.length > 0 && selectedIds.size === filteredRequirements.length}
+                    onChange={toggleAll}
+                  />
+                  Označi všetky zobrazené
+                </label>
+                <span>{filteredRequirements.length} požiadaviek</span>
+              </div>
+              {filteredRequirements.map((req, index) => {
+                const isSelected = selectedIds.has(req.id);
+                const isExpanded = expandedRows.has(req.id);
+                const showSectionHeader = index === 0 || filteredRequirements[index - 1].sectionId !== req.sectionId;
+                const guide = isExpanded ? getVerificationGuide(req) : null;
+
+                return (
+                  <React.Fragment key={req.id}>
+                    {showSectionHeader && (
+                      <div className="bg-slate-100 px-4 py-2 text-xs font-bold text-slate-700">
+                        <span className="mr-2 rounded border border-blue-200 bg-blue-100 px-1.5 py-0.5 font-mono text-blue-800">{req.sectionId}</span>
+                        {asvsSections.find(section => section.id === req.sectionId)?.name || req.sectionName || req.title}
+                      </div>
+                    )}
+                    <article className={`p-4 ${isSelected ? "bg-blue-50/50" : "bg-white"} ${req.triageReason || req.status === "N/A" ? "opacity-75" : ""}`}>
+                      <div className="flex items-start gap-2">
+                        <input
+                          type="checkbox"
+                          aria-label={`Označi ${req.id}`}
+                          className="mt-1 rounded border-slate-300 text-blue-600"
+                          checked={isSelected}
+                          onChange={() => toggleSelection(req.id)}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <span className="font-mono text-xs font-bold text-slate-800">{req.id}</span>
+                            <span className={`rounded px-2 py-0.5 text-[10px] font-bold ${
+                              req.level === 1 ? "bg-slate-200 text-slate-700" :
+                              req.level === 2 ? "bg-blue-100 text-blue-800" :
+                              "bg-purple-100 text-purple-800"
+                            }`}>L{req.level}</span>
+                          </div>
+                          <p className="mt-2 text-sm leading-relaxed text-slate-800">{req.description}</p>
+                          {req.triageReason && (
+                            <p className="mt-2 rounded border border-blue-100 bg-blue-50 p-2 text-xs text-blue-800">
+                              <strong>Vylúčené technológiou:</strong> {req.triageReason}
+                            </p>
+                          )}
+                          <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor={`mobile-status-${req.id}`}>Stav</label>
+                          <select
+                            id={`mobile-status-${req.id}`}
+                            className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium"
+                            value={req.status || ""}
+                            onChange={event => updateRequirementStatus(req.id, event.target.value)}
+                            disabled={!!req.triageReason}
+                          >
+                            <option value="" disabled>Vyberte stav...</option>
+                            <option value="Implemented">Implemented</option>
+                            <option value="Partial">Partial</option>
+                            <option value="Missing">Missing</option>
+                            <option value="N/A">Not Applicable</option>
+                          </select>
+                          <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor={`mobile-notes-${req.id}`}>Poznámka / dôkaz</label>
+                          <input
+                            id={`mobile-notes-${req.id}`}
+                            type="text"
+                            className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
+                            placeholder={req.triageReason ? "Vylúčené z analýzy" : "Pridať referenciu, link alebo dôkaz"}
+                            value={req.notes || ""}
+                            onChange={event => updateRequirementNote(req.id, event.target.value)}
+                            disabled={!!req.triageReason}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => toggleRow(req.id)}
+                            aria-expanded={isExpanded}
+                            className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
+                          >
+                            {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                            {isExpanded ? "Skryť metodiku" : "Zobraziť metodiku"}
+                          </button>
+                          {guide && (
+                            <div className="mt-3 space-y-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-xs">
+                              <p className="font-bold text-blue-800">{guide.method}</p>
+                              <div>
+                                <p className="font-semibold text-slate-700">Kľúčová otázka</p>
+                                <p className="mt-1 text-slate-600">{guide.keyQuestion}</p>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-700">Čo overiť</p>
+                                <ul className="mt-1 list-disc space-y-1 pl-4 text-slate-600">
+                                  {guide.whatToInspect.map(item => <li key={item}>{item}</li>)}
+                                </ul>
+                              </div>
+                              <div>
+                                <p className="font-semibold text-slate-700">Očakávaný dôkaz</p>
+                                <p className="mt-1 text-slate-600">{guide.expectedEvidence}</p>
+                              </div>
+                              <div>
+                                <p className="mb-1 font-semibold text-slate-700">Súvisiace komponenty</p>
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                  {TRACE_COMPONENTS.map(component => {
+                                    const isLinked = req.traceability?.some(trace => trace.id === component.id) || (req as any).traceComponents?.includes(component.id);
+                                    return (
+                                      <button
+                                        key={component.id}
+                                        type="button"
+                                        onClick={() => toggleRequirementTraceability(req.id, component.id, component.color)}
+                                        className={`flex items-center justify-between rounded border px-2 py-2 text-left ${isLinked ? "border-blue-300 bg-blue-100 text-blue-800" : "border-slate-200 bg-white text-slate-600"}`}
+                                      >
+                                        <span>{component.id}</span>
+                                        {isLinked && <Check size={13} />}
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </article>
+                  </React.Fragment>
+                );
+              })}
+              {filteredRequirements.length === 0 && (
+                <p className="px-4 py-10 text-center text-sm text-slate-500">
+                  Nenašli sa žiadne požiadavky pre aktuálne filtre.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </div>

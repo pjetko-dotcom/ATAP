@@ -12,7 +12,7 @@ import { ASVSRequirement, asvsRequirements } from "../data/asvsData";
 import { 
   Shield, Database, LayoutTemplate, Activity, DollarSign, Bell, 
   PanelRight, X, Pin, PinOff, ChevronLeft, Save, Check,
-  GitBranch, Lock, History, Scale, Sparkles, ChevronDown, ArrowRight, Eye 
+  GitBranch, Lock, History, Scale, Sparkles, ChevronDown, ArrowRight, Eye, MoreHorizontal
 } from "lucide-react";
 import { AnalysisVersionProvider, useAnalysisVersion } from "../context/AnalysisVersionContext";
 import { FinalizeVersionModal } from "./FinalizeVersionModal";
@@ -69,6 +69,7 @@ function AnalysisLayoutInner() {
   const [showAddNote, setShowAddNote] = useState(false);
   const [newNoteText, setNewNoteText] = useState("");
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
+  const [isHeaderActionsOpen, setIsHeaderActionsOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
   const [renameModalTarget, setRenameModalTarget] = useState<{ id: string; name: string } | null>(null);
@@ -96,6 +97,15 @@ function AnalysisLayoutInner() {
       window.removeEventListener("storage", handler);
     };
   }, []);
+
+  useEffect(() => {
+    if (!isHeaderActionsOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsHeaderActionsOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isHeaderActionsOpen]);
 
   // Keys
   const asvsKey = `atap_asvs_v5_${currentAnalysis.id}`;
@@ -216,8 +226,8 @@ function AnalysisLayoutInner() {
       )}
 
       {/* Header */}
-      <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-8 shrink-0 relative z-10">
-        <div className="flex items-center gap-3">
+      <header className="min-h-16 bg-white border-b border-slate-200 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-2 xl:gap-4 px-3 sm:px-4 md:px-8 py-2 xl:py-0 shrink-0 relative z-10">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 min-w-0 w-full xl:w-auto xl:flex-1">
           
           {/* Version Pill & History Trigger */}
           <button 
@@ -243,11 +253,12 @@ function AnalysisLayoutInner() {
           <ProjectSwitcher 
             currentAnalysis={currentAnalysis}
             onOpenRenameModal={(id, name) => setRenameModalTarget({ id, name })}
+            containerClassName="w-full sm:w-auto sm:max-w-full"
           />
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2 md:gap-2.5">
+        <div className="hidden xl:flex items-center gap-2 md:gap-2.5 shrink-0">
           
           {/* Diff Button */}
           <button 
@@ -313,12 +324,83 @@ function AnalysisLayoutInner() {
             </button>
           )}
 
-          <button 
-            onClick={() => setIsInfoPanelOpen(!isInfoPanelOpen)}
-            className="lg:hidden p-1.5 md:p-2 text-slate-500 hover:text-slate-800 hover:bg-slate-100 rounded-md transition-colors"
-          >
-            <PanelRight size={20} />
-          </button>
+        </div>
+
+        <div className="flex xl:hidden items-center justify-between w-full">
+          <div className="relative">
+            <button
+              onClick={() => setIsHeaderActionsOpen(open => !open)}
+              aria-expanded={isHeaderActionsOpen}
+              aria-haspopup="menu"
+              className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg"
+            >
+              <MoreHorizontal size={16} />
+              <span>Viac</span>
+            </button>
+            {isHeaderActionsOpen && (
+              <>
+                <button
+                  type="button"
+                  aria-label="Zavrieť ponuku akcií"
+                  className="fixed inset-0 z-40 cursor-default"
+                  onClick={() => setIsHeaderActionsOpen(false)}
+                />
+                <div className="absolute left-0 top-full z-50 mt-1 w-56 rounded-lg border border-slate-200 bg-white p-1 shadow-xl" role="menu">
+                  <button
+                    onClick={() => { openDiffWithVersions(allVersions[0]?.version || "1.0", currentWorkingVersion); setIsHeaderActionsOpen(false); }}
+                    className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-50"
+                    role="menuitem"
+                  >
+                    Porovnať verzie
+                  </button>
+                  <button
+                    onClick={() => { setIsHistoryModalOpen(true); setIsHeaderActionsOpen(false); }}
+                    className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-50"
+                    role="menuitem"
+                  >
+                    História verzií
+                  </button>
+                  {currentAnalysis.status !== "Final" && !isHistorical ? (
+                    <button
+                      onClick={() => { setIsFinalizeModalOpen(true); setIsHeaderActionsOpen(false); }}
+                      className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-50"
+                      role="menuitem"
+                    >
+                      Uložiť ako Final
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => { setIsNewVersionModalOpen(true); setIsHeaderActionsOpen(false); }}
+                      className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-50"
+                      role="menuitem"
+                    >
+                      Vytvoriť novú verziu
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            {!isReadOnly && (
+              <button
+                onClick={handleSave}
+                className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${
+                  isSaved ? "bg-emerald-600 text-white" : "bg-blue-600 text-white"
+                }`}
+              >
+                {isSaved ? <Check size={16} /> : <Save size={16} />}
+                <span>{isSaved ? "Uložené" : "Uložiť"}</span>
+              </button>
+            )}
+            <button
+              onClick={() => setIsInfoPanelOpen(!isInfoPanelOpen)}
+              aria-label="Otvoriť kontextový panel"
+              className="p-2 text-slate-600 hover:bg-slate-100 rounded-md"
+            >
+              <PanelRight size={20} />
+            </button>
+          </div>
         </div>
       </header>
 

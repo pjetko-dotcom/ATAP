@@ -128,7 +128,7 @@ function createMenu(isDev) {
               type: 'info',
               title: 'O aplikácii ATAP',
               message: 'ATAP - Application Threat Analysis Platform',
-              detail: 'Verzia 1.0.0 Desktop (Offline Ready)\nOWASP ASVS 5.0 Workspace & STRIDE Threat Modeling System.',
+              detail: 'Verzia 5.2.0 Desktop (Offline Ready)\nOWASP ASVS 5.0 Workspace & STRIDE Threat Modeling System.',
               buttons: ['OK']
             });
           }

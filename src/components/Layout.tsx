@@ -63,7 +63,7 @@ export function Layout() {
           <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-white">
             <Shield size={14} />
           </div>
-          <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V5.1</span></span>
+          <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V5.2</span></span>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -103,7 +103,7 @@ export function Layout() {
               <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white shrink-0">
                 <Shield size={20} />
               </div>
-              <h1 className={`text-white font-bold text-lg tracking-tight uppercase whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 md:w-auto overflow-hidden'}`}>ATAP V5.1</h1>
+              <h1 className={`text-white font-bold text-lg tracking-tight uppercase whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 md:w-auto overflow-hidden'}`}>ATAP V5.2</h1>
             </div>
             {isExpanded && (
               <button 
@@ -198,7 +198,7 @@ export function Layout() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2 text-blue-600">
                 <HelpCircle size={20} />
-                <h2 className="text-lg font-bold text-slate-800">ATAP V5.0 Help & Documentation</h2>
+                <h2 className="text-lg font-bold text-slate-800">ATAP V5.2 Help & Documentation</h2>
               </div>
               <button 
                 onClick={() => setIsHelpOpen(false)}
@@ -210,7 +210,7 @@ export function Layout() {
             <div className="p-4 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600">
               <section>
                 <h3 className="font-bold text-slate-800 text-base mb-2">Welcome to Application Threat Analysis Platform (ATAP)</h3>
-                <p>ATAP V5.1 is designed to streamline the threat modeling and security verification process using the OWASP ASVS 5.0 framework.</p>
+                <p>ATAP V5.2 is designed to streamline the threat modeling and security verification process using the OWASP ASVS 5.0 framework.</p>
               </section>
               
               <section>

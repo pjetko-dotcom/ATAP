@@ -24,11 +24,13 @@ import { useAnalyses, Analysis } from "../hooks/useAnalyses";
 interface ProjectSwitcherProps {
   currentAnalysis: Analysis;
   onOpenRenameModal: (id: string, name: string) => void;
+  containerClassName?: string;
 }
 
 export function ProjectSwitcher({
   currentAnalysis,
-  onOpenRenameModal
+  onOpenRenameModal,
+  containerClassName = ""
 }: ProjectSwitcherProps) {
   const navigate = useNavigate();
   const location = useLocation();
@@ -95,9 +97,9 @@ export function ProjectSwitcher({
   );
 
   return (
-    <div className="relative" ref={containerRef}>
+    <div className={`relative min-w-0 ${containerClassName}`} ref={containerRef}>
       {/* Project Switcher Bar */}
-      <div className="flex items-center gap-1.5 bg-slate-50 hover:bg-slate-100/90 border border-slate-200 rounded-lg p-1 pr-1.5 transition-colors">
+      <div className="flex items-center gap-1.5 min-w-0 w-full sm:w-auto bg-slate-50 hover:bg-slate-100/90 border border-slate-200 rounded-lg p-1 pr-1.5 transition-colors">
         
         {/* ASVS Level Badge */}
         <span 
@@ -110,14 +112,14 @@ export function ProjectSwitcher({
         {/* Project Selector Trigger Button */}
         <button
           onClick={() => setIsOpen(!isOpen)}
-          className="flex items-center gap-2 px-1.5 py-0.5 text-left rounded cursor-pointer group"
+          className="flex items-center gap-2 px-1.5 py-0.5 text-left rounded cursor-pointer group min-w-0 flex-1"
           title="Prepnúť na iný projekt alebo spravovať projekty"
           aria-expanded={isOpen}
           aria-haspopup="true"
         >
           <FolderGit2 size={15} className="text-blue-600 shrink-0" />
           
-          <span className="text-sm md:text-base font-bold text-slate-800 tracking-tight truncate max-w-[150px] sm:max-w-[220px] md:max-w-xs group-hover:text-blue-700 transition-colors">
+          <span className="text-sm md:text-base font-bold text-slate-800 tracking-tight truncate min-w-0 max-w-[calc(100vw-230px)] sm:max-w-[220px] md:max-w-xs group-hover:text-blue-700 transition-colors">
             {currentAnalysis.name}
           </span>
 

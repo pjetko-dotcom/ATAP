@@ -113,7 +113,10 @@ test("uses a stricter production CSP and development-only Vite allowances", () =
   assert.match(productionPolicy, /object-src 'none'/);
   assert.doesNotMatch(productionPolicy, /unsafe-eval|localhost/);
   assert.match(developmentPolicy, /unsafe-eval/);
+  assert.match(developmentPolicy, /unsafe-inline/);
   assert.match(developmentPolicy, /ws:\/\/localhost:3000/);
+  assert.match(developmentPolicy, /ws:\/\/127\.0\.0\.1:24678/);
+  assert.doesNotMatch(getContentSecurityPolicy(false, false), /frame-ancestors/);
 });
 
 test("loads only well-formed local activity log entries", () => {

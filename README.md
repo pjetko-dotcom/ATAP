@@ -56,8 +56,15 @@ npm ci
 npm run electron:build
 ```
 Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `release/`:
-* `release/ATAP Threat Analysis Platform Setup 5.1.0.exe` (NSIS Installer)
-* `release/ATAP Threat Analysis Platform 5.1.0.exe` (Standalone Portable)
+* `release/ATAP Threat Analysis Platform Setup 5.2.0.exe` (NSIS Installer)
+* `release/ATAP Threat Analysis Platform 5.2.0.exe` (Standalone Portable)
+
+### GUI / malé obrazovky (verzia 5.2.0)
+* Hlavička analýzy sa na užších viewportoch rozdelí na riadky; sekundárne akcie sú v ponuke **Viac**, aby neodišli mimo obrazovku.
+* ASVS používa kompaktné karty pod 1280 px vrátane úpravy stavu, dôkazu, metodiky a mapovania komponentov. Na širokých obrazovkách zostáva tabuľkový pohľad.
+* Triážne otázky sú rozbaľovacie a naraz možno otvoriť detail jednej otázky.
+* Fonty sú systémové a lokálne, takže vizuál nepotrebuje načítať Google Fonts ani sieťové pripojenie.
+* Táto sada zmien je verzovaná ako **5.2.0**; vydanie **5.1.0** zostáva dostupné ako rollback referencia.
 
 ---
 
