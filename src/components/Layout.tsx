@@ -62,7 +62,7 @@ export function Layout() {
           <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-white">
             <Shield size={14} />
           </div>
-          <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V5.0</span></span>
+          <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V5.1</span></span>
         </div>
         <button 
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
@@ -89,7 +89,7 @@ export function Layout() {
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`
-          fixed inset-y-0 left-0 z-40 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 
+          fixed inset-y-0 left-0 z-40 bg-slate-900 text-slate-300 flex flex-col border-r border-slate-800 overflow-hidden 
           transform transition-all duration-300 ease-in-out
           ${isMobileMenuOpen ? "translate-x-0 w-64 shadow-2xl flex" : "-translate-x-full md:translate-x-0 md:flex"}
           ${isExpanded ? 'md:w-64' : 'md:w-16'}
@@ -102,7 +102,7 @@ export function Layout() {
               <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white shrink-0">
                 <Shield size={20} />
               </div>
-              <h1 className={`text-white font-bold text-lg tracking-tight uppercase whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 md:hidden'}`}>ATAP V5.0</h1>
+              <h1 className={`text-white font-bold text-lg tracking-tight uppercase whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 md:w-auto overflow-hidden'}`}>ATAP V5.1</h1>
             </div>
             {isExpanded && (
               <button 
@@ -126,13 +126,13 @@ export function Layout() {
                 }`}
               >
                 <div className="shrink-0"><link.icon size={16} /></div>
-                <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 md:hidden"}`}>{link.name}</span>
+                <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{link.name}</span>
               </Link>
             ))}
             
             {activeAnalysisId && (
               <>
-                <div className={`pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap overflow-hidden transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 md:hidden"}`}>Analysis Lifecycle</div>
+                <div className={`pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap overflow-hidden transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Analysis Lifecycle</div>
                 {analysisLinks.map((link) => (
                   <Link
                     key={link.name}
@@ -143,12 +143,12 @@ export function Layout() {
                         : "hover:bg-slate-800 hover:text-white"
                     }`}
                   >
-                    <link.icon size={16} />
-                    {link.name}
+                    <div className="shrink-0"><link.icon size={16} /></div>
+                    <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{link.name}</span>
                   </Link>
                 ))}
 
-                <div className={`pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap overflow-hidden transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 md:hidden"}`}>Reporting</div>
+                <div className={`pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap overflow-hidden transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Reporting</div>
                 {reportLinks.map((link) => (
                   <Link
                     key={link.name}
@@ -159,8 +159,8 @@ export function Layout() {
                         : "hover:bg-slate-800 hover:text-white"
                     }`}
                   >
-                    <link.icon size={16} />
-                    {link.name}
+                    <div className="shrink-0"><link.icon size={16} /></div>
+                    <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{link.name}</span>
                   </Link>
                 ))}
               </>
@@ -172,8 +172,8 @@ export function Layout() {
             onClick={() => setIsHelpOpen(true)}
             className="w-full flex items-center gap-3 px-6 py-4 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
           >
-            <HelpCircle size={16} />
-            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 md:hidden"}`}>Help & Documentation</span>
+            <div className="shrink-0"><HelpCircle size={16} /></div>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Help & Documentation</span>
           </button>
           <div className="p-6 pt-2 flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-slate-700"></div>
@@ -209,7 +209,7 @@ export function Layout() {
             <div className="p-4 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600">
               <section>
                 <h3 className="font-bold text-slate-800 text-base mb-2">Welcome to Application Threat Analysis Platform (ATAP)</h3>
-                <p>ATAP V5.0 is designed to streamline the threat modeling and security verification process using the OWASP ASVS 5.0 framework.</p>
+                <p>ATAP V5.1 is designed to streamline the threat modeling and security verification process using the OWASP ASVS 5.0 framework.</p>
               </section>
               
               <section>

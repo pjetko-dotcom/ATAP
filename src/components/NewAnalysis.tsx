@@ -6,8 +6,9 @@
  */
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, Shield } from "lucide-react";
+import { ArrowLeft, ArrowRight, Shield, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useAnalyses } from "../hooks/useAnalyses";
+import { ProjectCategorizationModal } from "./ProjectCategorizationModal";
 
 /**
  * New Analysis Component.
@@ -22,6 +23,7 @@ export function NewAnalysis() {
   const { saveAnalysis } = useAnalyses();
   // Tracks the current step in the wizard (1 or 2)
   const [step, setStep] = useState(1);
+  const [isCategorizationOpen, setIsCategorizationOpen] = useState(false);
   
   // Holds the form input data
   const [formData, setFormData] = useState({
@@ -124,7 +126,17 @@ export function NewAnalysis() {
             {step === 2 && (
               <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-4">Target ASVS Level</label>
+                  <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+                    <label className="block text-sm font-semibold text-slate-700">Target ASVS Level</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCategorizationOpen(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+                    >
+                      <Sparkles size={14} className="text-blue-600" />
+                      <span>Pomôcka: Triážové otázky pre kategorizáciu projektu</span>
+                    </button>
+                  </div>
                   <div className="space-y-3">
                     {[
                       { level: "1", title: "Level 1: First steps, automated", desc: "For low assurance levels, completely automated testable." },
@@ -179,6 +191,13 @@ export function NewAnalysis() {
           </form>
         </div>
       </div>
+
+      <ProjectCategorizationModal
+        isOpen={isCategorizationOpen}
+        onClose={() => setIsCategorizationOpen(false)}
+        currentLevel={formData.asvsLevel}
+        onApplyLevel={(level) => setFormData((prev) => ({ ...prev, asvsLevel: level }))}
+      />
     </div>
   );
 }

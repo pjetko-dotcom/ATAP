@@ -7,10 +7,11 @@
  */
 import React, { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { Search, Plus, Filter, ShieldAlert, Edit2, Trash2, X, AlertTriangle, CheckCircle } from "lucide-react";
+import { Search, Plus, Filter, ShieldAlert, Edit2, Trash2, X, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
 import { HelpTooltip } from "./HelpTooltip";
 
-type ScaleLevel = "Very Low" | "Low" | "Medium" | "High" | "Very High";
+type LikelihoodLevel = "Exceptionally" | "Unlikely" | "Probably" | "Frequently";
+type ImpactLevel = "Minor" | "Moderate" | "Major" | "Critical";
 type RiskLevel = "Very Low" | "Low" | "Medium" | "High" | "Critical";
 type ThreatStatus = "Open" | "Mitigated" | "Remediated" | "Accepted";
 
@@ -19,8 +20,8 @@ interface Threat {
   title: string;
   description: string;
   stride: string;
-  likelihood: ScaleLevel;
-  impact: ScaleLevel;
+  likelihood: LikelihoodLevel;
+  impact: ImpactLevel;
   risk: RiskLevel;
   status: ThreatStatus;
   mitigation: string;
@@ -32,8 +33,8 @@ const initialThreats: Threat[] = [
     title: "Session Hijacking via XSS",
     description: "An attacker could steal session cookies if XSS vulnerabilities exist in the user profile inputs.",
     stride: "Elevation of Privilege",
-    likelihood: "Medium",
-    impact: "High",
+    likelihood: "Probably",
+    impact: "Major",
     risk: "High",
     status: "Open",
     mitigation: "V4.3.1 (HttpOnly cookies), V5.1.1 (Output encoding)"
@@ -43,8 +44,8 @@ const initialThreats: Threat[] = [
     title: "Parameter Tampering on Checkout",
     description: "Manipulation of product prices during the checkout process via intercepting proxy.",
     stride: "Tampering",
-    likelihood: "Medium",
-    impact: "High",
+    likelihood: "Probably",
+    impact: "Major",
     risk: "High",
     status: "Mitigated",
     mitigation: "V5.1.4 (Server-side validation)"
@@ -54,8 +55,8 @@ const initialThreats: Threat[] = [
     title: "Brute Force of Admin Login",
     description: "Automated credential stuffing against the administrative portal.",
     stride: "Spoofing",
-    likelihood: "Very High",
-    impact: "High",
+    likelihood: "Frequently",
+    impact: "Major",
     risk: "Critical",
     status: "Open",
     mitigation: "V2.2.1 (Anti-automation), V2.3.1 (MFA)"
@@ -65,8 +66,8 @@ const initialThreats: Threat[] = [
     title: "Information Disclosure via Stack Traces",
     description: "Unhandled exceptions leaking internal network paths and database versions.",
     stride: "Information Disclosure",
-    likelihood: "Very Low",
-    impact: "Low",
+    likelihood: "Exceptionally",
+    impact: "Minor",
     risk: "Very Low",
     status: "Accepted",
     mitigation: "Risk accepted for internal dev environments. To be fixed in Prod."
@@ -74,11 +75,11 @@ const initialThreats: Threat[] = [
 ];
 
 const riskStyles: Record<RiskLevel, string> = {
-  "Very Low": "bg-slate-100 text-slate-700",
-  "Low": "bg-blue-100 text-blue-700",
-  "Medium": "bg-orange-100 text-orange-700",
-  "High": "bg-red-100 text-red-700",
-  "Critical": "bg-purple-100 text-purple-700"
+  "Very Low": "bg-green-50 text-green-700 border border-green-200",
+  "Low": "bg-green-100 text-green-800 border border-green-300",
+  "Medium": "bg-yellow-100 text-yellow-800 border border-yellow-300",
+  "High": "bg-orange-100 text-orange-800 border border-orange-300",
+  "Critical": "bg-red-100 text-red-800 border border-red-300"
 };
 
 const statusStyles: Record<ThreatStatus, string> = {
@@ -88,48 +89,50 @@ const statusStyles: Record<ThreatStatus, string> = {
   Accepted: "bg-slate-50 text-slate-600 border-slate-200"
 };
 
-// Standard 5x5 Risk Matrix Calculator
-const calculateRisk = (likelihood: ScaleLevel, impact: ScaleLevel): RiskLevel => {
-  const scores = { "Very Low": 1, "Low": 2, "Medium": 3, "High": 4, "Very High": 5 };
-  const score = scores[likelihood] * scores[impact];
+// Standard 4x4 Risk Matrix Calculator
+const calculateRisk = (likelihood: LikelihoodLevel, impact: ImpactLevel): RiskLevel => {
+  const scoresLikelihood = { "Exceptionally": 1, "Unlikely": 2, "Probably": 3, "Frequently": 4 };
+  const scoresImpact = { "Minor": 1, "Moderate": 2, "Major": 3, "Critical": 4 };
+  const score = scoresLikelihood[likelihood] * scoresImpact[impact];
   
-  if (score >= 16) return "Critical";
-  if (score >= 10) return "High";
-  if (score >= 5) return "Medium";
-  if (score >= 3) return "Low";
+  if (score >= 12) return "Critical";
+  if (score >= 8) return "High";
+  if (score >= 4) return "Medium";
+  if (score >= 2) return "Low";
   return "Very Low";
 };
 
 const RISK_CELL_STYLES: Record<RiskLevel, string> = {
-  "Very Low": "bg-slate-100 text-slate-600 hover:bg-slate-200",
-  "Low": "bg-blue-100 text-blue-700 hover:bg-blue-200",
-  "Medium": "bg-orange-100 text-orange-700 hover:bg-orange-200",
-  "High": "bg-red-100 text-red-700 hover:bg-red-200",
-  "Critical": "bg-purple-100 text-purple-700 hover:bg-purple-200"
+  "Very Low": "bg-green-200 text-green-900 hover:bg-green-300",
+  "Low": "bg-green-300 text-green-950 hover:bg-green-400",
+  "Medium": "bg-yellow-200 text-yellow-950 hover:bg-yellow-300",
+  "High": "bg-orange-300 text-orange-950 hover:bg-orange-400",
+  "Critical": "bg-red-500 text-white hover:bg-red-600"
 };
 
 function RiskMatrix({ threats }: { threats: Threat[] }) {
-  const levels: ScaleLevel[] = ["Very High", "High", "Medium", "Low", "Very Low"];
-  const impacts: ScaleLevel[] = ["Very Low", "Low", "Medium", "High", "Very High"];
+  const levels: LikelihoodLevel[] = ["Frequently", "Probably", "Unlikely", "Exceptionally"];
+  const impacts: ImpactLevel[] = ["Minor", "Moderate", "Major", "Critical"];
 
   return (
-    <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center justify-center h-full min-w-[300px]">
-      <h3 className="text-sm font-bold text-slate-800 mb-6 w-full text-center">Risk Matrix</h3>
-      <div className="flex gap-1">
+    <div className="bg-white rounded-xl flex flex-col items-center justify-center h-full w-full">
+      <div className="flex gap-1.5">
         {/* Y Axis Label */}
         <div className="flex flex-col items-center justify-center w-6 mr-1">
-          <span className="text-xs font-semibold text-slate-500 -rotate-90 whitespace-nowrap">
+          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider -rotate-90 whitespace-nowrap">
             Likelihood
           </span>
         </div>
-        <div className="flex flex-col justify-between items-end py-2 pr-2">
-          <span className="text-[10px] font-semibold text-slate-400 leading-none">High</span>
-          <span className="text-[10px] font-semibold text-slate-400 leading-none">Low</span>
+        <div className="flex flex-col justify-between items-end py-2 pr-2 text-[10px] font-bold text-slate-400">
+          <span>Freq</span>
+          <span>Prob</span>
+          <span>Unlk</span>
+          <span>Excp</span>
         </div>
         
         {/* Matrix Grid */}
         <div className="flex flex-col">
-          <div className="grid grid-cols-5 gap-1">
+          <div className="grid grid-cols-4 gap-1.5">
             {levels.map((likelihood) => (
               <React.Fragment key={likelihood}>
                 {impacts.map((impact) => {
@@ -140,10 +143,10 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
                   return (
                     <div 
                       key={`${likelihood}-${impact}`}
-                      className={`w-9 h-9 md:w-11 md:h-11 flex items-center justify-center rounded-sm transition-colors cursor-help ${RISK_CELL_STYLES[riskLevel]} ${count > 0 ? 'ring-1 ring-slate-900/10 shadow-sm font-bold text-slate-900 scale-105' : 'opacity-50 hover:opacity-100'}`}
-                      title={`Likelihood: ${likelihood}, Impact: ${impact} - ${count} Open Threats`}
+                      className={`w-9 h-9 md:w-11 md:h-11 flex flex-col items-center justify-center rounded transition-all cursor-help ${RISK_CELL_STYLES[riskLevel]} ${count > 0 ? 'ring-2 ring-slate-900/30 shadow-md font-extrabold scale-105 z-10' : 'opacity-60 hover:opacity-100'}`}
+                      title={`Likelihood: ${likelihood}\nImpact: ${impact}\nRisk: ${riskLevel}\n${count} Open Threats`}
                     >
-                      {count > 0 ? count : ""}
+                      <span className="text-xs">{count > 0 ? count : ""}</span>
                     </div>
                   );
                 })}
@@ -151,12 +154,217 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
             ))}
           </div>
           {/* X Axis Label */}
-          <div className="flex justify-between items-center pt-3">
-            <span className="text-[10px] font-semibold text-slate-400">Low</span>
-            <span className="text-xs font-semibold text-slate-500">Impact</span>
-            <span className="text-[10px] font-semibold text-slate-400">High</span>
+          <div className="flex justify-between items-center pt-3 text-[10px] font-bold text-slate-400">
+            <span>Minor</span>
+            <span>Mod</span>
+            <span>Maj</span>
+            <span>Crit</span>
+          </div>
+          <div className="text-center pt-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Business Impact
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function EvaluationCriteriaGuide() {
+  const [activeTab, setActiveTab] = useState<"impact" | "likelihood">("impact");
+  const [expandedCriteria, setExpandedCriteria] = useState<string | null>("Critical");
+
+  const toggleCriteria = (id: string) => {
+    setExpandedCriteria(expandedCriteria === id ? null : id);
+  };
+
+  const impactDetails = [
+    {
+      grade: "Critical",
+      color: "border-red-200 bg-red-50 text-red-900",
+      pill: "bg-red-500 text-white",
+      quant: "Exceeds 100 mil. EUR",
+      qual: "The consequences of the risk may jeopardize the existence of the institution and consequently affect the entire group.",
+      reputational: "Permanent negative media reports (including social media) for more than 20 days and/or dramatic reduction of counterpart confidence.",
+      compliance: [
+        "Potential withdrawal of a license as a regular sanction",
+        "Criminal sanctions against companies / employees with an international dimension",
+        "Massive loss of client confidence",
+        "Recurrence factor: Standard would be high risk, but since the entity had a similar problem in the past, the impact is elevated to Critical."
+      ]
+    },
+    {
+      grade: "Major",
+      color: "border-orange-200 bg-orange-50 text-orange-900",
+      pill: "bg-orange-400 text-slate-900",
+      quant: "≥ 10 mil. EUR and < 100 mil. EUR",
+      qual: "The consequences of the risk may jeopardize the achievement of the objectives of the entire institution.",
+      reputational: "Permanent negative media reports (including social media) for more than 7 days and/or significant decrease in counterpart trust.",
+      compliance: [
+        "Infringement of the law with criminal sanctions",
+        "Criminal offense of a company or manager / employee",
+        "Possible limitation of the bank license",
+        "High fine on the controller side",
+        "Loss of client confidence on a large scale"
+      ]
+    },
+    {
+      grade: "Moderate",
+      color: "border-yellow-200 bg-yellow-50 text-yellow-900",
+      pill: "bg-yellow-300 text-yellow-900",
+      quant: "≥ 1 mil. EUR and < 10 mil. EUR",
+      qual: "The consequences of the risk may jeopardize the achievement of the objectives of the process. This may result in financial or reputational impact relevant to the process.",
+      reputational: "Permanent negative media reports (including social media) for more than 2 days and/or slightly reducing counterpart confidence.",
+      compliance: [
+        "Infringement of the Civil Penalty Act",
+        "The threat of withdrawal of a bank license is only potential",
+        "The regulator's penalties correspond to a qualitative financial impact",
+        "Loss of low-trust clients"
+      ]
+    },
+    {
+      grade: "Minor",
+      color: "border-green-200 bg-green-50 text-green-900",
+      pill: "bg-green-200 text-green-900",
+      quant: "Less than 1 mil. EUR",
+      qual: "The consequences of the risk may jeopardize the achievement of the objectives of the process. The financial or reputational impact is manageable.",
+      reputational: "Permanent negative media reports (including social media) for less than 2 days and/or minimal decrease of counterpart trust.",
+      compliance: [
+        "Standard requirements are not strictly adhered to, but standard practice is applied and tolerated by the regulator.",
+        "The regulator's penalties correspond to a qualitative financial impact",
+        "No impact on client trust"
+      ]
+    }
+  ];
+
+  const likelihoodDetails = [
+    {
+      grade: "Frequently",
+      color: "border-red-200 bg-red-50 text-red-900",
+      pill: "bg-red-500 text-white",
+      freq: "> 0.5 expected frequency / year",
+      desc: "It may occur more than once every 2 years. Probability of occurrence for 1 year is greater than 50%."
+    },
+    {
+      grade: "Probably",
+      color: "border-orange-200 bg-orange-50 text-orange-900",
+      pill: "bg-orange-400 text-slate-900",
+      freq: "Between 0.2 and 0.5 expected frequency / year",
+      desc: "It may occur once every 2 - 5 years. Probability of occurrence for 1 year is between 20% and 50%."
+    },
+    {
+      grade: "Unlikely",
+      color: "border-yellow-200 bg-yellow-50 text-yellow-900",
+      pill: "bg-yellow-300 text-yellow-900",
+      freq: "Between 0.04 and 0.2 expected frequency / year",
+      desc: "It may occur once every 5 - 25 years. Probability of occurrence in 1 year is between 4% and 20%."
+    },
+    {
+      grade: "Exceptionally",
+      color: "border-green-200 bg-green-50 text-green-900",
+      pill: "bg-green-200 text-green-900",
+      freq: "< 0.04 expected frequency / year",
+      desc: "It may occur less than once every 25 years. Probability of occurrence in 1 year is less than 4%."
+    }
+  ];
+
+  return (
+    <div className="flex flex-col h-full min-h-[240px]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-2 mb-3 gap-2 flex-shrink-0">
+        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Evaluation Reference Manual</h3>
+        <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+          <button
+            type="button"
+            onClick={() => { setActiveTab("impact"); setExpandedCriteria("Critical"); }}
+            className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-colors cursor-pointer ${activeTab === "impact" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            Impact
+          </button>
+          <button
+            type="button"
+            onClick={() => { setActiveTab("likelihood"); setExpandedCriteria("Frequently"); }}
+            className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-colors cursor-pointer ${activeTab === "likelihood" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
+          >
+            Likelihood
+          </button>
+        </div>
+      </div>
+
+      <div className="flex-1 overflow-y-auto custom-scrollbar max-h-[175px] space-y-2 pr-1">
+        {activeTab === "impact" ? (
+          impactDetails.map((imp) => {
+            const isExpanded = expandedCriteria === imp.grade;
+            return (
+              <div key={imp.grade} className={`border rounded-lg transition-all overflow-hidden ${imp.color}`}>
+                <button
+                  type="button"
+                  onClick={() => toggleCriteria(imp.grade)}
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-left hover:opacity-90 transition-opacity font-bold text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${imp.pill}`}>
+                      {imp.grade}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      {imp.quant}
+                    </span>
+                  </div>
+                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+                
+                {isExpanded && (
+                  <div className="px-3 pb-3 pt-1 border-t border-slate-200/50 space-y-2 text-[11px] bg-white/50">
+                    <div>
+                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">Qualitative Financial Impact</span>
+                      <p className="mt-0.5 text-slate-700 leading-relaxed font-medium">{imp.qual}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">Reputational Impact</span>
+                      <p className="mt-0.5 text-slate-700 leading-relaxed font-medium">{imp.reputational}</p>
+                    </div>
+                    <div>
+                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">Impact on Compliance</span>
+                      <ul className="list-disc pl-4 mt-1 space-y-0.5 text-slate-700 font-medium">
+                        {imp.compliance.map((item, i) => (
+                          <li key={i} className="leading-relaxed">{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        ) : (
+          likelihoodDetails.map((lh) => {
+            const isExpanded = expandedCriteria === lh.grade;
+            return (
+              <div key={lh.grade} className={`border rounded-lg transition-all overflow-hidden ${lh.color}`}>
+                <button
+                  type="button"
+                  onClick={() => toggleCriteria(lh.grade)}
+                  className="w-full flex items-center justify-between px-3 py-1.5 text-left hover:opacity-90 transition-opacity font-bold text-xs"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${lh.pill}`}>
+                      {lh.grade}
+                    </span>
+                    <span className="text-[11px] font-bold text-slate-500">
+                      {lh.freq}
+                    </span>
+                  </div>
+                  {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                </button>
+                
+                {isExpanded && (
+                  <div className="px-3 pb-3 pt-1.5 border-t border-slate-200/50 text-[11px] bg-white/50 space-y-1">
+                    <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">Probability & Period</span>
+                    <p className="text-slate-700 leading-relaxed font-medium">{lh.desc}</p>
+                  </div>
+                )}
+              </div>
+            );
+          })
+        )}
       </div>
     </div>
   );
@@ -190,6 +398,12 @@ export function ThreatRegister() {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingThreat, setEditingThreat] = useState<Threat | null>(null);
+
+  // Collapsible State for Stats & Risk Matrix
+  const [isSummaryExpanded, setIsSummaryExpanded] = useState<boolean>(() => {
+    const saved = localStorage.getItem("atap_threats_summary_expanded");
+    return saved !== "false";
+  });
 
   // Stats
   const totalOpen = threats.filter(t => t.status === "Open").length;
@@ -226,8 +440,8 @@ export function ThreatRegister() {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
     
-    const likelihood = formData.get("likelihood") as ScaleLevel;
-    const impact = formData.get("impact") as ScaleLevel;
+    const likelihood = formData.get("likelihood") as LikelihoodLevel;
+    const impact = formData.get("impact") as ImpactLevel;
     
     const newThreat: Threat = {
       id: editingThreat ? editingThreat.id : `TR-${String(threats.length + 1).padStart(3, '0')}`,
@@ -252,44 +466,83 @@ export function ThreatRegister() {
 
   return (
     <div className="flex flex-col h-full bg-slate-50">
-      {/* Top Section: Stats & Matrix */}
-      <div className="flex flex-col lg:flex-row gap-6 mb-6">
-        {/* Stats */}
-        <div className="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0">
-              <AlertTriangle size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-800">{highCriticalOpen}</p>
-              <p className="text-xs font-semibold uppercase text-slate-500">Critical/High Risks</p>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0">
-              <ShieldAlert size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-800">{totalOpen}</p>
-              <p className="text-xs font-semibold uppercase text-slate-500">Total Open Threats</p>
-            </div>
-          </div>
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
-            <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
-              <CheckCircle size={24} />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-slate-800">{mitigated}</p>
-              <p className="text-xs font-semibold uppercase text-slate-500">Mitigated Threats</p>
-            </div>
-          </div>
+      {/* Overview Toggle Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm mb-4 flex-shrink-0">
+        <div className="flex flex-wrap items-center gap-2">
+          <ShieldAlert className="text-blue-600" size={18} />
+          <h2 className="text-sm font-bold text-slate-800">Threat Landscape & Risk Matrix</h2>
+          <span className="text-xs text-slate-400 font-medium hidden md:inline-block">• {threats.length} logged, {totalOpen} open</span>
         </div>
-
-        {/* Matrix */}
-        <div className="shrink-0 flex justify-center">
-          <RiskMatrix threats={threats} />
-        </div>
+        <button
+          onClick={() => {
+            const next = !isSummaryExpanded;
+            setIsSummaryExpanded(next);
+            localStorage.setItem("atap_threats_summary_expanded", String(next));
+          }}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-slate-50 hover:bg-slate-100 border border-slate-200 hover:border-slate-300 rounded-lg transition-colors cursor-pointer self-start sm:self-auto"
+        >
+          {isSummaryExpanded ? (
+            <>
+              <ChevronUp size={14} />
+              <span>Hide Dashboard & Matrix</span>
+            </>
+          ) : (
+            <>
+              <ChevronDown size={14} />
+              <span>Show Dashboard & Matrix</span>
+            </>
+          )}
+        </button>
       </div>
+
+      {/* Top Section: Stats & Matrix & Guide */}
+      {isSummaryExpanded && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6 flex-shrink-0">
+          {/* Left Column: Stats & Matrix */}
+          <div className="lg:col-span-7 flex flex-col gap-4">
+            {/* Stats Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-red-100 text-red-600 rounded-full flex items-center justify-center shrink-0">
+                  <AlertTriangle size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{highCriticalOpen}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Critical/High Risks</p>
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-orange-100 text-orange-600 rounded-full flex items-center justify-center shrink-0">
+                  <ShieldAlert size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{totalOpen}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Total Open Threats</p>
+                </div>
+              </div>
+              <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
+                <div className="w-12 h-12 bg-green-100 text-green-600 rounded-full flex items-center justify-center shrink-0">
+                  <CheckCircle size={24} />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-slate-800">{mitigated}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Mitigated Threats</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Matrix Card */}
+            <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex items-center justify-center min-h-[220px]">
+              <RiskMatrix threats={threats} />
+            </div>
+          </div>
+
+          {/* Right Column: Evaluation Help Guide */}
+          <div className="lg:col-span-5 bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between">
+            <EvaluationCriteriaGuide />
+          </div>
+        </div>
+      )}
 
       {/* Main Workspace */}
       <div className="flex-1 min-h-0 bg-white rounded-xl border border-slate-200 shadow-sm flex flex-col overflow-hidden">
@@ -514,14 +767,13 @@ export function ThreatRegister() {
                     <select 
                       name="likelihood"
                       required
-                      defaultValue={editingThreat?.likelihood || "Medium"}
+                      defaultValue={editingThreat?.likelihood || "Probably"}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
-                      <option value="Very Low">Very Low</option>
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Very High">Very High</option>
+                      <option value="Exceptionally">Exceptionally (&lt; 0.04)</option>
+                      <option value="Unlikely">Unlikely (0.04 - 0.2)</option>
+                      <option value="Probably">Probably (0.2 - 0.5)</option>
+                      <option value="Frequently">Frequently (&gt; 0.5)</option>
                     </select>
                   </div>
                   <div>
@@ -529,14 +781,13 @@ export function ThreatRegister() {
                     <select 
                       name="impact"
                       required
-                      defaultValue={editingThreat?.impact || "Medium"}
+                      defaultValue={editingThreat?.impact || "Moderate"}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
-                      <option value="Very Low">Very Low</option>
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Very High">Very High</option>
+                      <option value="Minor">Minor (&lt; 1M EUR)</option>
+                      <option value="Moderate">Moderate (1M - 10M EUR)</option>
+                      <option value="Major">Major (10M - 100M EUR)</option>
+                      <option value="Critical">Critical (&gt; 100M EUR)</option>
                     </select>
                   </div>
                   <div className="col-span-2">

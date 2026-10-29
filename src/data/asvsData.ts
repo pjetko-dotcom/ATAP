@@ -1,93 +1,1255 @@
 /**
- * OWASP Application Security Verification Standard (ASVS) 5.0.0 Data
+ * OWASP Application Security Verification Standard (ASVS) 5.0.0 Official Canonical Data
  * 
- * Auto-generated schema representing the complete ASVS framework.
+ * Synchronized with official OWASP ASVS 5.0.0 specifications:
+ * https://github.com/OWASP/ASVS/blob/master/5.0/docs_en/OWASP_Application_Security_Verification_Standard_5.0.0_en.csv
  */
 
 export interface ASVSChapter {
   id: number;
   name: string;
+  sections: string[];
+  reqCount: number;
+}
+
+export interface ASVSSection {
+  id: string;
+  chapterId: number;
+  chapterName: string;
+  name: string;
+  reqCount: number;
 }
 
 export interface ASVSRequirement {
   id: string;
   chapterId: number;
+  chapterName?: string;
+  sectionId?: string;
+  sectionName?: string;
+  section_name?: string;
   title: string;
   description: string;
   level: number;
   status: "Implemented" | "Partial" | "Missing" | "N/A";
   traceability: { id: string; color: string }[];
   notes: string;
+  triageReason?: string;
+}
+
+export interface ASVSTriageQuestion {
+  id: string;
+  category: string;
+  question: string;
+  description: string;
+  targetScope: "chapter" | "section" | "custom";
+  chapterId?: number;
+  sectionId?: string;
+  reqIds?: string[];
+  affectsLabel: string;
 }
 
 export const asvsChapters: ASVSChapter[] = [
   {
     "id": 1,
-    "name": "Encoding and Sanitization"
+    "name": "Encoding and Sanitization",
+    "sections": [
+      "V1.1",
+      "V1.2",
+      "V1.3",
+      "V1.4",
+      "V1.5"
+    ],
+    "reqCount": 30
   },
   {
     "id": 2,
-    "name": "Validation and Business Logic"
+    "name": "Validation and Business Logic",
+    "sections": [
+      "V2.1",
+      "V2.2",
+      "V2.3",
+      "V2.4"
+    ],
+    "reqCount": 13
   },
   {
     "id": 3,
-    "name": "Web Frontend Security"
+    "name": "Web Frontend Security",
+    "sections": [
+      "V3.1",
+      "V3.2",
+      "V3.3",
+      "V3.4",
+      "V3.5",
+      "V3.6",
+      "V3.7"
+    ],
+    "reqCount": 31
   },
   {
     "id": 4,
-    "name": "API and Web Service"
+    "name": "API and Web Service",
+    "sections": [
+      "V4.1",
+      "V4.2",
+      "V4.3",
+      "V4.4"
+    ],
+    "reqCount": 16
   },
   {
     "id": 5,
-    "name": "File Handling"
+    "name": "File Handling",
+    "sections": [
+      "V5.1",
+      "V5.2",
+      "V5.3",
+      "V5.4"
+    ],
+    "reqCount": 13
   },
   {
     "id": 6,
-    "name": "Authentication"
+    "name": "Authentication",
+    "sections": [
+      "V6.1",
+      "V6.2",
+      "V6.3",
+      "V6.4",
+      "V6.5",
+      "V6.6",
+      "V6.7",
+      "V6.8"
+    ],
+    "reqCount": 47
   },
   {
     "id": 7,
-    "name": "Session Management"
+    "name": "Session Management",
+    "sections": [
+      "V7.1",
+      "V7.2",
+      "V7.3",
+      "V7.4",
+      "V7.5",
+      "V7.6"
+    ],
+    "reqCount": 19
   },
   {
     "id": 8,
-    "name": "Authorization"
+    "name": "Authorization",
+    "sections": [
+      "V8.1",
+      "V8.2",
+      "V8.3",
+      "V8.4"
+    ],
+    "reqCount": 13
   },
   {
     "id": 9,
-    "name": "Self-contained Tokens"
+    "name": "Self-contained Tokens",
+    "sections": [
+      "V9.1",
+      "V9.2"
+    ],
+    "reqCount": 7
   },
   {
     "id": 10,
-    "name": "OAuth and OIDC"
+    "name": "OAuth and OIDC",
+    "sections": [
+      "V10.1",
+      "V10.2",
+      "V10.3",
+      "V10.4",
+      "V10.5",
+      "V10.6",
+      "V10.7"
+    ],
+    "reqCount": 36
   },
   {
     "id": 11,
-    "name": "Cryptography"
+    "name": "Cryptography",
+    "sections": [
+      "V11.1",
+      "V11.2",
+      "V11.3",
+      "V11.4",
+      "V11.5",
+      "V11.6",
+      "V11.7"
+    ],
+    "reqCount": 24
   },
   {
     "id": 12,
-    "name": "Secure Communication"
+    "name": "Secure Communication",
+    "sections": [
+      "V12.1",
+      "V12.2",
+      "V12.3"
+    ],
+    "reqCount": 12
   },
   {
     "id": 13,
-    "name": "Configuration"
+    "name": "Configuration",
+    "sections": [
+      "V13.1",
+      "V13.2",
+      "V13.3",
+      "V13.4"
+    ],
+    "reqCount": 21
   },
   {
     "id": 14,
-    "name": "Data Protection"
+    "name": "Data Protection",
+    "sections": [
+      "V14.1",
+      "V14.2",
+      "V14.3"
+    ],
+    "reqCount": 13
   },
   {
     "id": 15,
-    "name": "Secure Coding and Architecture"
+    "name": "Secure Coding and Architecture",
+    "sections": [
+      "V15.1",
+      "V15.2",
+      "V15.3",
+      "V15.4"
+    ],
+    "reqCount": 21
   },
   {
     "id": 16,
-    "name": "Security Logging and Error Handling"
+    "name": "Security Logging and Error Handling",
+    "sections": [
+      "V16.1",
+      "V16.2",
+      "V16.3",
+      "V16.4",
+      "V16.5"
+    ],
+    "reqCount": 17
   },
   {
     "id": 17,
-    "name": "WebRTC"
+    "name": "WebRTC",
+    "sections": [
+      "V17.1",
+      "V17.2",
+      "V17.3"
+    ],
+    "reqCount": 12
+  }
+];
+
+export const asvsSections: ASVSSection[] = [
+  {
+    "id": "V1.1",
+    "chapterId": 1,
+    "chapterName": "Encoding and Sanitization",
+    "name": "Encoding and Sanitization Architecture",
+    "reqCount": 2
+  },
+  {
+    "id": "V1.2",
+    "chapterId": 1,
+    "chapterName": "Encoding and Sanitization",
+    "name": "Injection Prevention",
+    "reqCount": 10
+  },
+  {
+    "id": "V1.3",
+    "chapterId": 1,
+    "chapterName": "Encoding and Sanitization",
+    "name": "Sanitization",
+    "reqCount": 12
+  },
+  {
+    "id": "V1.4",
+    "chapterId": 1,
+    "chapterName": "Encoding and Sanitization",
+    "name": "Memory, String, and Unmanaged Code",
+    "reqCount": 3
+  },
+  {
+    "id": "V1.5",
+    "chapterId": 1,
+    "chapterName": "Encoding and Sanitization",
+    "name": "Safe Deserialization",
+    "reqCount": 3
+  },
+  {
+    "id": "V2.1",
+    "chapterId": 2,
+    "chapterName": "Validation and Business Logic",
+    "name": "Validation and Business Logic Documentation",
+    "reqCount": 3
+  },
+  {
+    "id": "V2.2",
+    "chapterId": 2,
+    "chapterName": "Validation and Business Logic",
+    "name": "Input Validation",
+    "reqCount": 3
+  },
+  {
+    "id": "V2.3",
+    "chapterId": 2,
+    "chapterName": "Validation and Business Logic",
+    "name": "Business Logic Security",
+    "reqCount": 5
+  },
+  {
+    "id": "V2.4",
+    "chapterId": 2,
+    "chapterName": "Validation and Business Logic",
+    "name": "Anti-automation",
+    "reqCount": 2
+  },
+  {
+    "id": "V3.1",
+    "chapterId": 3,
+    "chapterName": "Web Frontend Security",
+    "name": "Web Frontend Security Documentation",
+    "reqCount": 1
+  },
+  {
+    "id": "V3.2",
+    "chapterId": 3,
+    "chapterName": "Web Frontend Security",
+    "name": "Unintended Content Interpretation",
+    "reqCount": 3
+  },
+  {
+    "id": "V3.3",
+    "chapterId": 3,
+    "chapterName": "Web Frontend Security",
+    "name": "Cookie Setup",
+    "reqCount": 5
+  },
+  {
+    "id": "V3.4",
+    "chapterId": 3,
+    "chapterName": "Web Frontend Security",
+    "name": "Browser Security Mechanism Headers",
+    "reqCount": 8
+  },
+  {
+    "id": "V3.5",
+    "chapterId": 3,
+    "chapterName": "Web Frontend Security",
+    "name": "Browser Origin Separation",
+    "reqCount": 8
+  },
+  {
+    "id": "V3.6",
+    "chapterId": 3,
+    "chapterName": "Web Frontend Security",
+    "name": "External Resource Integrity",
+    "reqCount": 1
+  },
+  {
+    "id": "V3.7",
+    "chapterId": 3,
+    "chapterName": "Web Frontend Security",
+    "name": "Other Browser Security Considerations",
+    "reqCount": 5
+  },
+  {
+    "id": "V4.1",
+    "chapterId": 4,
+    "chapterName": "API and Web Service",
+    "name": "Generic Web Service Security",
+    "reqCount": 5
+  },
+  {
+    "id": "V4.2",
+    "chapterId": 4,
+    "chapterName": "API and Web Service",
+    "name": "HTTP Message Structure Validation",
+    "reqCount": 5
+  },
+  {
+    "id": "V4.3",
+    "chapterId": 4,
+    "chapterName": "API and Web Service",
+    "name": "GraphQL",
+    "reqCount": 2
+  },
+  {
+    "id": "V4.4",
+    "chapterId": 4,
+    "chapterName": "API and Web Service",
+    "name": "WebSocket",
+    "reqCount": 4
+  },
+  {
+    "id": "V5.1",
+    "chapterId": 5,
+    "chapterName": "File Handling",
+    "name": "File Handling Documentation",
+    "reqCount": 1
+  },
+  {
+    "id": "V5.2",
+    "chapterId": 5,
+    "chapterName": "File Handling",
+    "name": "File Upload and Content",
+    "reqCount": 6
+  },
+  {
+    "id": "V5.3",
+    "chapterId": 5,
+    "chapterName": "File Handling",
+    "name": "File Storage",
+    "reqCount": 3
+  },
+  {
+    "id": "V5.4",
+    "chapterId": 5,
+    "chapterName": "File Handling",
+    "name": "File Download",
+    "reqCount": 3
+  },
+  {
+    "id": "V6.1",
+    "chapterId": 6,
+    "chapterName": "Authentication",
+    "name": "Authentication Documentation",
+    "reqCount": 3
+  },
+  {
+    "id": "V6.2",
+    "chapterId": 6,
+    "chapterName": "Authentication",
+    "name": "Password Security",
+    "reqCount": 12
+  },
+  {
+    "id": "V6.3",
+    "chapterId": 6,
+    "chapterName": "Authentication",
+    "name": "General Authentication Security",
+    "reqCount": 8
+  },
+  {
+    "id": "V6.4",
+    "chapterId": 6,
+    "chapterName": "Authentication",
+    "name": "Authentication Factor Lifecycle and Recovery",
+    "reqCount": 6
+  },
+  {
+    "id": "V6.5",
+    "chapterId": 6,
+    "chapterName": "Authentication",
+    "name": "General Multi-factor authentication requirements",
+    "reqCount": 8
+  },
+  {
+    "id": "V6.6",
+    "chapterId": 6,
+    "chapterName": "Authentication",
+    "name": "Out-of-Band authentication mechanisms",
+    "reqCount": 4
+  },
+  {
+    "id": "V6.7",
+    "chapterId": 6,
+    "chapterName": "Authentication",
+    "name": "Cryptographic authentication mechanism",
+    "reqCount": 2
+  },
+  {
+    "id": "V6.8",
+    "chapterId": 6,
+    "chapterName": "Authentication",
+    "name": "Authentication with an Identity Provider",
+    "reqCount": 4
+  },
+  {
+    "id": "V7.1",
+    "chapterId": 7,
+    "chapterName": "Session Management",
+    "name": "Session Management Documentation",
+    "reqCount": 3
+  },
+  {
+    "id": "V7.2",
+    "chapterId": 7,
+    "chapterName": "Session Management",
+    "name": "Fundamental Session Management Security",
+    "reqCount": 4
+  },
+  {
+    "id": "V7.3",
+    "chapterId": 7,
+    "chapterName": "Session Management",
+    "name": "Session Timeout",
+    "reqCount": 2
+  },
+  {
+    "id": "V7.4",
+    "chapterId": 7,
+    "chapterName": "Session Management",
+    "name": "Session Termination",
+    "reqCount": 5
+  },
+  {
+    "id": "V7.5",
+    "chapterId": 7,
+    "chapterName": "Session Management",
+    "name": "Defenses Against Session Abuse",
+    "reqCount": 3
+  },
+  {
+    "id": "V7.6",
+    "chapterId": 7,
+    "chapterName": "Session Management",
+    "name": "Federated Re-authentication",
+    "reqCount": 2
+  },
+  {
+    "id": "V8.1",
+    "chapterId": 8,
+    "chapterName": "Authorization",
+    "name": "Authorization Documentation",
+    "reqCount": 4
+  },
+  {
+    "id": "V8.2",
+    "chapterId": 8,
+    "chapterName": "Authorization",
+    "name": "General Authorization Design",
+    "reqCount": 4
+  },
+  {
+    "id": "V8.3",
+    "chapterId": 8,
+    "chapterName": "Authorization",
+    "name": "Operation Level Authorization",
+    "reqCount": 3
+  },
+  {
+    "id": "V8.4",
+    "chapterId": 8,
+    "chapterName": "Authorization",
+    "name": "Other Authorization Considerations",
+    "reqCount": 2
+  },
+  {
+    "id": "V9.1",
+    "chapterId": 9,
+    "chapterName": "Self-contained Tokens",
+    "name": "Token source and integrity",
+    "reqCount": 3
+  },
+  {
+    "id": "V9.2",
+    "chapterId": 9,
+    "chapterName": "Self-contained Tokens",
+    "name": "Token content",
+    "reqCount": 4
+  },
+  {
+    "id": "V10.1",
+    "chapterId": 10,
+    "chapterName": "OAuth and OIDC",
+    "name": "Generic OAuth and OIDC Security",
+    "reqCount": 2
+  },
+  {
+    "id": "V10.2",
+    "chapterId": 10,
+    "chapterName": "OAuth and OIDC",
+    "name": "OAuth Client",
+    "reqCount": 3
+  },
+  {
+    "id": "V10.3",
+    "chapterId": 10,
+    "chapterName": "OAuth and OIDC",
+    "name": "OAuth Resource Server",
+    "reqCount": 5
+  },
+  {
+    "id": "V10.4",
+    "chapterId": 10,
+    "chapterName": "OAuth and OIDC",
+    "name": "OAuth Authorization Server",
+    "reqCount": 16
+  },
+  {
+    "id": "V10.5",
+    "chapterId": 10,
+    "chapterName": "OAuth and OIDC",
+    "name": "OIDC Client",
+    "reqCount": 5
+  },
+  {
+    "id": "V10.6",
+    "chapterId": 10,
+    "chapterName": "OAuth and OIDC",
+    "name": "OpenID Provider",
+    "reqCount": 2
+  },
+  {
+    "id": "V10.7",
+    "chapterId": 10,
+    "chapterName": "OAuth and OIDC",
+    "name": "Consent Management",
+    "reqCount": 3
+  },
+  {
+    "id": "V11.1",
+    "chapterId": 11,
+    "chapterName": "Cryptography",
+    "name": "Cryptographic Inventory and Documentation",
+    "reqCount": 4
+  },
+  {
+    "id": "V11.2",
+    "chapterId": 11,
+    "chapterName": "Cryptography",
+    "name": "Secure Cryptography Implementation",
+    "reqCount": 5
+  },
+  {
+    "id": "V11.3",
+    "chapterId": 11,
+    "chapterName": "Cryptography",
+    "name": "Encryption Algorithms",
+    "reqCount": 5
+  },
+  {
+    "id": "V11.4",
+    "chapterId": 11,
+    "chapterName": "Cryptography",
+    "name": "Hashing and Hash-based Functions",
+    "reqCount": 4
+  },
+  {
+    "id": "V11.5",
+    "chapterId": 11,
+    "chapterName": "Cryptography",
+    "name": "Random Values",
+    "reqCount": 2
+  },
+  {
+    "id": "V11.6",
+    "chapterId": 11,
+    "chapterName": "Cryptography",
+    "name": "Public Key Cryptography",
+    "reqCount": 2
+  },
+  {
+    "id": "V11.7",
+    "chapterId": 11,
+    "chapterName": "Cryptography",
+    "name": "In-Use Data Cryptography",
+    "reqCount": 2
+  },
+  {
+    "id": "V12.1",
+    "chapterId": 12,
+    "chapterName": "Secure Communication",
+    "name": "General TLS Security Guidance",
+    "reqCount": 5
+  },
+  {
+    "id": "V12.2",
+    "chapterId": 12,
+    "chapterName": "Secure Communication",
+    "name": "HTTPS Communication with External Facing Services",
+    "reqCount": 2
+  },
+  {
+    "id": "V12.3",
+    "chapterId": 12,
+    "chapterName": "Secure Communication",
+    "name": "General Service to Service Communication Security",
+    "reqCount": 5
+  },
+  {
+    "id": "V13.1",
+    "chapterId": 13,
+    "chapterName": "Configuration",
+    "name": "Configuration Documentation",
+    "reqCount": 4
+  },
+  {
+    "id": "V13.2",
+    "chapterId": 13,
+    "chapterName": "Configuration",
+    "name": "Backend Communication Configuration",
+    "reqCount": 6
+  },
+  {
+    "id": "V13.3",
+    "chapterId": 13,
+    "chapterName": "Configuration",
+    "name": "Secret Management",
+    "reqCount": 4
+  },
+  {
+    "id": "V13.4",
+    "chapterId": 13,
+    "chapterName": "Configuration",
+    "name": "Unintended Information Leakage",
+    "reqCount": 7
+  },
+  {
+    "id": "V14.1",
+    "chapterId": 14,
+    "chapterName": "Data Protection",
+    "name": "Data Protection Documentation",
+    "reqCount": 2
+  },
+  {
+    "id": "V14.2",
+    "chapterId": 14,
+    "chapterName": "Data Protection",
+    "name": "General Data Protection",
+    "reqCount": 8
+  },
+  {
+    "id": "V14.3",
+    "chapterId": 14,
+    "chapterName": "Data Protection",
+    "name": "Client-side Data Protection",
+    "reqCount": 3
+  },
+  {
+    "id": "V15.1",
+    "chapterId": 15,
+    "chapterName": "Secure Coding and Architecture",
+    "name": "Secure Coding and Architecture Documentation",
+    "reqCount": 5
+  },
+  {
+    "id": "V15.2",
+    "chapterId": 15,
+    "chapterName": "Secure Coding and Architecture",
+    "name": "Security Architecture and Dependencies",
+    "reqCount": 5
+  },
+  {
+    "id": "V15.3",
+    "chapterId": 15,
+    "chapterName": "Secure Coding and Architecture",
+    "name": "Defensive Coding",
+    "reqCount": 7
+  },
+  {
+    "id": "V15.4",
+    "chapterId": 15,
+    "chapterName": "Secure Coding and Architecture",
+    "name": "Safe Concurrency",
+    "reqCount": 4
+  },
+  {
+    "id": "V16.1",
+    "chapterId": 16,
+    "chapterName": "Security Logging and Error Handling",
+    "name": "Security Logging Documentation",
+    "reqCount": 1
+  },
+  {
+    "id": "V16.2",
+    "chapterId": 16,
+    "chapterName": "Security Logging and Error Handling",
+    "name": "General Logging",
+    "reqCount": 5
+  },
+  {
+    "id": "V16.3",
+    "chapterId": 16,
+    "chapterName": "Security Logging and Error Handling",
+    "name": "Security Events",
+    "reqCount": 4
+  },
+  {
+    "id": "V16.4",
+    "chapterId": 16,
+    "chapterName": "Security Logging and Error Handling",
+    "name": "Log Protection",
+    "reqCount": 3
+  },
+  {
+    "id": "V16.5",
+    "chapterId": 16,
+    "chapterName": "Security Logging and Error Handling",
+    "name": "Error Handling",
+    "reqCount": 4
+  },
+  {
+    "id": "V17.1",
+    "chapterId": 17,
+    "chapterName": "WebRTC",
+    "name": "TURN Server",
+    "reqCount": 2
+  },
+  {
+    "id": "V17.2",
+    "chapterId": 17,
+    "chapterName": "WebRTC",
+    "name": "Media",
+    "reqCount": 8
+  },
+  {
+    "id": "V17.3",
+    "chapterId": 17,
+    "chapterName": "WebRTC",
+    "name": "Signaling",
+    "reqCount": 2
+  }
+];
+
+export const asvsTriageQuestions: ASVSTriageQuestion[] = [
+  {
+    "id": "triage-webrtc",
+    "category": "WebRTC & Real-Time Media",
+    "question": "Používa aplikácia technológiu WebRTC (P2P audio/video/dátové kanály, STUN/TURN servery)?",
+    "description": "Ak aplikácia neobsahuje real-time P2P prenos audia/videa ani WebRTC signalizáciu, všetky kontroly kapitoly V17 sú irelevantné.",
+    "targetScope": "chapter",
+    "chapterId": 17,
+    "affectsLabel": "12 požiadaviek (V17.1.1 – V17.3.2)"
+  },
+  {
+    "id": "triage-oauth-oidc",
+    "category": "OAuth 2.0 a OpenID Connect",
+    "question": "Využíva aplikácia protokol OAuth 2.0 alebo OpenID Connect (OIDC)?",
+    "description": "Ak aplikácia nepodporuje OAuth 2.0/OIDC autorizáciu, delegovanie práv ani OIDC federované prihlasovanie, celá kapitola V10 je irelevantná.",
+    "targetScope": "chapter",
+    "chapterId": 10,
+    "affectsLabel": "36 požiadaviek (V10.1.1 – V10.7.3)"
+  },
+  {
+    "id": "triage-oauth-auth-server",
+    "category": "OAuth 2.0 Authorization Server",
+    "question": "Implementuje aplikácia vlastný OAuth 2.0 Authorization Server / Token Endpoint?",
+    "description": "Ak je aplikácia len OAuth klient alebo resource server a sama nevydáva autorizačné tokeny tretím stranám, požiadavky V10.4 nie sú potrebné.",
+    "targetScope": "section",
+    "chapterId": 10,
+    "sectionId": "V10.4",
+    "affectsLabel": "16 požiadaviek (V10.4.1 – V10.4.16)"
+  },
+  {
+    "id": "triage-openid-provider",
+    "category": "OpenID Provider",
+    "question": "Pôsobí aplikácia ako OpenID Provider (vydáva ID tokeny používateľom)?",
+    "description": "Ak aplikácia nie je poskytovateľom identity (OpenID Provider), kontroly sekcie V10.6 sú nepotrebné.",
+    "targetScope": "section",
+    "chapterId": 10,
+    "sectionId": "V10.6",
+    "affectsLabel": "2 požiadavky (V10.6.1, V10.6.2)"
+  },
+  {
+    "id": "triage-jwt-tokens",
+    "category": "Self-contained Tokeny (JWT / PASETO)",
+    "question": "Používa aplikácia samostatné kryptografické tokeny (napr. JWT, PASETO, Macaroons)?",
+    "description": "Ak aplikácia využíva len klasické stavové opaque session cookies ukladané na serveri, kapitola V9 je irelevantná.",
+    "targetScope": "chapter",
+    "chapterId": 9,
+    "affectsLabel": "7 požiadaviek (V9.1.1 – V9.2.4)"
+  },
+  {
+    "id": "triage-file-handling",
+    "category": "Spracovanie a nahrávanie súborov",
+    "question": "Spracováva aplikácia nahrávanie (upload), ukladanie alebo sťahovanie používateľských súborov?",
+    "description": "Ak aplikácia neumožňuje používateľom nahrávať súbory na server ani nespracováva externé prílohy, celá kapitola V5 je irelevantná.",
+    "targetScope": "chapter",
+    "chapterId": 5,
+    "affectsLabel": "13 požiadaviek (V5.1.1 – V5.4.3)"
+  },
+  {
+    "id": "triage-web-frontend",
+    "category": "Webový frontend v prehliadači",
+    "question": "Má aplikácia webové klientske rozhranie (Web UI v prehliadači / HTML / DOM / JS)?",
+    "description": "Ak ide o čisto headless API, démona, CLI alebo mikroslužbu bez webového GUI, kapitola V3 je irelevantná.",
+    "targetScope": "chapter",
+    "chapterId": 3,
+    "affectsLabel": "31 požiadaviek (V3.1.1 – V3.7.5)"
+  },
+  {
+    "id": "triage-cookies",
+    "category": "Používanie HTTP Cookies",
+    "question": "Používa aplikácia HTTP cookies (napr. na session tracking alebo autorizáciu)?",
+    "description": "Ak aplikácia vôbec nepoužíva cookies (napr. výhradne Authorization Bearer hlavičky), sekcia V3.3 o nastavení cookies je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 3,
+    "sectionId": "V3.3",
+    "affectsLabel": "5 požiadaviek (V3.3.1 – V3.3.5)"
+  },
+  {
+    "id": "triage-graphql",
+    "category": "GraphQL API",
+    "question": "Poskytuje aplikácia GraphQL API rozhranie?",
+    "description": "Ak aplikácia nepoužíva GraphQL (používa REST, gRPC alebo SOAP), sekcia V4.3 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 4,
+    "sectionId": "V4.3",
+    "affectsLabel": "2 požiadavky (V4.3.1, V4.3.2)"
+  },
+  {
+    "id": "triage-websocket",
+    "category": "WebSocket Komunikácia",
+    "question": "Používa aplikácia WebSocket spojenia na obojsmernú komunikáciu?",
+    "description": "Ak aplikácia používa len štandardné HTTP/HTTPS požiadavky, sekcia V4.4 o WebSocketoch je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 4,
+    "sectionId": "V4.4",
+    "affectsLabel": "4 požiadavky (V4.4.1 – V4.4.4)"
+  },
+  {
+    "id": "triage-passwords",
+    "category": "Lokálna správa hesiel",
+    "question": "Spravuje a overuje aplikácia lokálne heslá používateľov?",
+    "description": "Ak aplikácia nepoužíva heslá (používa len SSO, federáciu alebo bezheslové WebAuthn), sekcia V6.2 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 6,
+    "sectionId": "V6.2",
+    "affectsLabel": "12 požiadaviek (V6.2.1 – V6.2.12)"
+  },
+  {
+    "id": "triage-mfa",
+    "category": "Viacfaktorová autentifikácia (MFA)",
+    "question": "Poskytuje aplikácia viacfaktorovú autentifikáciu (MFA / 2FA / TOTP / FIDO2)?",
+    "description": "Ak aplikácia neobsahuje funkcionalitu MFA (napr. základná L1 aplikácia bez MFA požiadavky), sekcie V6.5 a V6.6 sú irelevantné.",
+    "targetScope": "custom",
+    "chapterId": 6,
+    "reqIds": [
+      "V6.5.1",
+      "V6.5.2",
+      "V6.5.3",
+      "V6.5.4",
+      "V6.5.5",
+      "V6.5.6",
+      "V6.5.7",
+      "V6.5.8",
+      "V6.6.1",
+      "V6.6.2",
+      "V6.6.3",
+      "V6.6.4"
+    ],
+    "affectsLabel": "12 požiadaviek (V6.5.1 – V6.6.4)"
+  },
+  {
+    "id": "triage-federated-idp",
+    "category": "Federovaný Identity Provider",
+    "question": "Podporuje aplikácia prihlasovanie cez externého Identity Providera (IdP / SAML / Social)?",
+    "description": "Ak aplikácia neposkytuje prihlásenie cez externého IdP, sekcia V6.8 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 6,
+    "sectionId": "V6.8",
+    "affectsLabel": "4 požiadavky (V6.8.1 – V6.8.4)"
+  },
+  {
+    "id": "triage-unmanaged-code",
+    "category": "Neriadený kód a manuálna pamäť",
+    "question": "Využíva aplikácia neriadený kód (C, C++, assembly) alebo manuálnu správu pamäte?",
+    "description": "Ak je aplikácia vyvinutá v pamäťovo bezpečnom riadenom jazyku (Java, C#, Python, Go, Node.js), požiadavky na pretečenie vyrovnávacej pamäte sú irelevantné.",
+    "targetScope": "section",
+    "chapterId": 1,
+    "sectionId": "V1.4",
+    "affectsLabel": "3 požiadavky (V1.4.1 – V1.4.3)"
+  },
+  {
+    "id": "triage-third-party-services",
+    "category": "Komunikácia s externými službami",
+    "question": "Komunikuje aplikácia cez sieť so službami tretích strán, externými API alebo mikroslužbami?",
+    "description": "Ak ide o monolitický systém bez volania externých služieb, sekcia V12.3 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 12,
+    "sectionId": "V12.3",
+    "affectsLabel": "5 požiadaviek (V12.3.1 – V12.3.5)"
+  },
+  {
+    "id": "triage-client-storage",
+    "category": "Klientske ukladanie dát",
+    "question": "Ukladá aplikácia perzistentné používateľské dáta na strane klienta (Local Storage, IndexedDB)?",
+    "description": "Ak aplikácia neukladá na strane klienta žiadne dáta, sekcia V14.3 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 14,
+    "sectionId": "V14.3",
+    "affectsLabel": "3 požiadavky (V14.3.1 – V14.3.3)"
+  },
+  {
+    "id": "triage-external-scripts",
+    "category": "Externé CDN a skripty",
+    "question": "Načítava webová aplikácia externé JavaScript knižnice alebo skripty z verejných CDN tretích strán?",
+    "description": "Ak sú všetky assety a skripty servované výhradne z vlastnej domény, požiadavka na Subresource Integrity (SRI) nie je potrebná.",
+    "targetScope": "custom",
+    "chapterId": 3,
+    "reqIds": [
+      "V3.6.1"
+    ],
+    "affectsLabel": "1 požiadavka (V3.6.1)"
+  },
+  {
+    "id": "triage-anti-automation",
+    "category": "Anti-automation a ochrana pred botmi",
+    "question": "Vyžaduje aplikácia ochranu pred automatizovanými útokmi, botmi a nadmerným volaním biznis operácií (Rate-limiting / Anti-automation)?",
+    "description": "Ak ide o internú backendovú službu, dávkové spracovanie alebo zabezpečené rozhranie bez rizika automatizovaného scrapingu, credential stuffingu či zahltenia zdrojov, sekcia V2.4 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 2,
+    "sectionId": "V2.4",
+    "affectsLabel": "2 požiadavky (V2.4.1, V2.4.2)"
+  },
+  {
+    "id": "triage-business-logic-flows",
+    "category": "Komplexné biznis toky a transakcie",
+    "question": "Spracováva aplikácia viackrokové biznis procesy (multi-step workflows), finančné transakcie alebo rezervácie obmedzených kapacít (napr. vstupenky, termíny)?",
+    "description": "Ak aplikácia poskytuje len jednoduché nezávislé CRUD operácie bez stavových postupností, locking mechanizmov a viackrokového schvaľovania, požiadavky sekcie V2.3 na poradie tokov a transakcie sú irelevantné.",
+    "targetScope": "section",
+    "chapterId": 2,
+    "sectionId": "V2.3",
+    "affectsLabel": "5 požiadaviek (V2.3.1 – V2.3.5)"
+  },
+  {
+    "id": "triage-deserialization",
+    "category": "Deserializácia dát a XML spracovanie",
+    "question": "Spracováva alebo deserializuje aplikácia XML dokumenty alebo binárne serializované objekty (Java serialization, Python pickle, PHP serialize)?",
+    "description": "Ak aplikácia neprijíma XML dokumenty ani nespracováva binárne serializované objekty (používa len štandardný JSON), požiadavky sekcie V1.5 sú irelevantné.",
+    "targetScope": "section",
+    "chapterId": 1,
+    "sectionId": "V1.5",
+    "affectsLabel": "3 požiadavky (V1.5.1 – V1.5.3)"
+  },
+  {
+    "id": "triage-stateless-sessions",
+    "category": "Správa relácií a stavové sessions",
+    "question": "Udržiava aplikácia stavové relácie používateľov (HTTP sessions / server-side session management)?",
+    "description": "Ak ide o čisto bezstavové API (stateless REST/microservice), kde je každá požiadavka autentifikovaná samostatným self-contained tokenom bez relačného stavu na serveri, kapitola V7 je irelevantná.",
+    "targetScope": "chapter",
+    "chapterId": 7,
+    "affectsLabel": "19 požiadaviek (V7.1.1 – V7.6.2)"
+  },
+  {
+    "id": "triage-multi-tenancy",
+    "category": "Multi-tenant architektúra",
+    "question": "Je aplikácia prevádzkovaná ako multi-tenant systém (zdieľaná jednou inštanciou pre viacero nezávislých organizácií / nájomcov)?",
+    "description": "Ak je aplikácia dedikovaná pre jedného klienta (single-tenant inštancia), multi-tenant izolačné kontroly v sekcii V8.4 sú irelevantné.",
+    "targetScope": "custom",
+    "chapterId": 8,
+    "reqIds": [
+      "V8.4.1"
+    ],
+    "affectsLabel": "1 požiadavka (V8.4.1)"
+  },
+  {
+    "id": "triage-public-key-crypto",
+    "category": "Asymetrická kryptografia a PKI",
+    "question": "Implementuje aplikácia vlastné operácie asymetrickej kryptografie (vlastná tvorba kľúčov, výmena Diffie-Hellman, digitálne podpisovanie a overovanie certifikátov)?",
+    "description": "Ak aplikácia využíva len štandardný HTTPS/TLS prenos a bežné symetrické šifrovanie a nespravuje vlastné aplikačné kľúčové páry, sekcia V11.6 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 11,
+    "sectionId": "V11.6",
+    "affectsLabel": "2 požiadavky (V11.6.1, V11.6.2)"
+  },
+  {
+    "id": "triage-backend-connections",
+    "category": "Komunikácia s backendovými a OS komponentmi",
+    "question": "Komunikuje webová vrstva s internými backendovými službami, internými databázami alebo lokálnymi systémovými procesmi?",
+    "description": "Ak ide o samostatnú monolitickú aplikáciu bez distribuovaných backendových prepojení a volaní OS komponentov, sekcia V13.2 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 13,
+    "sectionId": "V13.2",
+    "affectsLabel": "6 požiadaviek (V13.2.1 – V13.2.6)"
+  },
+  {
+    "id": "triage-concurrency",
+    "category": "Paralelné viacvláknové spracovanie (Concurrency)",
+    "question": "Využíva aplikácia viacvláknové (multi-threaded) paralelné spracovanie so zdieľaným stavom v pamäti (možnosť Race Conditions)?",
+    "description": "Ak je aplikácia vyvinutá v jednovláknovom modeli (napr. štandardný Node.js) alebo nepoužíva zdieľané objekty v pamäti medzi vláknami, sekcia V15.4 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 15,
+    "sectionId": "V15.4",
+    "affectsLabel": "4 požiadavky (V15.4.1 – V15.4.4)"
+  },
+  {
+    "id": "triage-security-events",
+    "category": "Centrálny audit bezpečnostných udalostí (SIEM)",
+    "question": "Vyžaduje aplikácia integrované zaznamenávanie špecifických bezpečnostných udalostí do centrálneho SIEM / audítorského systému?",
+    "description": "Ak ide o internú aplikáciu s nízkym rizikom bez napojenia na centrálny SOC/SIEM monitorovací systém, pokročilé bezpečnostné logovanie udalostí v V16.3 je irelevantné.",
+    "targetScope": "section",
+    "chapterId": 16,
+    "sectionId": "V16.3",
+    "affectsLabel": "4 požiadavky (V16.3.1 – V16.3.4)"
+  },
+  {
+    "id": "triage-ldap-xpath",
+    "category": "LDAP a XPath dotazovanie",
+    "question": "Využíva aplikácia napojenie na adresárové služby LDAP / Active Directory alebo spracováva XPath dopyty v XML?",
+    "description": "Ak aplikácia nekomunikuje s LDAP adresárom a nepoužíva XPath vyhľadávanie v XML, požiadavky V1.2.6 a V1.2.7 na LDAP/XPath injection sú irelevantné.",
+    "targetScope": "custom",
+    "chapterId": 1,
+    "reqIds": [
+      "V1.2.6",
+      "V1.2.7"
+    ],
+    "affectsLabel": "2 požiadavky (V1.2.6, V1.2.7)"
+  },
+  {
+    "id": "triage-latex-rendering",
+    "category": "LaTeX procesor a matematické výrazy",
+    "question": "Generuje alebo renderuje aplikácia matematické vzorce či dokumenty cez LaTeX procesor?",
+    "description": "Ak aplikácia nepoužíva LaTeX renderovanie (napr. pdfTeX, KaTeX/LaTeX shell nástroje), kontrola V1.2.8 je irelevantná.",
+    "targetScope": "custom",
+    "chapterId": 1,
+    "reqIds": [
+      "V1.2.8"
+    ],
+    "affectsLabel": "1 požiadavka (V1.2.8)"
+  },
+  {
+    "id": "triage-csv-formula-export",
+    "category": "Export do CSV a tabuliek (Formula Injection)",
+    "question": "Umožňuje aplikácia exportovať používateľské dáta do formátu CSV alebo tabuliek (Excel / Calc)?",
+    "description": "Ak aplikácia neposkytuje export dát do tabuľkových formátov, ochrana pred CSV / Formula Injection v V1.2.10 je irelevantná.",
+    "targetScope": "custom",
+    "chapterId": 1,
+    "reqIds": [
+      "V1.2.10"
+    ],
+    "affectsLabel": "1 požiadavka (V1.2.10)"
+  },
+  {
+    "id": "triage-wysiwyg-html",
+    "category": "HTML WYSIWYG editory",
+    "question": "Prijíma aplikácia formátovaný HTML obsah od používateľov (napr. z WYSIWYG editorov ako TinyMCE, CKEditor, Quill)?",
+    "description": "Ak aplikácia prijíma iba čistý text bez povolenia HTML tagov, požiadavka V1.3.1 na HTML sanitizáciu je irelevantná.",
+    "targetScope": "custom",
+    "chapterId": 1,
+    "reqIds": [
+      "V1.3.1"
+    ],
+    "affectsLabel": "1 požiadavka (V1.3.1)"
+  },
+  {
+    "id": "triage-svg-content",
+    "category": "Spracovanie a nahrávanie SVG grafiky",
+    "question": "Prijíma alebo zobrazuje aplikácia používateľské SVG obrázky?",
+    "description": "Ak aplikácia nepodporuje SVG grafiku (podporuje len rastrové formáty PNG, JPG alebo žiadne), kontrola V1.3.4 na skriptovateľné SVG je irelevantná.",
+    "targetScope": "custom",
+    "chapterId": 1,
+    "reqIds": [
+      "V1.3.4"
+    ],
+    "affectsLabel": "1 požiadavka (V1.3.4)"
+  },
+  {
+    "id": "triage-markdown-templates",
+    "category": "Markdown, BBCode a šablónovacie enginy",
+    "question": "Spracováva aplikácia používateľom zadaný Markdown, BBCode alebo dynamické šablóny (Template Injection)?",
+    "description": "Ak aplikácia nepoužíva používateľské šablóny ani Markdown parsovanie, požiadavky V1.3.5 a V1.3.7 sú irelevantné.",
+    "targetScope": "custom",
+    "chapterId": 1,
+    "reqIds": [
+      "V1.3.5",
+      "V1.3.7"
+    ],
+    "affectsLabel": "2 požiadavky (V1.3.5, V1.3.7)"
+  },
+  {
+    "id": "triage-email-sending",
+    "category": "Spracovanie a odosielanie emailov (SMTP/IMAP)",
+    "question": "Odosiela aplikácia emaily s dynamickými používateľskými hlavičkami alebo poľami (SMTP / Email Injection)?",
+    "description": "Ak aplikácia neodosiela žiadne emaily ani neinteraguje s poštovým serverom, požiadavka V1.3.11 je irelevantná.",
+    "targetScope": "custom",
+    "chapterId": 1,
+    "reqIds": [
+      "V1.3.11"
+    ],
+    "affectsLabel": "1 požiadavka (V1.3.11)"
+  },
+  {
+    "id": "triage-oob-auth",
+    "category": "Out-of-Band (OOB) autentifikácia (SMS, Push notifikácie)",
+    "question": "Používa aplikácia Out-of-Band (OOB) kanály na overenie používateľa (napr. SMS kódy alebo Push notifikácie do mobilnej aplikácie)?",
+    "description": "Ak aplikácia nepoužíva SMS ani mobilné push notifikácie pri overovaní identity, sekcia V6.6 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 6,
+    "sectionId": "V6.6",
+    "affectsLabel": "4 požiadavky (V6.6.1 – V6.6.4)"
+  },
+  {
+    "id": "triage-crypto-auth",
+    "category": "Kryptografické hardvérové kľúče (FIDO2 / WebAuthn)",
+    "question": "Podporuje aplikácia hardvérové alebo asymetrické kryptografické autentifikátory (FIDO2, WebAuthn, Passkeys, klientske TLS certifikáty)?",
+    "description": "Ak aplikácia nepoužíva FIDO2/WebAuthn ani klientske certifikáty na prihlásenie, sekcia V6.7 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 6,
+    "sectionId": "V6.7",
+    "affectsLabel": "2 požiadavky (V6.7.1, V6.7.2)"
+  },
+  {
+    "id": "triage-federated-session-mgmt",
+    "category": "Federovaná správa relácií a Single Sign-Out",
+    "question": "Vyžaduje aplikácia synchronizáciu životného cyklu relácie s externým poskytovateľom identity (Federated Re-authentication / Single Logout)?",
+    "description": "Ak aplikácia nerieši synchronizované odhlasovanie (SLO) s externým IdP, sekcia V7.6 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 7,
+    "sectionId": "V7.6",
+    "affectsLabel": "2 požiadavky (V7.6.1, V7.6.2)"
+  },
+  {
+    "id": "triage-oauth-client",
+    "category": "OAuth 2.0 Klient",
+    "question": "Pôsobí aplikácia ako OAuth 2.0 klient pristupujúci k externým chráneným API v mene používateľa?",
+    "description": "Ak aplikácia sama o sebe nepristupuje k externým OAuth 2.0 zdrojom prostredníctvom prístupových tokenov, sekcia V10.2 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 10,
+    "sectionId": "V10.2",
+    "affectsLabel": "3 požiadavky (V10.2.1 – V10.2.3)"
+  },
+  {
+    "id": "triage-oauth-resource-server",
+    "category": "OAuth 2.0 Resource Server",
+    "question": "Pôsobí aplikácia ako chránené rozhranie (OAuth Resource Server) overujúce Bearer tokeny vydané externým Authorization Serverom?",
+    "description": "Ak aplikácia nechraňuje svoje API pomocou OAuth 2.0 access tokenov, sekcia V10.3 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 10,
+    "sectionId": "V10.3",
+    "affectsLabel": "5 požiadaviek (V10.3.1 – V10.3.5)"
+  },
+  {
+    "id": "triage-oidc-client",
+    "category": "OpenID Connect (OIDC) Klient",
+    "question": "Pôsobí aplikácia ako OpenID Connect (OIDC) klient prihlasujúci používateľov cez ID tokeny?",
+    "description": "Ak aplikácia nepoužíva OIDC prihlasovací protokol (alebo používa iné metódy), sekcia V10.5 je irelevantná.",
+    "targetScope": "section",
+    "chapterId": 10,
+    "sectionId": "V10.5",
+    "affectsLabel": "5 požiadaviek (V10.5.1 – V10.5.5)"
+  },
+  {
+    "id": "triage-in-use-crypto",
+    "category": "Kryptografia dát v pamäti (Confidential Computing / In-Use)",
+    "question": "Vyžaduje aplikácia hardvérové šifrovanie pamäte za behu (Confidential Computing / Intel SGX / AMD SEV) pre spracovanie vysoko citlivých dát?",
+    "description": "Ak aplikácia nebeží v špecializovanom dôveryhodnom enklávovom prostredí (Trusted Execution Environment), požiadavky sekcie V11.7 (Level 3) sú irelevantné.",
+    "targetScope": "section",
+    "chapterId": 11,
+    "sectionId": "V11.7",
+    "affectsLabel": "2 požiadavky (V11.7.1, V11.7.2)"
+  },
+  {
+    "id": "triage-key-vault",
+    "category": "Centrálna správa tajomstiev (Key Vault / KMS / HSM)",
+    "question": "Spravuje a rotuje aplikácia citlivé kľúče prostredníctvom špecializovaného riešenia pre správu tajomstiev (Vault, AWS KMS, Azure Key Vault, HSM)?",
+    "description": "Ak ide o jednoduchú aplikáciu s konfiguráciou cez bezpečné env premenné bez požiadavky na automatickú rotáciu a externý KMS, pokročilé požiadavky sekcie V13.3 sú irelevantné.",
+    "targetScope": "section",
+    "chapterId": 13,
+    "sectionId": "V13.3",
+    "affectsLabel": "4 požiadavky (V13.3.1 – V13.3.4)"
   }
 ];
 
@@ -95,7 +1257,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.1.1",
     "chapterId": 1,
-    "title": "Verify V1.1.1",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.1",
+    "sectionName": "Encoding and Sanitization Architecture",
+    "title": "Encoding and Sanitization Architecture",
     "description": "Verify that input is decoded or unescaped into a canonical form only once, it is only decoded when encoded data in that form is expected, and that this is done before processing the input further, for example it is not performed after input validation or sanitization.",
     "level": 2,
     "status": "N/A",
@@ -105,7 +1270,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.1.2",
     "chapterId": 1,
-    "title": "Verify V1.1.2",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.1",
+    "sectionName": "Encoding and Sanitization Architecture",
+    "title": "Encoding and Sanitization Architecture",
     "description": "Verify that the application performs output encoding and escaping either as a final step before being used by the interpreter for which it is intended or by the interpreter itself.",
     "level": 2,
     "status": "N/A",
@@ -115,7 +1283,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.2.1",
     "chapterId": 1,
-    "title": "Verify V1.2.1",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that output encoding for an HTTP response, HTML document, or XML document is relevant for the context required, such as encoding the relevant characters for HTML elements, HTML attributes, HTML comments, CSS, or HTTP header fields, to avoid changing the message or document structure.",
     "level": 1,
     "status": "N/A",
@@ -125,7 +1296,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.2.2",
     "chapterId": 1,
-    "title": "Verify V1.2.2",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that when dynamically building URLs, untrusted data is encoded according to its context (e.g., URL encoding or base64url encoding for query or path parameters). Ensure that only safe URL protocols are permitted (e.g., disallow javascript: or data:).",
     "level": 1,
     "status": "N/A",
@@ -135,7 +1309,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.2.3",
     "chapterId": 1,
-    "title": "Verify V1.2.3",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that output encoding or escaping is used when dynamically building JavaScript content (including JSON), to avoid changing the message or document structure (to avoid JavaScript and JSON injection).",
     "level": 1,
     "status": "N/A",
@@ -145,7 +1322,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.2.4",
     "chapterId": 1,
-    "title": "Verify V1.2.4",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that data selection or database queries (e.g., SQL, HQL, NoSQL, Cypher) use parameterized queries, ORMs, entity frameworks, or are otherwise protected from SQL Injection and other database injection attacks. This is also relevant when writing stored procedures.",
     "level": 1,
     "status": "N/A",
@@ -155,7 +1335,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.2.5",
     "chapterId": 1,
-    "title": "Verify V1.2.5",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that the application protects against OS command injection and that operating system calls use parameterized OS queries or use contextual command line output encoding.",
     "level": 1,
     "status": "N/A",
@@ -165,7 +1348,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.2.6",
     "chapterId": 1,
-    "title": "Verify V1.2.6",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that the application protects against LDAP injection vulnerabilities, or that specific security controls to prevent LDAP injection have been implemented.",
     "level": 2,
     "status": "N/A",
@@ -175,22 +1361,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.2.7",
     "chapterId": 1,
-    "title": "Verify V1.2.7",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that the application is protected against XPath injection attacks by using query parameterization or precompiled queries.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V1.2.8",
     "chapterId": 1,
-    "title": "Verify V1.2.8",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that LaTeX processors are configured securely (such as not using the \"--shell-escape\" flag) and an allowlist of commands is used to prevent LaTeX injection attacks.",
     "level": 2,
     "status": "N/A",
@@ -200,22 +1387,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.2.9",
     "chapterId": 1,
-    "title": "Verify V1.2.9",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that the application escapes special characters in regular expressions (typically using a backslash) to prevent them from being misinterpreted as metacharacters.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V1.2.10",
     "chapterId": 1,
-    "title": "Verify V1.2.10",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.2",
+    "sectionName": "Injection Prevention",
+    "title": "Injection Prevention",
     "description": "Verify that the application is protected against CSV and Formula Injection. The application must follow the escaping rules defined in RFC 4180 sections 2.6 and 2.7 when exporting CSV content. Additionally, when exporting to CSV or other spreadsheet formats (such as XLS, XLSX, or ODF), special characters (including '=', '+', '-', '@', '\\t' (tab), and '\\0' (null character)) must be escaped with a single quote if they appear as the first character in a field value.",
     "level": 3,
     "status": "N/A",
@@ -225,7 +1413,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.1",
     "chapterId": 1,
-    "title": "Verify V1.3.1",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that all untrusted HTML input from WYSIWYG editors or similar is sanitized using a well-known and secure HTML sanitization library or framework feature.",
     "level": 1,
     "status": "N/A",
@@ -235,7 +1426,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.2",
     "chapterId": 1,
-    "title": "Verify V1.3.2",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that the application avoids the use of eval() or other dynamic code execution features such as Spring Expression Language (SpEL). Where there is no alternative, any user input being included must be sanitized before being executed.",
     "level": 1,
     "status": "N/A",
@@ -245,7 +1439,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.3",
     "chapterId": 1,
-    "title": "Verify V1.3.3",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that data being passed to a potentially dangerous context is sanitized beforehand to enforce safety measures, such as only allowing characters which are safe for this context and trimming input which is too long.",
     "level": 2,
     "status": "N/A",
@@ -255,7 +1452,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.4",
     "chapterId": 1,
-    "title": "Verify V1.3.4",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that user-supplied Scalable Vector Graphics (SVG) scriptable content is validated or sanitized to contain only tags and attributes (such as draw graphics) that are safe for the application, e.g., do not contain scripts and foreignObject.",
     "level": 2,
     "status": "N/A",
@@ -265,7 +1465,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.5",
     "chapterId": 1,
-    "title": "Verify V1.3.5",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that the application sanitizes or disables user-supplied scriptable or expression template language content, such as Markdown, CSS or XSL stylesheets, BBCode, or similar.",
     "level": 2,
     "status": "N/A",
@@ -275,7 +1478,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.6",
     "chapterId": 1,
-    "title": "Verify V1.3.6",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that the application protects against Server-side Request Forgery (SSRF) attacks, by validating untrusted data against an allowlist of protocols, domains, paths and ports and sanitizing potentially dangerous characters before using the data to call another service.",
     "level": 2,
     "status": "N/A",
@@ -285,7 +1491,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.7",
     "chapterId": 1,
-    "title": "Verify V1.3.7",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that the application protects against template injection attacks by not allowing templates to be built based on untrusted input. Where there is no alternative, any untrusted input being included dynamically during template creation must be sanitized or strictly validated.",
     "level": 2,
     "status": "N/A",
@@ -295,7 +1504,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.8",
     "chapterId": 1,
-    "title": "Verify V1.3.8",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that the application appropriately sanitizes untrusted input before use in Java Naming and Directory Interface (JNDI) queries and that JNDI is configured securely to prevent JNDI injection attacks.",
     "level": 2,
     "status": "N/A",
@@ -305,7 +1517,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.9",
     "chapterId": 1,
-    "title": "Verify V1.3.9",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that the application sanitizes content before it is sent to memcache to prevent injection attacks.",
     "level": 2,
     "status": "N/A",
@@ -315,7 +1530,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.10",
     "chapterId": 1,
-    "title": "Verify V1.3.10",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that format strings which might resolve in an unexpected or malicious way when used are sanitized before being processed.",
     "level": 2,
     "status": "N/A",
@@ -325,7 +1543,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.11",
     "chapterId": 1,
-    "title": "Verify V1.3.11",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that the application sanitizes user input before passing to mail systems to protect against SMTP or IMAP injection.",
     "level": 2,
     "status": "N/A",
@@ -335,7 +1556,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.3.12",
     "chapterId": 1,
-    "title": "Verify V1.3.12",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.3",
+    "sectionName": "Sanitization",
+    "title": "Sanitization",
     "description": "Verify that regular expressions are free from elements causing exponential backtracking, and ensure untrusted input is sanitized to mitigate ReDoS or Runaway Regex attacks.",
     "level": 3,
     "status": "N/A",
@@ -345,7 +1569,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.4.1",
     "chapterId": 1,
-    "title": "Verify V1.4.1",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.4",
+    "sectionName": "Memory, String, and Unmanaged Code",
+    "title": "Memory, String, and Unmanaged Code",
     "description": "Verify that the application uses memory-safe string, safer memory copy and pointer arithmetic to detect or prevent stack, buffer, or heap overflows.",
     "level": 2,
     "status": "N/A",
@@ -355,52 +1582,49 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.4.2",
     "chapterId": 1,
-    "title": "Verify V1.4.2",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.4",
+    "sectionName": "Memory, String, and Unmanaged Code",
+    "title": "Memory, String, and Unmanaged Code",
     "description": "Verify that sign, range, and input validation techniques are used to prevent integer overflows.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V1.4.3",
     "chapterId": 1,
-    "title": "Verify V1.4.3",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.4",
+    "sectionName": "Memory, String, and Unmanaged Code",
+    "title": "Memory, String, and Unmanaged Code",
     "description": "Verify that dynamically allocated memory and resources are released, and that references or pointers to freed memory are removed or set to null to prevent dangling pointers and use-after-free vulnerabilities.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "API Gateway",
-        "color": "bg-purple-100 text-purple-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V1.5.1",
     "chapterId": 1,
-    "title": "Verify V1.5.1",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.5",
+    "sectionName": "Safe Deserialization",
+    "title": "Safe Deserialization",
     "description": "Verify that the application configures XML parsers to use a restrictive configuration and that unsafe features such as resolving external entities are disabled to prevent XML eXternal Entity (XXE) attacks.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V1.5.2",
     "chapterId": 1,
-    "title": "Verify V1.5.2",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.5",
+    "sectionName": "Safe Deserialization",
+    "title": "Safe Deserialization",
     "description": "Verify that deserialization of untrusted data enforces safe input handling, such as using an allowlist of object types or restricting client-defined object types, to prevent deserialization attacks. Deserialization mechanisms that are explicitly defined as insecure must not be used with untrusted input.",
     "level": 2,
     "status": "N/A",
@@ -410,7 +1634,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V1.5.3",
     "chapterId": 1,
-    "title": "Verify V1.5.3",
+    "chapterName": "Encoding and Sanitization",
+    "sectionId": "V1.5",
+    "sectionName": "Safe Deserialization",
+    "title": "Safe Deserialization",
     "description": "Verify that different parsers used in the application for the same data type (e.g., JSON parsers, XML parsers, URL parsers), perform parsing in a consistent way and use the same character encoding mechanism to avoid issues such as JSON Interoperability vulnerabilities or different URI or file parsing behavior being exploited in Remote File Inclusion (RFI) or Server-side Request Forgery (SSRF) attacks.",
     "level": 3,
     "status": "N/A",
@@ -420,22 +1647,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.1.1",
     "chapterId": 2,
-    "title": "Verify V2.1.1",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.1",
+    "sectionName": "Validation and Business Logic Documentation",
+    "title": "Validation and Business Logic Documentation",
     "description": "Verify that the application's documentation defines input validation rules for how to check the validity of data items against an expected structure. This could be common data formats such as credit card numbers, email addresses, telephone numbers, or it could be an internal data format.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V2.1.2",
     "chapterId": 2,
-    "title": "Verify V2.1.2",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.1",
+    "sectionName": "Validation and Business Logic Documentation",
+    "title": "Validation and Business Logic Documentation",
     "description": "Verify that the application's documentation defines how to validate the logical and contextual consistency of combined data items, such as checking that suburb and ZIP code match.",
     "level": 2,
     "status": "N/A",
@@ -445,7 +1673,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.1.3",
     "chapterId": 2,
-    "title": "Verify V2.1.3",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.1",
+    "sectionName": "Validation and Business Logic Documentation",
+    "title": "Validation and Business Logic Documentation",
     "description": "Verify that expectations for business logic limits and validations are documented, including both per-user and globally across the application.",
     "level": 2,
     "status": "N/A",
@@ -455,7 +1686,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.2.1",
     "chapterId": 2,
-    "title": "Verify V2.2.1",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.2",
+    "sectionName": "Input Validation",
+    "title": "Input Validation",
     "description": "Verify that input is validated to enforce business or functional expectations for that input. This should either use positive validation against an allow list of values, patterns, and ranges, or be based on comparing the input to an expected structure and logical limits according to predefined rules. For L1, this can focus on input which is used to make specific business or security decisions. For L2 and up, this should apply to all input.",
     "level": 1,
     "status": "N/A",
@@ -465,7 +1699,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.2.2",
     "chapterId": 2,
-    "title": "Verify V2.2.2",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.2",
+    "sectionName": "Input Validation",
+    "title": "Input Validation",
     "description": "Verify that the application is designed to enforce input validation at a trusted service layer. While client-side validation improves usability and should be encouraged, it must not be relied upon as a security control.",
     "level": 1,
     "status": "N/A",
@@ -475,7 +1712,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.2.3",
     "chapterId": 2,
-    "title": "Verify V2.2.3",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.2",
+    "sectionName": "Input Validation",
+    "title": "Input Validation",
     "description": "Verify that the application ensures that combinations of related data items are reasonable according to the pre-defined rules.",
     "level": 2,
     "status": "N/A",
@@ -485,7 +1725,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.3.1",
     "chapterId": 2,
-    "title": "Verify V2.3.1",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.3",
+    "sectionName": "Business Logic Security",
+    "title": "Business Logic Security",
     "description": "Verify that the application will only process business logic flows for the same user in the expected sequential step order and without skipping steps.",
     "level": 1,
     "status": "N/A",
@@ -495,7 +1738,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.3.2",
     "chapterId": 2,
-    "title": "Verify V2.3.2",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.3",
+    "sectionName": "Business Logic Security",
+    "title": "Business Logic Security",
     "description": "Verify that business logic limits are implemented per the application's documentation to avoid business logic flaws being exploited.",
     "level": 2,
     "status": "N/A",
@@ -505,22 +1751,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.3.3",
     "chapterId": 2,
-    "title": "Verify V2.3.3",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.3",
+    "sectionName": "Business Logic Security",
+    "title": "Business Logic Security",
     "description": "Verify that transactions are being used at the business logic level such that either a business logic operation succeeds in its entirety or it is rolled back to the previous correct state.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "API Gateway",
-        "color": "bg-purple-100 text-purple-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V2.3.4",
     "chapterId": 2,
-    "title": "Verify V2.3.4",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.3",
+    "sectionName": "Business Logic Security",
+    "title": "Business Logic Security",
     "description": "Verify that business logic level locking mechanisms are used to ensure that limited quantity resources (such as theater seats or delivery slots) cannot be double-booked by manipulating the application's logic.",
     "level": 2,
     "status": "N/A",
@@ -530,7 +1777,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.3.5",
     "chapterId": 2,
-    "title": "Verify V2.3.5",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.3",
+    "sectionName": "Business Logic Security",
+    "title": "Business Logic Security",
     "description": "Verify that high-value business logic flows require multi-user approval to prevent unauthorized or accidental actions. This could include but is not limited to large monetary transfers, contract approvals, access to classified information, or safety overrides in manufacturing.",
     "level": 3,
     "status": "N/A",
@@ -540,22 +1790,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V2.4.1",
     "chapterId": 2,
-    "title": "Verify V2.4.1",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.4",
+    "sectionName": "Anti-automation",
+    "title": "Anti-automation",
     "description": "Verify that anti-automation controls are in place to protect against excessive calls to application functions that could lead to data exfiltration, garbage-data creation, quota exhaustion, rate-limit breaches, denial-of-service, or overuse of costly resources.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V2.4.2",
     "chapterId": 2,
-    "title": "Verify V2.4.2",
+    "chapterName": "Validation and Business Logic",
+    "sectionId": "V2.4",
+    "sectionName": "Anti-automation",
+    "title": "Anti-automation",
     "description": "Verify that business logic flows require realistic human timing, preventing excessively rapid transaction submissions.",
     "level": 3,
     "status": "N/A",
@@ -565,7 +1816,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.1.1",
     "chapterId": 3,
-    "title": "Verify V3.1.1",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.1",
+    "sectionName": "Web Frontend Security Documentation",
+    "title": "Web Frontend Security Documentation",
     "description": "Verify that application documentation states the expected security features that browsers using the application must support (such as HTTPS, HTTP Strict Transport Security (HSTS), Content Security Policy (CSP), and other relevant HTTP security mechanisms). It must also define how the application must behave when some of these features are not available (such as warning the user or blocking access).",
     "level": 3,
     "status": "N/A",
@@ -575,7 +1829,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.2.1",
     "chapterId": 3,
-    "title": "Verify V3.2.1",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.2",
+    "sectionName": "Unintended Content Interpretation",
+    "title": "Unintended Content Interpretation",
     "description": "Verify that security controls are in place to prevent browsers from rendering content or functionality in HTTP responses in an incorrect context (e.g., when an API, a user-uploaded file or other resource is requested directly). Possible controls could include: not serving the content unless HTTP request header fields (such as Sec-Fetch-\\*) indicate it is the correct context, using the sandbox directive of the Content-Security-Policy header field or using the attachment disposition type in the Content-Disposition header field.",
     "level": 1,
     "status": "N/A",
@@ -585,7 +1842,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.2.2",
     "chapterId": 3,
-    "title": "Verify V3.2.2",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.2",
+    "sectionName": "Unintended Content Interpretation",
+    "title": "Unintended Content Interpretation",
     "description": "Verify that content intended to be displayed as text, rather than rendered as HTML, is handled using safe rendering functions (such as createTextNode or textContent) to prevent unintended execution of content such as HTML or JavaScript.",
     "level": 1,
     "status": "N/A",
@@ -595,7 +1855,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.2.3",
     "chapterId": 3,
-    "title": "Verify V3.2.3",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.2",
+    "sectionName": "Unintended Content Interpretation",
+    "title": "Unintended Content Interpretation",
     "description": "Verify that the application avoids DOM clobbering when using client-side JavaScript by employing explicit variable declarations, performing strict type checking, avoiding storing global variables on the document object, and implementing namespace isolation.",
     "level": 3,
     "status": "N/A",
@@ -605,7 +1868,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.3.1",
     "chapterId": 3,
-    "title": "Verify V3.3.1",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.3",
+    "sectionName": "Cookie Setup",
+    "title": "Cookie Setup",
     "description": "Verify that cookies have the 'Secure' attribute set, and if the '\\__Host-' prefix is not used for the cookie name, the '__Secure-' prefix must be used for the cookie name.",
     "level": 1,
     "status": "N/A",
@@ -615,7 +1881,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.3.2",
     "chapterId": 3,
-    "title": "Verify V3.3.2",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.3",
+    "sectionName": "Cookie Setup",
+    "title": "Cookie Setup",
     "description": "Verify that each cookie's 'SameSite' attribute value is set according to the purpose of the cookie, to limit exposure to user interface redress attacks and browser-based request forgery attacks, commonly known as cross-site request forgery (CSRF).",
     "level": 2,
     "status": "N/A",
@@ -625,7 +1894,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.3.3",
     "chapterId": 3,
-    "title": "Verify V3.3.3",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.3",
+    "sectionName": "Cookie Setup",
+    "title": "Cookie Setup",
     "description": "Verify that cookies have the '__Host-' prefix for the cookie name unless they are explicitly designed to be shared with other hosts.",
     "level": 2,
     "status": "N/A",
@@ -635,22 +1907,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.3.4",
     "chapterId": 3,
-    "title": "Verify V3.3.4",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.3",
+    "sectionName": "Cookie Setup",
+    "title": "Cookie Setup",
     "description": "Verify that if the value of a cookie is not meant to be accessible to client-side scripts (such as a session token), the cookie must have the 'HttpOnly' attribute set and the same value (e. g. session token) must only be transferred to the client via the 'Set-Cookie' header field.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "API Gateway",
-        "color": "bg-purple-100 text-purple-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V3.3.5",
     "chapterId": 3,
-    "title": "Verify V3.3.5",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.3",
+    "sectionName": "Cookie Setup",
+    "title": "Cookie Setup",
     "description": "Verify that when the application writes a cookie, the cookie name and value length combined are not over 4096 bytes. Overly large cookies will not be stored by the browser and therefore not sent with requests, preventing the user from using application functionality which relies on that cookie.",
     "level": 3,
     "status": "N/A",
@@ -660,7 +1933,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.4.1",
     "chapterId": 3,
-    "title": "Verify V3.4.1",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.4",
+    "sectionName": "Browser Security Mechanism Headers",
+    "title": "Browser Security Mechanism Headers",
     "description": "Verify that a Strict-Transport-Security header field is included on all responses to enforce an HTTP Strict Transport Security (HSTS) policy. A maximum age of at least 1 year must be defined, and for L2 and up, the policy must apply to all subdomains as well.",
     "level": 1,
     "status": "N/A",
@@ -670,7 +1946,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.4.2",
     "chapterId": 3,
-    "title": "Verify V3.4.2",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.4",
+    "sectionName": "Browser Security Mechanism Headers",
+    "title": "Browser Security Mechanism Headers",
     "description": "Verify that the Cross-Origin Resource Sharing (CORS) Access-Control-Allow-Origin header field is a fixed value by the application, or if the Origin HTTP request header field value is used, it is validated against an allowlist of trusted origins. When 'Access-Control-Allow-Origin: *' needs to be used, verify that the response does not include any sensitive information.",
     "level": 1,
     "status": "N/A",
@@ -680,7 +1959,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.4.3",
     "chapterId": 3,
-    "title": "Verify V3.4.3",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.4",
+    "sectionName": "Browser Security Mechanism Headers",
+    "title": "Browser Security Mechanism Headers",
     "description": "Verify that HTTP responses include a Content-Security-Policy response header field which defines directives to ensure the browser only loads and executes trusted content or resources, in order to limit execution of malicious JavaScript. As a minimum, a global policy must be used which includes the directives object-src 'none' and base-uri 'none' and defines either an allowlist or uses nonces or hashes. For an L3 application, a per-response policy with nonces or hashes must be defined.",
     "level": 2,
     "status": "N/A",
@@ -690,7 +1972,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.4.4",
     "chapterId": 3,
-    "title": "Verify V3.4.4",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.4",
+    "sectionName": "Browser Security Mechanism Headers",
+    "title": "Browser Security Mechanism Headers",
     "description": "Verify that all HTTP responses contain an 'X-Content-Type-Options: nosniff' header field. This instructs browsers not to use content sniffing and MIME type guessing for the given response, and to require the response's Content-Type header field value to match the destination resource. For example, the response to a request for a style is only accepted if the response's Content-Type is 'text/css'. This also enables the use of the Cross-Origin Read Blocking (CORB) functionality by the browser.",
     "level": 2,
     "status": "N/A",
@@ -700,7 +1985,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.4.5",
     "chapterId": 3,
-    "title": "Verify V3.4.5",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.4",
+    "sectionName": "Browser Security Mechanism Headers",
+    "title": "Browser Security Mechanism Headers",
     "description": "Verify that the application sets a referrer policy to prevent leakage of technically sensitive data to third-party services via the 'Referer' HTTP request header field. This can be done using the Referrer-Policy HTTP response header field or via HTML element attributes. Sensitive data could include path and query data in the URL, and for internal non-public applications also the hostname.",
     "level": 2,
     "status": "N/A",
@@ -710,7 +1998,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.4.6",
     "chapterId": 3,
-    "title": "Verify V3.4.6",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.4",
+    "sectionName": "Browser Security Mechanism Headers",
+    "title": "Browser Security Mechanism Headers",
     "description": "Verify that the web application uses the frame-ancestors directive of the Content-Security-Policy header field for every HTTP response to ensure that it cannot be embedded by default and that embedding of specific resources is allowed only when necessary. Note that the X-Frame-Options header field, although supported by browsers, is obsolete and may not be relied upon.",
     "level": 2,
     "status": "N/A",
@@ -720,7 +2011,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.4.7",
     "chapterId": 3,
-    "title": "Verify V3.4.7",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.4",
+    "sectionName": "Browser Security Mechanism Headers",
+    "title": "Browser Security Mechanism Headers",
     "description": "Verify that the Content-Security-Policy header field specifies a location to report violations.",
     "level": 3,
     "status": "N/A",
@@ -730,22 +2024,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.4.8",
     "chapterId": 3,
-    "title": "Verify V3.4.8",
-    "description": "Verify that all HTTP responses that initiate a document rendering (such as responses with Content-Type text/html), include the Cross\u2011Origin\u2011Opener\u2011Policy header field with the same-origin directive or the same-origin-allow-popups directive as required. This prevents attacks that abuse shared access to Window objects, such as tabnabbing and frame counting.",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.4",
+    "sectionName": "Browser Security Mechanism Headers",
+    "title": "Browser Security Mechanism Headers",
+    "description": "Verify that all HTTP responses that initiate a document rendering (such as responses with Content-Type text/html), include the Cross‑Origin‑Opener‑Policy header field with the same-origin directive or the same-origin-allow-popups directive as required. This prevents attacks that abuse shared access to Window objects, such as tabnabbing and frame counting.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V3.5.1",
     "chapterId": 3,
-    "title": "Verify V3.5.1",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.5",
+    "sectionName": "Browser Origin Separation",
+    "title": "Browser Origin Separation",
     "description": "Verify that, if the application does not rely on the CORS preflight mechanism to prevent disallowed cross-origin requests to use sensitive functionality, these requests are validated to ensure they originate from the application itself. This may be done by using and validating anti-forgery tokens or requiring extra HTTP header fields that are not CORS-safelisted request-header fields. This is to defend against browser-based request forgery attacks, commonly known as cross-site request forgery (CSRF).",
     "level": 1,
     "status": "N/A",
@@ -755,7 +2050,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.5.2",
     "chapterId": 3,
-    "title": "Verify V3.5.2",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.5",
+    "sectionName": "Browser Origin Separation",
+    "title": "Browser Origin Separation",
     "description": "Verify that, if the application relies on the CORS preflight mechanism to prevent disallowed cross-origin use of sensitive functionality, it is not possible to call the functionality with a request which does not trigger a CORS-preflight request. This may require checking the values of the 'Origin' and 'Content-Type' request header fields or using an extra header field that is not a CORS-safelisted header-field.",
     "level": 1,
     "status": "N/A",
@@ -765,7 +2063,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.5.3",
     "chapterId": 3,
-    "title": "Verify V3.5.3",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.5",
+    "sectionName": "Browser Origin Separation",
+    "title": "Browser Origin Separation",
     "description": "Verify that HTTP requests to sensitive functionality use appropriate HTTP methods such as POST, PUT, PATCH, or DELETE, and not methods defined by the HTTP specification as \"safe\" such as HEAD, OPTIONS, or GET. Alternatively, strict validation of the Sec-Fetch-* request header fields can be used to ensure that the request did not originate from an inappropriate cross-origin call, a navigation request, or a resource load (such as an image source) where this is not expected.",
     "level": 1,
     "status": "N/A",
@@ -775,7 +2076,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.5.4",
     "chapterId": 3,
-    "title": "Verify V3.5.4",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.5",
+    "sectionName": "Browser Origin Separation",
+    "title": "Browser Origin Separation",
     "description": "Verify that separate applications are hosted on different hostnames to leverage the restrictions provided by same-origin policy, including how documents or scripts loaded by one origin can interact with resources from another origin and hostname-based restrictions on cookies.",
     "level": 2,
     "status": "N/A",
@@ -785,7 +2089,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.5.5",
     "chapterId": 3,
-    "title": "Verify V3.5.5",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.5",
+    "sectionName": "Browser Origin Separation",
+    "title": "Browser Origin Separation",
     "description": "Verify that messages received by the postMessage interface are discarded if the origin of the message is not trusted, or if the syntax of the message is invalid.",
     "level": 2,
     "status": "N/A",
@@ -795,7 +2102,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.5.6",
     "chapterId": 3,
-    "title": "Verify V3.5.6",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.5",
+    "sectionName": "Browser Origin Separation",
+    "title": "Browser Origin Separation",
     "description": "Verify that JSONP functionality is not enabled anywhere across the application to avoid Cross-Site Script Inclusion (XSSI) attacks.",
     "level": 3,
     "status": "N/A",
@@ -805,7 +2115,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.5.7",
     "chapterId": 3,
-    "title": "Verify V3.5.7",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.5",
+    "sectionName": "Browser Origin Separation",
+    "title": "Browser Origin Separation",
     "description": "Verify that data requiring authorization is not included in script resource responses, like JavaScript files, to prevent Cross-Site Script Inclusion (XSSI) attacks.",
     "level": 3,
     "status": "N/A",
@@ -815,7 +2128,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.5.8",
     "chapterId": 3,
-    "title": "Verify V3.5.8",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.5",
+    "sectionName": "Browser Origin Separation",
+    "title": "Browser Origin Separation",
     "description": "Verify that authenticated resources (such as images, videos, scripts, and other documents) can be loaded or embedded on behalf of the user only when intended. This can be accomplished by strict validation of the Sec-Fetch-* HTTP request header fields to ensure that the request did not originate from an inappropriate cross-origin call, or by setting a restrictive Cross-Origin-Resource-Policy HTTP response header field to instruct the browser to block returned content.",
     "level": 3,
     "status": "N/A",
@@ -825,7 +2141,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.6.1",
     "chapterId": 3,
-    "title": "Verify V3.6.1",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.6",
+    "sectionName": "External Resource Integrity",
+    "title": "External Resource Integrity",
     "description": "Verify that client-side assets, such as JavaScript libraries, CSS, or web fonts, are only hosted externally (e.g., on a Content Delivery Network) if the resource is static and versioned and Subresource Integrity (SRI) is used to validate the integrity of the asset. If this is not possible, there should be a documented security decision to justify this for each resource.",
     "level": 3,
     "status": "N/A",
@@ -835,7 +2154,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.7.1",
     "chapterId": 3,
-    "title": "Verify V3.7.1",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.7",
+    "sectionName": "Other Browser Security Considerations",
+    "title": "Other Browser Security Considerations",
     "description": "Verify that the application only uses client-side technologies which are still supported and considered secure. Examples of technologies which do not meet this requirement include NSAPI plugins, Flash, Shockwave, ActiveX, Silverlight, NACL, or client-side Java applets.",
     "level": 2,
     "status": "N/A",
@@ -845,7 +2167,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.7.2",
     "chapterId": 3,
-    "title": "Verify V3.7.2",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.7",
+    "sectionName": "Other Browser Security Considerations",
+    "title": "Other Browser Security Considerations",
     "description": "Verify that the application will only automatically redirect the user to a different hostname or domain (which is not controlled by the application) where the destination appears on an allowlist.",
     "level": 2,
     "status": "N/A",
@@ -855,7 +2180,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.7.3",
     "chapterId": 3,
-    "title": "Verify V3.7.3",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.7",
+    "sectionName": "Other Browser Security Considerations",
+    "title": "Other Browser Security Considerations",
     "description": "Verify that the application shows a notification when the user is being redirected to a URL outside of the application's control, with an option to cancel the navigation.",
     "level": 3,
     "status": "N/A",
@@ -865,67 +2193,62 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V3.7.4",
     "chapterId": 3,
-    "title": "Verify V3.7.4",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.7",
+    "sectionName": "Other Browser Security Considerations",
+    "title": "Other Browser Security Considerations",
     "description": "Verify that the application's top-level domain (e.g., site.tld) is added to the public preload list for HTTP Strict Transport Security (HSTS). This ensures that the use of TLS for the application is built directly into the main browsers, rather than relying only on the Strict-Transport-Security response header field.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V3.7.5",
     "chapterId": 3,
-    "title": "Verify V3.7.5",
+    "chapterName": "Web Frontend Security",
+    "sectionId": "V3.7",
+    "sectionName": "Other Browser Security Considerations",
+    "title": "Other Browser Security Considerations",
     "description": "Verify that the application behaves as documented (such as warning the user or blocking access) if the browser used to access the application does not support the expected security features.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V4.1.1",
     "chapterId": 4,
-    "title": "Verify V4.1.1",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.1",
+    "sectionName": "Generic Web Service Security",
+    "title": "Generic Web Service Security",
     "description": "Verify that every HTTP response with a message body contains a Content-Type header field that matches the actual content of the response, including the charset parameter to specify safe character encoding (e.g., UTF-8, ISO-8859-1) according to IANA Media Types, such as \"text/\", \"/+xml\" and \"/xml\".",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V4.1.2",
     "chapterId": 4,
-    "title": "Verify V4.1.2",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.1",
+    "sectionName": "Generic Web Service Security",
+    "title": "Generic Web Service Security",
     "description": "Verify that only user-facing endpoints (intended for manual web-browser access) automatically redirect from HTTP to HTTPS, while other services or endpoints do not implement transparent redirects. This is to avoid a situation where a client is erroneously sending unencrypted HTTP requests, but since the requests are being automatically redirected to HTTPS, the leakage of sensitive data goes undiscovered.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V4.1.3",
     "chapterId": 4,
-    "title": "Verify V4.1.3",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.1",
+    "sectionName": "Generic Web Service Security",
+    "title": "Generic Web Service Security",
     "description": "Verify that any HTTP header field used by the application and set by an intermediary layer, such as a load balancer, a web proxy, or a backend-for-frontend service, cannot be overridden by the end-user. Example headers might include X-Real-IP, X-Forwarded-*, or X-User-ID.",
     "level": 2,
     "status": "N/A",
@@ -935,7 +2258,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.1.4",
     "chapterId": 4,
-    "title": "Verify V4.1.4",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.1",
+    "sectionName": "Generic Web Service Security",
+    "title": "Generic Web Service Security",
     "description": "Verify that only HTTP methods that are explicitly supported by the application or its API (including OPTIONS during preflight requests) can be used and that unused methods are blocked.",
     "level": 3,
     "status": "N/A",
@@ -945,7 +2271,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.1.5",
     "chapterId": 4,
-    "title": "Verify V4.1.5",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.1",
+    "sectionName": "Generic Web Service Security",
+    "title": "Generic Web Service Security",
     "description": "Verify that per-message digital signatures are used to provide additional assurance on top of transport protections for requests or transactions which are highly sensitive or which traverse a number of systems.",
     "level": 3,
     "status": "N/A",
@@ -955,7 +2284,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.2.1",
     "chapterId": 4,
-    "title": "Verify V4.2.1",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.2",
+    "sectionName": "HTTP Message Structure Validation",
+    "title": "HTTP Message Structure Validation",
     "description": "Verify that all application components (including load balancers, firewalls, and application servers) determine boundaries of incoming HTTP messages using the appropriate mechanism for the HTTP version to prevent HTTP request smuggling. In HTTP/1.x, if a Transfer-Encoding header field is present, the Content-Length header must be ignored per RFC 2616. When using HTTP/2 or HTTP/3, if a Content-Length header field is present, the receiver must ensure that it is consistent with the length of the DATA frames.",
     "level": 2,
     "status": "N/A",
@@ -965,7 +2297,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.2.2",
     "chapterId": 4,
-    "title": "Verify V4.2.2",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.2",
+    "sectionName": "HTTP Message Structure Validation",
+    "title": "HTTP Message Structure Validation",
     "description": "Verify that when generating HTTP messages, the Content-Length header field does not conflict with the length of the content as determined by the framing of the HTTP protocol, in order to prevent request smuggling attacks.",
     "level": 3,
     "status": "N/A",
@@ -975,7 +2310,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.2.3",
     "chapterId": 4,
-    "title": "Verify V4.2.3",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.2",
+    "sectionName": "HTTP Message Structure Validation",
+    "title": "HTTP Message Structure Validation",
     "description": "Verify that the application does not send nor accept HTTP/2 or HTTP/3 messages with connection-specific header fields such as Transfer-Encoding to prevent response splitting and header injection attacks.",
     "level": 3,
     "status": "N/A",
@@ -985,7 +2323,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.2.4",
     "chapterId": 4,
-    "title": "Verify V4.2.4",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.2",
+    "sectionName": "HTTP Message Structure Validation",
+    "title": "HTTP Message Structure Validation",
     "description": "Verify that the application only accepts HTTP/2 and HTTP/3 requests where the header fields and values do not contain any CR (\\r), LF (\\n), or CRLF (\\r\\n) sequences, to prevent header injection attacks.",
     "level": 3,
     "status": "N/A",
@@ -995,22 +2336,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.2.5",
     "chapterId": 4,
-    "title": "Verify V4.2.5",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.2",
+    "sectionName": "HTTP Message Structure Validation",
+    "title": "HTTP Message Structure Validation",
     "description": "Verify that, if the application (backend or frontend) builds and sends requests, it uses validation, sanitization, or other mechanisms to avoid creating URIs (such as for API calls) or HTTP request header fields (such as Authorization or Cookie), which are too long to be accepted by the receiving component. This could cause a denial of service, such as when sending an overly long request (e.g., a long cookie header field), which results in the server always responding with an error status.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V4.3.1",
     "chapterId": 4,
-    "title": "Verify V4.3.1",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.3",
+    "sectionName": "GraphQL",
+    "title": "GraphQL",
     "description": "Verify that a query allowlist, depth limiting, amount limiting, or query cost analysis is used to prevent GraphQL or data layer expression Denial of Service (DoS) as a result of expensive, nested queries.",
     "level": 2,
     "status": "N/A",
@@ -1020,7 +2362,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.3.2",
     "chapterId": 4,
-    "title": "Verify V4.3.2",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.3",
+    "sectionName": "GraphQL",
+    "title": "GraphQL",
     "description": "Verify that GraphQL introspection queries are disabled in the production environment unless the GraphQL API is meant to be used by other parties.",
     "level": 2,
     "status": "N/A",
@@ -1030,7 +2375,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.4.1",
     "chapterId": 4,
-    "title": "Verify V4.4.1",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.4",
+    "sectionName": "WebSocket",
+    "title": "WebSocket",
     "description": "Verify that WebSocket over TLS (WSS) is used for all WebSocket connections.",
     "level": 1,
     "status": "N/A",
@@ -1040,7 +2388,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.4.2",
     "chapterId": 4,
-    "title": "Verify V4.4.2",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.4",
+    "sectionName": "WebSocket",
+    "title": "WebSocket",
     "description": "Verify that, during the initial HTTP WebSocket handshake, the Origin header field is checked against a list of origins allowed for the application.",
     "level": 2,
     "status": "N/A",
@@ -1050,7 +2401,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.4.3",
     "chapterId": 4,
-    "title": "Verify V4.4.3",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.4",
+    "sectionName": "WebSocket",
+    "title": "WebSocket",
     "description": "Verify that, if the application's standard session management cannot be used, dedicated tokens are being used for this, which comply with the relevant Session Management security requirements.",
     "level": 2,
     "status": "N/A",
@@ -1060,22 +2414,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V4.4.4",
     "chapterId": 4,
-    "title": "Verify V4.4.4",
+    "chapterName": "API and Web Service",
+    "sectionId": "V4.4",
+    "sectionName": "WebSocket",
+    "title": "WebSocket",
     "description": "Verify that dedicated WebSocket session management tokens are initially obtained or validated through the previously authenticated HTTPS session when transitioning an existing HTTPS session to a WebSocket channel.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V5.1.1",
     "chapterId": 5,
-    "title": "Verify V5.1.1",
+    "chapterName": "File Handling",
+    "sectionId": "V5.1",
+    "sectionName": "File Handling Documentation",
+    "title": "File Handling Documentation",
     "description": "Verify that the documentation defines the permitted file types, expected file extensions, and maximum size (including unpacked size) for each upload feature. Additionally, ensure that the documentation specifies how files are made safe for end-users to download and process, such as how the application behaves when a malicious file is detected.",
     "level": 2,
     "status": "N/A",
@@ -1085,22 +2440,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.2.1",
     "chapterId": 5,
-    "title": "Verify V5.2.1",
+    "chapterName": "File Handling",
+    "sectionId": "V5.2",
+    "sectionName": "File Upload and Content",
+    "title": "File Upload and Content",
     "description": "Verify that the application will only accept files of a size which it can process without causing a loss of performance or a denial of service attack.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V5.2.2",
     "chapterId": 5,
-    "title": "Verify V5.2.2",
+    "chapterName": "File Handling",
+    "sectionId": "V5.2",
+    "sectionName": "File Upload and Content",
+    "title": "File Upload and Content",
     "description": "Verify that when the application accepts a file, either on its own or within an archive such as a zip file, it checks if the file extension matches an expected file extension and validates that the contents correspond to the type represented by the extension. This includes, but is not limited to, checking the initial 'magic bytes', performing image re-writing, and using specialized libraries for file content validation. For L1, this can focus just on files which are used to make specific business or security decisions. For L2 and up, this must apply to all files being accepted.",
     "level": 1,
     "status": "N/A",
@@ -1110,7 +2466,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.2.3",
     "chapterId": 5,
-    "title": "Verify V5.2.3",
+    "chapterName": "File Handling",
+    "sectionId": "V5.2",
+    "sectionName": "File Upload and Content",
+    "title": "File Upload and Content",
     "description": "Verify that the application checks compressed files (e.g., zip, gz, docx, odt) against maximum allowed uncompressed size and against maximum number of files before uncompressing the file.",
     "level": 2,
     "status": "N/A",
@@ -1120,7 +2479,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.2.4",
     "chapterId": 5,
-    "title": "Verify V5.2.4",
+    "chapterName": "File Handling",
+    "sectionId": "V5.2",
+    "sectionName": "File Upload and Content",
+    "title": "File Upload and Content",
     "description": "Verify that a file size quota and maximum number of files per user are enforced to ensure that a single user cannot fill up the storage with too many files, or excessively large files.",
     "level": 3,
     "status": "N/A",
@@ -1130,22 +2492,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.2.5",
     "chapterId": 5,
-    "title": "Verify V5.2.5",
+    "chapterName": "File Handling",
+    "sectionId": "V5.2",
+    "sectionName": "File Upload and Content",
+    "title": "File Upload and Content",
     "description": "Verify that the application does not allow uploading compressed files containing symlinks unless this is specifically required (in which case it will be necessary to enforce an allowlist of the files that can be symlinked to).",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V5.2.6",
     "chapterId": 5,
-    "title": "Verify V5.2.6",
+    "chapterName": "File Handling",
+    "sectionId": "V5.2",
+    "sectionName": "File Upload and Content",
+    "title": "File Upload and Content",
     "description": "Verify that the application rejects uploaded images with a pixel size larger than the maximum allowed, to prevent pixel flood attacks.",
     "level": 3,
     "status": "N/A",
@@ -1155,7 +2518,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.3.1",
     "chapterId": 5,
-    "title": "Verify V5.3.1",
+    "chapterName": "File Handling",
+    "sectionId": "V5.3",
+    "sectionName": "File Storage",
+    "title": "File Storage",
     "description": "Verify that files uploaded or generated by untrusted input and stored in a public folder, are not executed as server-side program code when accessed directly with an HTTP request.",
     "level": 1,
     "status": "N/A",
@@ -1165,7 +2531,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.3.2",
     "chapterId": 5,
-    "title": "Verify V5.3.2",
+    "chapterName": "File Handling",
+    "sectionId": "V5.3",
+    "sectionName": "File Storage",
+    "title": "File Storage",
     "description": "Verify that when the application creates file paths for file operations, instead of user-submitted filenames, it uses internally generated or trusted data, or if user-submitted filenames or file metadata must be used, strict validation and sanitization must be applied. This is to protect against path traversal, local or remote file inclusion (LFI, RFI), and server-side request forgery (SSRF) attacks.",
     "level": 1,
     "status": "N/A",
@@ -1175,7 +2544,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.3.3",
     "chapterId": 5,
-    "title": "Verify V5.3.3",
+    "chapterName": "File Handling",
+    "sectionId": "V5.3",
+    "sectionName": "File Storage",
+    "title": "File Storage",
     "description": "Verify that server-side file processing, such as file decompression, ignores user-provided path information to prevent vulnerabilities such as zip slip.",
     "level": 3,
     "status": "N/A",
@@ -1185,7 +2557,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.4.1",
     "chapterId": 5,
-    "title": "Verify V5.4.1",
+    "chapterName": "File Handling",
+    "sectionId": "V5.4",
+    "sectionName": "File Download",
+    "title": "File Download",
     "description": "Verify that the application validates or ignores user-submitted filenames, including in a JSON, JSONP, or URL parameter and specifies a filename in the Content-Disposition header field in the response.",
     "level": 2,
     "status": "N/A",
@@ -1195,7 +2570,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.4.2",
     "chapterId": 5,
-    "title": "Verify V5.4.2",
+    "chapterName": "File Handling",
+    "sectionId": "V5.4",
+    "sectionName": "File Download",
+    "title": "File Download",
     "description": "Verify that file names served (e.g., in HTTP response header fields or email attachments) are encoded or sanitized (e.g., following RFC 6266) to preserve document structure and prevent injection attacks.",
     "level": 2,
     "status": "N/A",
@@ -1205,22 +2583,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V5.4.3",
     "chapterId": 5,
-    "title": "Verify V5.4.3",
+    "chapterName": "File Handling",
+    "sectionId": "V5.4",
+    "sectionName": "File Download",
+    "title": "File Download",
     "description": "Verify that files obtained from untrusted sources are scanned by antivirus scanners to prevent serving of known malicious content.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V6.1.1",
     "chapterId": 6,
-    "title": "Verify V6.1.1",
+    "chapterName": "Authentication",
+    "sectionId": "V6.1",
+    "sectionName": "Authentication Documentation",
+    "title": "Authentication Documentation",
     "description": "Verify that application documentation defines how controls such as rate limiting, anti-automation, and adaptive response, are used to defend against attacks such as credential stuffing and password brute force. The documentation must make clear how these controls are configured and prevent malicious account lockout.",
     "level": 1,
     "status": "N/A",
@@ -1230,22 +2609,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.1.2",
     "chapterId": 6,
-    "title": "Verify V6.1.2",
+    "chapterName": "Authentication",
+    "sectionId": "V6.1",
+    "sectionName": "Authentication Documentation",
+    "title": "Authentication Documentation",
     "description": "Verify that a list of context-specific words is documented in order to prevent their use in passwords. The list could include permutations of organization names, product names, system identifiers, project codenames, department or role names, and similar.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V6.1.3",
     "chapterId": 6,
-    "title": "Verify V6.1.3",
+    "chapterName": "Authentication",
+    "sectionId": "V6.1",
+    "sectionName": "Authentication Documentation",
+    "title": "Authentication Documentation",
     "description": "Verify that, if the application includes multiple authentication pathways, these are all documented together with the security controls and authentication strength which must be consistently enforced across them.",
     "level": 2,
     "status": "N/A",
@@ -1255,7 +2635,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.1",
     "chapterId": 6,
-    "title": "Verify V6.2.1",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that user set passwords are at least 8 characters in length although a minimum of 15 characters is strongly recommended.",
     "level": 1,
     "status": "N/A",
@@ -1265,7 +2648,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.2",
     "chapterId": 6,
-    "title": "Verify V6.2.2",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that users can change their password.",
     "level": 1,
     "status": "N/A",
@@ -1275,7 +2661,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.3",
     "chapterId": 6,
-    "title": "Verify V6.2.3",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that password change functionality requires the user's current and new password.",
     "level": 1,
     "status": "N/A",
@@ -1285,7 +2674,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.4",
     "chapterId": 6,
-    "title": "Verify V6.2.4",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that passwords submitted during account registration or password change are checked against an available set of, at least, the top 3000 passwords which match the application's password policy, e.g. minimum length.",
     "level": 1,
     "status": "N/A",
@@ -1295,7 +2687,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.5",
     "chapterId": 6,
-    "title": "Verify V6.2.5",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that passwords of any composition can be used, without rules limiting the type of characters permitted. There must be no requirement for a minimum number of upper or lower case characters, numbers, or special characters.",
     "level": 1,
     "status": "N/A",
@@ -1305,7 +2700,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.6",
     "chapterId": 6,
-    "title": "Verify V6.2.6",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that password input fields use type=password to mask the entry. Applications may allow the user to temporarily view the entire masked password, or the last typed character of the password.",
     "level": 1,
     "status": "N/A",
@@ -1315,7 +2713,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.7",
     "chapterId": 6,
-    "title": "Verify V6.2.7",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that \"paste\" functionality, browser password helpers, and external password managers are permitted.",
     "level": 1,
     "status": "N/A",
@@ -1325,7 +2726,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.8",
     "chapterId": 6,
-    "title": "Verify V6.2.8",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that the application verifies the user's password exactly as received from the user, without any modifications such as truncation or case transformation.",
     "level": 1,
     "status": "N/A",
@@ -1335,7 +2739,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.9",
     "chapterId": 6,
-    "title": "Verify V6.2.9",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that passwords of at least 64 characters are permitted.",
     "level": 2,
     "status": "N/A",
@@ -1345,22 +2752,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.10",
     "chapterId": 6,
-    "title": "Verify V6.2.10",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that a user's password stays valid until it is discovered to be compromised or the user rotates it. The application must not require periodic credential rotation.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V6.2.11",
     "chapterId": 6,
-    "title": "Verify V6.2.11",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that the documented list of context specific words is used to prevent easy to guess passwords being created.",
     "level": 2,
     "status": "N/A",
@@ -1370,7 +2778,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.2.12",
     "chapterId": 6,
-    "title": "Verify V6.2.12",
+    "chapterName": "Authentication",
+    "sectionId": "V6.2",
+    "sectionName": "Password Security",
+    "title": "Password Security",
     "description": "Verify that passwords submitted during account registration or password changes are checked against a set of breached passwords.",
     "level": 2,
     "status": "N/A",
@@ -1380,7 +2791,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.3.1",
     "chapterId": 6,
-    "title": "Verify V6.3.1",
+    "chapterName": "Authentication",
+    "sectionId": "V6.3",
+    "sectionName": "General Authentication Security",
+    "title": "General Authentication Security",
     "description": "Verify that controls to prevent attacks such as credential stuffing and password brute force are implemented according to the application's security documentation.",
     "level": 1,
     "status": "N/A",
@@ -1390,7 +2804,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.3.2",
     "chapterId": 6,
-    "title": "Verify V6.3.2",
+    "chapterName": "Authentication",
+    "sectionId": "V6.3",
+    "sectionName": "General Authentication Security",
+    "title": "General Authentication Security",
     "description": "Verify that default user accounts (e.g., \"root\", \"admin\", or \"sa\") are not present in the application or are disabled.",
     "level": 1,
     "status": "N/A",
@@ -1400,7 +2817,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.3.3",
     "chapterId": 6,
-    "title": "Verify V6.3.3",
+    "chapterName": "Authentication",
+    "sectionId": "V6.3",
+    "sectionName": "General Authentication Security",
+    "title": "General Authentication Security",
     "description": "Verify that either a multi-factor authentication mechanism or a combination of single-factor authentication mechanisms, must be used in order to access the application. For L3, one of the factors must be a hardware-based authentication mechanism which provides compromise and impersonation resistance against phishing attacks while verifying the intent to authenticate by requiring a user-initiated action (such as a button press on a FIDO hardware key or a mobile phone). Relaxing any of the considerations in this requirement requires a fully documented rationale and a comprehensive set of mitigating controls.",
     "level": 2,
     "status": "N/A",
@@ -1410,7 +2830,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.3.4",
     "chapterId": 6,
-    "title": "Verify V6.3.4",
+    "chapterName": "Authentication",
+    "sectionId": "V6.3",
+    "sectionName": "General Authentication Security",
+    "title": "General Authentication Security",
     "description": "Verify that, if the application includes multiple authentication pathways, there are no undocumented pathways and that security controls and authentication strength are enforced consistently.",
     "level": 2,
     "status": "N/A",
@@ -1420,7 +2843,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.3.5",
     "chapterId": 6,
-    "title": "Verify V6.3.5",
+    "chapterName": "Authentication",
+    "sectionId": "V6.3",
+    "sectionName": "General Authentication Security",
+    "title": "General Authentication Security",
     "description": "Verify that users are notified of suspicious authentication attempts (successful or unsuccessful). This may include authentication attempts from an unusual location or client, partially successful authentication (only one of multiple factors), an authentication attempt after a long period of inactivity or a successful authentication after several unsuccessful attempts.",
     "level": 3,
     "status": "N/A",
@@ -1430,7 +2856,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.3.6",
     "chapterId": 6,
-    "title": "Verify V6.3.6",
+    "chapterName": "Authentication",
+    "sectionId": "V6.3",
+    "sectionName": "General Authentication Security",
+    "title": "General Authentication Security",
     "description": "Verify that email is not used as either a single-factor or multi-factor authentication mechanism.",
     "level": 3,
     "status": "N/A",
@@ -1440,22 +2869,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.3.7",
     "chapterId": 6,
-    "title": "Verify V6.3.7",
+    "chapterName": "Authentication",
+    "sectionId": "V6.3",
+    "sectionName": "General Authentication Security",
+    "title": "General Authentication Security",
     "description": "Verify that users are notified after updates to authentication details, such as credential resets or modification of the username or email address.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V6.3.8",
     "chapterId": 6,
-    "title": "Verify V6.3.8",
+    "chapterName": "Authentication",
+    "sectionId": "V6.3",
+    "sectionName": "General Authentication Security",
+    "title": "General Authentication Security",
     "description": "Verify that valid users cannot be deduced from failed authentication challenges, such as by basing on error messages, HTTP response codes, or different response times. Registration and forgot password functionality must also have this protection.",
     "level": 3,
     "status": "N/A",
@@ -1465,7 +2895,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.4.1",
     "chapterId": 6,
-    "title": "Verify V6.4.1",
+    "chapterName": "Authentication",
+    "sectionId": "V6.4",
+    "sectionName": "Authentication Factor Lifecycle and Recovery",
+    "title": "Authentication Factor Lifecycle and Recovery",
     "description": "Verify that system generated initial passwords or activation codes are securely randomly generated, follow the existing password policy, and expire after a short period of time or after they are initially used. These initial secrets must not be permitted to become the long term password.",
     "level": 1,
     "status": "N/A",
@@ -1475,7 +2908,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.4.2",
     "chapterId": 6,
-    "title": "Verify V6.4.2",
+    "chapterName": "Authentication",
+    "sectionId": "V6.4",
+    "sectionName": "Authentication Factor Lifecycle and Recovery",
+    "title": "Authentication Factor Lifecycle and Recovery",
     "description": "Verify that password hints or knowledge-based authentication (so-called \"secret questions\") are not present.",
     "level": 1,
     "status": "N/A",
@@ -1485,7 +2921,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.4.3",
     "chapterId": 6,
-    "title": "Verify V6.4.3",
+    "chapterName": "Authentication",
+    "sectionId": "V6.4",
+    "sectionName": "Authentication Factor Lifecycle and Recovery",
+    "title": "Authentication Factor Lifecycle and Recovery",
     "description": "Verify that a secure process for resetting a forgotten password is implemented, that does not bypass any enabled multi-factor authentication mechanisms.",
     "level": 2,
     "status": "N/A",
@@ -1495,22 +2934,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.4.4",
     "chapterId": 6,
-    "title": "Verify V6.4.4",
+    "chapterName": "Authentication",
+    "sectionId": "V6.4",
+    "sectionName": "Authentication Factor Lifecycle and Recovery",
+    "title": "Authentication Factor Lifecycle and Recovery",
     "description": "Verify that if a multi-factor authentication factor is lost, evidence of identity proofing is performed at the same level as during enrollment.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V6.4.5",
     "chapterId": 6,
-    "title": "Verify V6.4.5",
+    "chapterName": "Authentication",
+    "sectionId": "V6.4",
+    "sectionName": "Authentication Factor Lifecycle and Recovery",
+    "title": "Authentication Factor Lifecycle and Recovery",
     "description": "Verify that renewal instructions for authentication mechanisms which expire are sent with enough time to be carried out before the old authentication mechanism expires, configuring automated reminders if necessary.",
     "level": 3,
     "status": "N/A",
@@ -1520,7 +2960,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.4.6",
     "chapterId": 6,
-    "title": "Verify V6.4.6",
+    "chapterName": "Authentication",
+    "sectionId": "V6.4",
+    "sectionName": "Authentication Factor Lifecycle and Recovery",
+    "title": "Authentication Factor Lifecycle and Recovery",
     "description": "Verify that administrative users can initiate the password reset process for the user, but that this does not allow them to change or choose the user's password. This prevents a situation where they know the user's password.",
     "level": 3,
     "status": "N/A",
@@ -1530,7 +2973,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.5.1",
     "chapterId": 6,
-    "title": "Verify V6.5.1",
+    "chapterName": "Authentication",
+    "sectionId": "V6.5",
+    "sectionName": "General Multi-factor authentication requirements",
+    "title": "General Multi-factor authentication requirements",
     "description": "Verify that lookup secrets, out-of-band authentication requests or codes, and time-based one-time passwords (TOTPs) are only successfully usable once.",
     "level": 2,
     "status": "N/A",
@@ -1540,7 +2986,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.5.2",
     "chapterId": 6,
-    "title": "Verify V6.5.2",
+    "chapterName": "Authentication",
+    "sectionId": "V6.5",
+    "sectionName": "General Multi-factor authentication requirements",
+    "title": "General Multi-factor authentication requirements",
     "description": "Verify that, when being stored in the application's backend, lookup secrets with less than 112 bits of entropy (19 random alphanumeric characters or 34 random digits) are hashed with an approved password storage hashing algorithm that incorporates a 32-bit random salt. A standard hash function can be used if the secret has 112 bits of entropy or more.",
     "level": 2,
     "status": "N/A",
@@ -1550,22 +2999,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.5.3",
     "chapterId": 6,
-    "title": "Verify V6.5.3",
+    "chapterName": "Authentication",
+    "sectionId": "V6.5",
+    "sectionName": "General Multi-factor authentication requirements",
+    "title": "General Multi-factor authentication requirements",
     "description": "Verify that lookup secrets, out-of-band authentication code, and time-based one-time password seeds, are generated using a Cryptographically Secure Pseudorandom Number Generator (CSPRNG) to avoid predictable values.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V6.5.4",
     "chapterId": 6,
-    "title": "Verify V6.5.4",
+    "chapterName": "Authentication",
+    "sectionId": "V6.5",
+    "sectionName": "General Multi-factor authentication requirements",
+    "title": "General Multi-factor authentication requirements",
     "description": "Verify that lookup secrets and out-of-band authentication codes have a minimum of 20 bits of entropy (typically 4 random alphanumeric characters or 6 random digits is sufficient).",
     "level": 2,
     "status": "N/A",
@@ -1575,7 +3025,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.5.5",
     "chapterId": 6,
-    "title": "Verify V6.5.5",
+    "chapterName": "Authentication",
+    "sectionId": "V6.5",
+    "sectionName": "General Multi-factor authentication requirements",
+    "title": "General Multi-factor authentication requirements",
     "description": "Verify that out-of-band authentication requests, codes, or tokens, as well as time-based one-time passwords (TOTPs) have a defined lifetime. Out of band requests must have a maximum lifetime of 10 minutes and for TOTP a maximum lifetime of 30 seconds.",
     "level": 2,
     "status": "N/A",
@@ -1585,7 +3038,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.5.6",
     "chapterId": 6,
-    "title": "Verify V6.5.6",
+    "chapterName": "Authentication",
+    "sectionId": "V6.5",
+    "sectionName": "General Multi-factor authentication requirements",
+    "title": "General Multi-factor authentication requirements",
     "description": "Verify that any authentication factor (including physical devices) can be revoked in case of theft or other loss.",
     "level": 3,
     "status": "N/A",
@@ -1595,7 +3051,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.5.7",
     "chapterId": 6,
-    "title": "Verify V6.5.7",
+    "chapterName": "Authentication",
+    "sectionId": "V6.5",
+    "sectionName": "General Multi-factor authentication requirements",
+    "title": "General Multi-factor authentication requirements",
     "description": "Verify that biometric authentication mechanisms are only used as secondary factors together with either something you have or something you know.",
     "level": 3,
     "status": "N/A",
@@ -1605,7 +3064,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.5.8",
     "chapterId": 6,
-    "title": "Verify V6.5.8",
+    "chapterName": "Authentication",
+    "sectionId": "V6.5",
+    "sectionName": "General Multi-factor authentication requirements",
+    "title": "General Multi-factor authentication requirements",
     "description": "Verify that time-based one-time passwords (TOTPs) are checked based on a time source from a trusted service and not from an untrusted or client provided time.",
     "level": 3,
     "status": "N/A",
@@ -1615,7 +3077,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.6.1",
     "chapterId": 6,
-    "title": "Verify V6.6.1",
+    "chapterName": "Authentication",
+    "sectionId": "V6.6",
+    "sectionName": "Out-of-Band authentication mechanisms",
+    "title": "Out-of-Band authentication mechanisms",
     "description": "Verify that authentication mechanisms using the Public Switched Telephone Network (PSTN) to deliver One-time Passwords (OTPs) via phone or SMS are offered only when the phone number has previously been validated, alternate stronger methods (such as Time based One-time Passwords) are also offered, and the service provides information on their security risks to users. For L3 applications, phone and SMS must not be available as options.",
     "level": 2,
     "status": "N/A",
@@ -1625,7 +3090,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.6.2",
     "chapterId": 6,
-    "title": "Verify V6.6.2",
+    "chapterName": "Authentication",
+    "sectionId": "V6.6",
+    "sectionName": "Out-of-Band authentication mechanisms",
+    "title": "Out-of-Band authentication mechanisms",
     "description": "Verify that out-of-band authentication requests, codes, or tokens are bound to the original authentication request for which they were generated and are not usable for a previous or subsequent one.",
     "level": 2,
     "status": "N/A",
@@ -1635,7 +3103,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.6.3",
     "chapterId": 6,
-    "title": "Verify V6.6.3",
+    "chapterName": "Authentication",
+    "sectionId": "V6.6",
+    "sectionName": "Out-of-Band authentication mechanisms",
+    "title": "Out-of-Band authentication mechanisms",
     "description": "Verify that a code based out-of-band authentication mechanism is protected against brute force attacks by using rate limiting. Consider also using a code with at least 64 bits of entropy.",
     "level": 2,
     "status": "N/A",
@@ -1645,7 +3116,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.6.4",
     "chapterId": 6,
-    "title": "Verify V6.6.4",
+    "chapterName": "Authentication",
+    "sectionId": "V6.6",
+    "sectionName": "Out-of-Band authentication mechanisms",
+    "title": "Out-of-Band authentication mechanisms",
     "description": "Verify that, where push notifications are used for multi-factor authentication, rate limiting is used to prevent push bombing attacks. Number matching may also mitigate this risk.",
     "level": 3,
     "status": "N/A",
@@ -1655,7 +3129,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.7.1",
     "chapterId": 6,
-    "title": "Verify V6.7.1",
+    "chapterName": "Authentication",
+    "sectionId": "V6.7",
+    "sectionName": "Cryptographic authentication mechanism",
+    "title": "Cryptographic authentication mechanism",
     "description": "Verify that the certificates used to verify cryptographic authentication assertions are stored in a way protects them from modification.",
     "level": 3,
     "status": "N/A",
@@ -1665,7 +3142,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.7.2",
     "chapterId": 6,
-    "title": "Verify V6.7.2",
+    "chapterName": "Authentication",
+    "sectionId": "V6.7",
+    "sectionName": "Cryptographic authentication mechanism",
+    "title": "Cryptographic authentication mechanism",
     "description": "Verify that the challenge nonce is at least 64 bits in length, and statistically unique or unique over the lifetime of the cryptographic device.",
     "level": 3,
     "status": "N/A",
@@ -1675,7 +3155,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.8.1",
     "chapterId": 6,
-    "title": "Verify V6.8.1",
+    "chapterName": "Authentication",
+    "sectionId": "V6.8",
+    "sectionName": "Authentication with an Identity Provider",
+    "title": "Authentication with an Identity Provider",
     "description": "Verify that, if the application supports multiple identity providers (IdPs), the user's identity cannot be spoofed via another supported identity provider (eg. by using the same user identifier). The standard mitigation would be for the application to register and identify the user using a combination of the IdP ID (serving as a namespace) and the user's ID in the IdP.",
     "level": 2,
     "status": "N/A",
@@ -1685,7 +3168,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.8.2",
     "chapterId": 6,
-    "title": "Verify V6.8.2",
+    "chapterName": "Authentication",
+    "sectionId": "V6.8",
+    "sectionName": "Authentication with an Identity Provider",
+    "title": "Authentication with an Identity Provider",
     "description": "Verify that the presence and integrity of digital signatures on authentication assertions (for example on JWTs or SAML assertions) are always validated, rejecting any assertions that are unsigned or have invalid signatures.",
     "level": 2,
     "status": "N/A",
@@ -1695,22 +3181,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V6.8.3",
     "chapterId": 6,
-    "title": "Verify V6.8.3",
+    "chapterName": "Authentication",
+    "sectionId": "V6.8",
+    "sectionName": "Authentication with an Identity Provider",
+    "title": "Authentication with an Identity Provider",
     "description": "Verify that SAML assertions are uniquely processed and used only once within the validity period to prevent replay attacks.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V6.8.4",
     "chapterId": 6,
-    "title": "Verify V6.8.4",
+    "chapterName": "Authentication",
+    "sectionId": "V6.8",
+    "sectionName": "Authentication with an Identity Provider",
+    "title": "Authentication with an Identity Provider",
     "description": "Verify that, if an application uses a separate Identity Provider (IdP) and expects specific authentication strength, methods, or recentness for specific functions, the application verifies this using the information returned by the IdP. For example, if OIDC is used, this might be achieved by validating ID Token claims such as 'acr', 'amr', and 'auth_time' (if present). If the IdP does not provide this information, the application must have a documented fallback approach that assumes that the minimum strength authentication mechanism was used (for example, single-factor authentication using username and password).",
     "level": 2,
     "status": "N/A",
@@ -1720,7 +3207,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.1.1",
     "chapterId": 7,
-    "title": "Verify V7.1.1",
+    "chapterName": "Session Management",
+    "sectionId": "V7.1",
+    "sectionName": "Session Management Documentation",
+    "title": "Session Management Documentation",
     "description": "Verify that the user's session inactivity timeout and absolute maximum session lifetime are documented, are appropriate in combination with other controls, and that the documentation includes justification for any deviations from NIST SP 800-63B re-authentication requirements.",
     "level": 2,
     "status": "N/A",
@@ -1730,7 +3220,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.1.2",
     "chapterId": 7,
-    "title": "Verify V7.1.2",
+    "chapterName": "Session Management",
+    "sectionId": "V7.1",
+    "sectionName": "Session Management Documentation",
+    "title": "Session Management Documentation",
     "description": "Verify that the documentation defines how many concurrent (parallel) sessions are allowed for one account as well as the intended behaviors and actions to be taken when the maximum number of active sessions is reached.",
     "level": 2,
     "status": "N/A",
@@ -1740,22 +3233,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.1.3",
     "chapterId": 7,
-    "title": "Verify V7.1.3",
+    "chapterName": "Session Management",
+    "sectionId": "V7.1",
+    "sectionName": "Session Management Documentation",
+    "title": "Session Management Documentation",
     "description": "Verify that all systems that create and manage user sessions as part of a federated identity management ecosystem (such as SSO systems) are documented along with controls to coordinate session lifetimes, termination, and any other conditions that require re-authentication.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V7.2.1",
     "chapterId": 7,
-    "title": "Verify V7.2.1",
+    "chapterName": "Session Management",
+    "sectionId": "V7.2",
+    "sectionName": "Fundamental Session Management Security",
+    "title": "Fundamental Session Management Security",
     "description": "Verify that the application performs all session token verification using a trusted, backend service.",
     "level": 1,
     "status": "N/A",
@@ -1765,22 +3259,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.2.2",
     "chapterId": 7,
-    "title": "Verify V7.2.2",
+    "chapterName": "Session Management",
+    "sectionId": "V7.2",
+    "sectionName": "Fundamental Session Management Security",
+    "title": "Fundamental Session Management Security",
     "description": "Verify that the application uses either self-contained or reference tokens that are dynamically generated for session management, i.e. not using static API secrets and keys.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "API Gateway",
-        "color": "bg-purple-100 text-purple-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V7.2.3",
     "chapterId": 7,
-    "title": "Verify V7.2.3",
+    "chapterName": "Session Management",
+    "sectionId": "V7.2",
+    "sectionName": "Fundamental Session Management Security",
+    "title": "Fundamental Session Management Security",
     "description": "Verify that if reference tokens are used to represent user sessions, they are unique and generated using a cryptographically secure pseudo-random number generator (CSPRNG) and possess at least 128 bits of entropy.",
     "level": 1,
     "status": "N/A",
@@ -1790,22 +3285,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.2.4",
     "chapterId": 7,
-    "title": "Verify V7.2.4",
+    "chapterName": "Session Management",
+    "sectionId": "V7.2",
+    "sectionName": "Fundamental Session Management Security",
+    "title": "Fundamental Session Management Security",
     "description": "Verify that the application generates a new session token on user authentication, including re-authentication, and terminates the current session token.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V7.3.1",
     "chapterId": 7,
-    "title": "Verify V7.3.1",
+    "chapterName": "Session Management",
+    "sectionId": "V7.3",
+    "sectionName": "Session Timeout",
+    "title": "Session Timeout",
     "description": "Verify that there is an inactivity timeout such that re-authentication is enforced according to risk analysis and documented security decisions.",
     "level": 2,
     "status": "N/A",
@@ -1815,7 +3311,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.3.2",
     "chapterId": 7,
-    "title": "Verify V7.3.2",
+    "chapterName": "Session Management",
+    "sectionId": "V7.3",
+    "sectionName": "Session Timeout",
+    "title": "Session Timeout",
     "description": "Verify that there is an absolute maximum session lifetime such that re-authentication is enforced according to risk analysis and documented security decisions.",
     "level": 2,
     "status": "N/A",
@@ -1825,7 +3324,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.4.1",
     "chapterId": 7,
-    "title": "Verify V7.4.1",
+    "chapterName": "Session Management",
+    "sectionId": "V7.4",
+    "sectionName": "Session Termination",
+    "title": "Session Termination",
     "description": "Verify that when session termination is triggered (such as logout or expiration), the application disallows any further use of the session. For reference tokens or stateful sessions, this means invalidating the session data at the application backend. Applications using self-contained tokens will need a solution such as maintaining a list of terminated tokens, disallowing tokens produced before a per-user date and time or rotating a per-user signing key.",
     "level": 1,
     "status": "N/A",
@@ -1835,7 +3337,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.4.2",
     "chapterId": 7,
-    "title": "Verify V7.4.2",
+    "chapterName": "Session Management",
+    "sectionId": "V7.4",
+    "sectionName": "Session Termination",
+    "title": "Session Termination",
     "description": "Verify that the application terminates all active sessions when a user account is disabled or deleted (such as an employee leaving the company).",
     "level": 1,
     "status": "N/A",
@@ -1845,7 +3350,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.4.3",
     "chapterId": 7,
-    "title": "Verify V7.4.3",
+    "chapterName": "Session Management",
+    "sectionId": "V7.4",
+    "sectionName": "Session Termination",
+    "title": "Session Termination",
     "description": "Verify that the application gives the option to terminate all other active sessions after a successful change or removal of any authentication factor (including password change via reset or recovery and, if present, an MFA settings update).",
     "level": 2,
     "status": "N/A",
@@ -1855,7 +3363,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.4.4",
     "chapterId": 7,
-    "title": "Verify V7.4.4",
+    "chapterName": "Session Management",
+    "sectionId": "V7.4",
+    "sectionName": "Session Termination",
+    "title": "Session Termination",
     "description": "Verify that all pages that require authentication have easy and visible access to logout functionality.",
     "level": 2,
     "status": "N/A",
@@ -1865,7 +3376,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.4.5",
     "chapterId": 7,
-    "title": "Verify V7.4.5",
+    "chapterName": "Session Management",
+    "sectionId": "V7.4",
+    "sectionName": "Session Termination",
+    "title": "Session Termination",
     "description": "Verify that application administrators are able to terminate active sessions for an individual user or for all users.",
     "level": 2,
     "status": "N/A",
@@ -1875,7 +3389,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.5.1",
     "chapterId": 7,
-    "title": "Verify V7.5.1",
+    "chapterName": "Session Management",
+    "sectionId": "V7.5",
+    "sectionName": "Defenses Against Session Abuse",
+    "title": "Defenses Against Session Abuse",
     "description": "Verify that the application requires full re-authentication before allowing modifications to sensitive account attributes which may affect authentication such as email address, phone number, MFA configuration, or other information used in account recovery.",
     "level": 2,
     "status": "N/A",
@@ -1885,7 +3402,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.5.2",
     "chapterId": 7,
-    "title": "Verify V7.5.2",
+    "chapterName": "Session Management",
+    "sectionId": "V7.5",
+    "sectionName": "Defenses Against Session Abuse",
+    "title": "Defenses Against Session Abuse",
     "description": "Verify that users are able to view and (having authenticated again with at least one factor) terminate any or all currently active sessions.",
     "level": 2,
     "status": "N/A",
@@ -1895,7 +3415,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.5.3",
     "chapterId": 7,
-    "title": "Verify V7.5.3",
+    "chapterName": "Session Management",
+    "sectionId": "V7.5",
+    "sectionName": "Defenses Against Session Abuse",
+    "title": "Defenses Against Session Abuse",
     "description": "Verify that the application requires further authentication with at least one factor or secondary verification before performing highly sensitive transactions or operations.",
     "level": 3,
     "status": "N/A",
@@ -1905,22 +3428,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V7.6.1",
     "chapterId": 7,
-    "title": "Verify V7.6.1",
+    "chapterName": "Session Management",
+    "sectionId": "V7.6",
+    "sectionName": "Federated Re-authentication",
+    "title": "Federated Re-authentication",
     "description": "Verify that session lifetime and termination between Relying Parties (RPs) and Identity Providers (IdPs) behave as documented, requiring re-authentication as necessary such as when the maximum time between IdP authentication events is reached.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V7.6.2",
     "chapterId": 7,
-    "title": "Verify V7.6.2",
+    "chapterName": "Session Management",
+    "sectionId": "V7.6",
+    "sectionName": "Federated Re-authentication",
+    "title": "Federated Re-authentication",
     "description": "Verify that creation of a session requires either the user's consent or an explicit action, preventing the creation of new application sessions without user interaction.",
     "level": 2,
     "status": "N/A",
@@ -1930,37 +3454,36 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.1.1",
     "chapterId": 8,
-    "title": "Verify V8.1.1",
+    "chapterName": "Authorization",
+    "sectionId": "V8.1",
+    "sectionName": "Authorization Documentation",
+    "title": "Authorization Documentation",
     "description": "Verify that authorization documentation defines rules for restricting function-level and data-specific access based on consumer permissions and resource attributes.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V8.1.2",
     "chapterId": 8,
-    "title": "Verify V8.1.2",
+    "chapterName": "Authorization",
+    "sectionId": "V8.1",
+    "sectionName": "Authorization Documentation",
+    "title": "Authorization Documentation",
     "description": "Verify that authorization documentation defines rules for field-level access restrictions (both read and write) based on consumer permissions and resource attributes. Note that these rules might depend on other attribute values of the relevant data object, such as state or status.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V8.1.3",
     "chapterId": 8,
-    "title": "Verify V8.1.3",
+    "chapterName": "Authorization",
+    "sectionId": "V8.1",
+    "sectionName": "Authorization Documentation",
+    "title": "Authorization Documentation",
     "description": "Verify that the application's documentation defines the environmental and contextual attributes (including but not limited to, time of day, user location, IP address, or device) that are used in the application to make security decisions, including those pertaining to authentication and authorization.",
     "level": 3,
     "status": "N/A",
@@ -1970,7 +3493,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.1.4",
     "chapterId": 8,
-    "title": "Verify V8.1.4",
+    "chapterName": "Authorization",
+    "sectionId": "V8.1",
+    "sectionName": "Authorization Documentation",
+    "title": "Authorization Documentation",
     "description": "Verify that authentication and authorization documentation defines how environmental and contextual factors are used in decision-making, in addition to function-level, data-specific, and field-level authorization. This should include the attributes evaluated, thresholds for risk, and actions taken (e.g., allow, challenge, deny, step-up authentication).",
     "level": 3,
     "status": "N/A",
@@ -1980,7 +3506,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.2.1",
     "chapterId": 8,
-    "title": "Verify V8.2.1",
+    "chapterName": "Authorization",
+    "sectionId": "V8.2",
+    "sectionName": "General Authorization Design",
+    "title": "General Authorization Design",
     "description": "Verify that the application ensures that function-level access is restricted to consumers with explicit permissions.",
     "level": 1,
     "status": "N/A",
@@ -1990,7 +3519,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.2.2",
     "chapterId": 8,
-    "title": "Verify V8.2.2",
+    "chapterName": "Authorization",
+    "sectionId": "V8.2",
+    "sectionName": "General Authorization Design",
+    "title": "General Authorization Design",
     "description": "Verify that the application ensures that data-specific access is restricted to consumers with explicit permissions to specific data items to mitigate insecure direct object reference (IDOR) and broken object level authorization (BOLA).",
     "level": 1,
     "status": "N/A",
@@ -2000,22 +3532,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.2.3",
     "chapterId": 8,
-    "title": "Verify V8.2.3",
+    "chapterName": "Authorization",
+    "sectionId": "V8.2",
+    "sectionName": "General Authorization Design",
+    "title": "General Authorization Design",
     "description": "Verify that the application ensures that field-level access is restricted to consumers with explicit permissions to specific fields to mitigate broken object property level authorization (BOPLA).",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V8.2.4",
     "chapterId": 8,
-    "title": "Verify V8.2.4",
+    "chapterName": "Authorization",
+    "sectionId": "V8.2",
+    "sectionName": "General Authorization Design",
+    "title": "General Authorization Design",
     "description": "Verify that adaptive security controls based on a consumer's environmental and contextual attributes (such as time of day, location, IP address, or device) are implemented for authentication and authorization decisions, as defined in the application's documentation. These controls must be applied when the consumer tries to start a new session and also during an existing session.",
     "level": 3,
     "status": "N/A",
@@ -2025,7 +3558,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.3.1",
     "chapterId": 8,
-    "title": "Verify V8.3.1",
+    "chapterName": "Authorization",
+    "sectionId": "V8.3",
+    "sectionName": "Operation Level Authorization",
+    "title": "Operation Level Authorization",
     "description": "Verify that the application enforces authorization rules at a trusted service layer and doesn't rely on controls that an untrusted consumer could manipulate, such as client-side JavaScript.",
     "level": 1,
     "status": "N/A",
@@ -2035,7 +3571,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.3.2",
     "chapterId": 8,
-    "title": "Verify V8.3.2",
+    "chapterName": "Authorization",
+    "sectionId": "V8.3",
+    "sectionName": "Operation Level Authorization",
+    "title": "Operation Level Authorization",
     "description": "Verify that changes to values on which authorization decisions are made are applied immediately. Where changes cannot be applied immediately, (such as when relying on data in self-contained tokens), there must be mitigating controls to alert when a consumer performs an action when they are no longer authorized to do so and revert the change. Note that this alternative would not mitigate information leakage.",
     "level": 3,
     "status": "N/A",
@@ -2045,7 +3584,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.3.3",
     "chapterId": 8,
-    "title": "Verify V8.3.3",
+    "chapterName": "Authorization",
+    "sectionId": "V8.3",
+    "sectionName": "Operation Level Authorization",
+    "title": "Operation Level Authorization",
     "description": "Verify that access to an object is based on the originating subject's (e.g. consumer's) permissions, not on the permissions of any intermediary or service acting on their behalf. For example, if a consumer calls a web service using a self-contained token for authentication, and the service then requests data from a different service, the second service will use the consumer's token, rather than a machine-to-machine token from the first service, to make permission decisions.",
     "level": 3,
     "status": "N/A",
@@ -2055,7 +3597,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.4.1",
     "chapterId": 8,
-    "title": "Verify V8.4.1",
+    "chapterName": "Authorization",
+    "sectionId": "V8.4",
+    "sectionName": "Other Authorization Considerations",
+    "title": "Other Authorization Considerations",
     "description": "Verify that multi-tenant applications use cross-tenant controls to ensure consumer operations will never affect tenants with which they do not have permissions to interact.",
     "level": 2,
     "status": "N/A",
@@ -2065,7 +3610,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V8.4.2",
     "chapterId": 8,
-    "title": "Verify V8.4.2",
+    "chapterName": "Authorization",
+    "sectionId": "V8.4",
+    "sectionName": "Other Authorization Considerations",
+    "title": "Other Authorization Considerations",
     "description": "Verify that access to administrative interfaces incorporates multiple layers of security, including continuous consumer identity verification, device security posture assessment, and contextual risk analysis, ensuring that network location or trusted endpoints are not the sole factors for authorization even though they may reduce the likelihood of unauthorized access.",
     "level": 3,
     "status": "N/A",
@@ -2075,7 +3623,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V9.1.1",
     "chapterId": 9,
-    "title": "Verify V9.1.1",
+    "chapterName": "Self-contained Tokens",
+    "sectionId": "V9.1",
+    "sectionName": "Token source and integrity",
+    "title": "Token source and integrity",
     "description": "Verify that self-contained tokens are validated using their digital signature or MAC to protect against tampering before accepting the token's contents.",
     "level": 1,
     "status": "N/A",
@@ -2085,7 +3636,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V9.1.2",
     "chapterId": 9,
-    "title": "Verify V9.1.2",
+    "chapterName": "Self-contained Tokens",
+    "sectionId": "V9.1",
+    "sectionName": "Token source and integrity",
+    "title": "Token source and integrity",
     "description": "Verify that only algorithms on an allowlist can be used to create and verify self-contained tokens, for a given context. The allowlist must include the permitted algorithms, ideally only either symmetric or asymmetric algorithms, and must not include the 'None' algorithm. If both symmetric and asymmetric must be supported, additional controls will be needed to prevent key confusion.",
     "level": 1,
     "status": "N/A",
@@ -2095,7 +3649,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V9.1.3",
     "chapterId": 9,
-    "title": "Verify V9.1.3",
+    "chapterName": "Self-contained Tokens",
+    "sectionId": "V9.1",
+    "sectionName": "Token source and integrity",
+    "title": "Token source and integrity",
     "description": "Verify that key material that is used to validate self-contained tokens is from trusted pre-configured sources for the token issuer, preventing attackers from specifying untrusted sources and keys. For JWTs and other JWS structures, headers such as 'jku', 'x5u', and 'jwk' must be validated against an allowlist of trusted sources.",
     "level": 1,
     "status": "N/A",
@@ -2105,7 +3662,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V9.2.1",
     "chapterId": 9,
-    "title": "Verify V9.2.1",
+    "chapterName": "Self-contained Tokens",
+    "sectionId": "V9.2",
+    "sectionName": "Token content",
+    "title": "Token content",
     "description": "Verify that, if a validity time span is present in the token data, the token and its content are accepted only if the verification time is within this validity time span. For example, for JWTs, the claims 'nbf' and 'exp' must be verified.",
     "level": 1,
     "status": "N/A",
@@ -2115,7 +3675,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V9.2.2",
     "chapterId": 9,
-    "title": "Verify V9.2.2",
+    "chapterName": "Self-contained Tokens",
+    "sectionId": "V9.2",
+    "sectionName": "Token content",
+    "title": "Token content",
     "description": "Verify that the service receiving a token validates the token to be the correct type and is meant for the intended purpose before accepting the token's contents. For example, only access tokens can be accepted for authorization decisions and only ID Tokens can be used for proving user authentication.",
     "level": 2,
     "status": "N/A",
@@ -2125,7 +3688,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V9.2.3",
     "chapterId": 9,
-    "title": "Verify V9.2.3",
+    "chapterName": "Self-contained Tokens",
+    "sectionId": "V9.2",
+    "sectionName": "Token content",
+    "title": "Token content",
     "description": "Verify that the service only accepts tokens which are intended for use with that service (audience). For JWTs, this can be achieved by validating the 'aud' claim against an allowlist defined in the service.",
     "level": 2,
     "status": "N/A",
@@ -2135,7 +3701,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V9.2.4",
     "chapterId": 9,
-    "title": "Verify V9.2.4",
+    "chapterName": "Self-contained Tokens",
+    "sectionId": "V9.2",
+    "sectionName": "Token content",
+    "title": "Token content",
     "description": "Verify that, if a token issuer uses the same private key for issuing tokens to different audiences, the issued tokens contain an audience restriction that uniquely identifies the intended audiences. This will prevent a token from being reused with an unintended audience. If the audience identifier is dynamically provisioned, the token issuer must validate these audiences in order to make sure that they do not result in audience impersonation.",
     "level": 2,
     "status": "N/A",
@@ -2145,7 +3714,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.1.1",
     "chapterId": 10,
-    "title": "Verify V10.1.1",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.1",
+    "sectionName": "Generic OAuth and OIDC Security",
+    "title": "Generic OAuth and OIDC Security",
     "description": "Verify that tokens are only sent to components that strictly need them. For example, when using a backend-for-frontend pattern for browser-based JavaScript applications, access and refresh tokens shall only be accessible for the backend.",
     "level": 2,
     "status": "N/A",
@@ -2155,7 +3727,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.1.2",
     "chapterId": 10,
-    "title": "Verify V10.1.2",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.1",
+    "sectionName": "Generic OAuth and OIDC Security",
+    "title": "Generic OAuth and OIDC Security",
     "description": "Verify that the client only accepts values from the authorization server (such as the authorization code or ID Token) if these values result from an authorization flow that was initiated by the same user agent session and transaction. This requires that client-generated secrets, such as the proof key for code exchange (PKCE) 'code_verifier', 'state' or OIDC 'nonce', are not guessable, are specific to the transaction, and are securely bound to both the client and the user agent session in which the transaction was started.",
     "level": 2,
     "status": "N/A",
@@ -2165,7 +3740,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.2.1",
     "chapterId": 10,
-    "title": "Verify V10.2.1",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.2",
+    "sectionName": "OAuth Client",
+    "title": "OAuth Client",
     "description": "Verify that, if the code flow is used, the OAuth client has protection against browser-based request forgery attacks, commonly known as cross-site request forgery (CSRF), which trigger token requests, either by using proof key for code exchange (PKCE) functionality or checking the 'state' parameter that was sent in the authorization request.",
     "level": 2,
     "status": "N/A",
@@ -2175,7 +3753,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.2.2",
     "chapterId": 10,
-    "title": "Verify V10.2.2",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.2",
+    "sectionName": "OAuth Client",
+    "title": "OAuth Client",
     "description": "Verify that, if the OAuth client can interact with more than one authorization server, it has a defense against mix-up attacks. For example, it could require that the authorization server return the 'iss' parameter value and validate it in the authorization response and the token response.",
     "level": 2,
     "status": "N/A",
@@ -2185,22 +3766,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.2.3",
     "chapterId": 10,
-    "title": "Verify V10.2.3",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.2",
+    "sectionName": "OAuth Client",
+    "title": "OAuth Client",
     "description": "Verify that the OAuth client only requests the required scopes (or other authorization parameters) in requests to the authorization server.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V10.3.1",
     "chapterId": 10,
-    "title": "Verify V10.3.1",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.3",
+    "sectionName": "OAuth Resource Server",
+    "title": "OAuth Resource Server",
     "description": "Verify that the resource server only accepts access tokens that are intended for use with that service (audience). The audience may be included in a structured access token (such as the 'aud' claim in JWT), or it can be checked using the token introspection endpoint.",
     "level": 2,
     "status": "N/A",
@@ -2210,7 +3792,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.3.2",
     "chapterId": 10,
-    "title": "Verify V10.3.2",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.3",
+    "sectionName": "OAuth Resource Server",
+    "title": "OAuth Resource Server",
     "description": "Verify that the resource server enforces authorization decisions based on claims from the access token that define delegated authorization. If claims such as 'sub', 'scope', and 'authorization_details' are present, they must be part of the decision.",
     "level": 2,
     "status": "N/A",
@@ -2220,7 +3805,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.3.3",
     "chapterId": 10,
-    "title": "Verify V10.3.3",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.3",
+    "sectionName": "OAuth Resource Server",
+    "title": "OAuth Resource Server",
     "description": "Verify that if an access control decision requires identifying a unique user from an access token (JWT or related token introspection response), the resource server identifies the user from claims that cannot be reassigned to other users. Typically, it means using a combination of 'iss' and 'sub' claims.",
     "level": 2,
     "status": "N/A",
@@ -2230,7 +3818,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.3.4",
     "chapterId": 10,
-    "title": "Verify V10.3.4",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.3",
+    "sectionName": "OAuth Resource Server",
+    "title": "OAuth Resource Server",
     "description": "Verify that, if the resource server requires specific authentication strength, methods, or recentness, it verifies that the presented access token satisfies these constraints. For example, if present, using the OIDC 'acr', 'amr' and 'auth_time' claims respectively.",
     "level": 2,
     "status": "N/A",
@@ -2240,7 +3831,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.3.5",
     "chapterId": 10,
-    "title": "Verify V10.3.5",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.3",
+    "sectionName": "OAuth Resource Server",
+    "title": "OAuth Resource Server",
     "description": "Verify that the resource server prevents the use of stolen access tokens or replay of access tokens (from unauthorized parties) by requiring sender-constrained access tokens, either Mutual TLS for OAuth 2 or OAuth 2 Demonstration of Proof of Possession (DPoP).",
     "level": 3,
     "status": "N/A",
@@ -2250,7 +3844,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.1",
     "chapterId": 10,
-    "title": "Verify V10.4.1",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that the authorization server validates redirect URIs based on a client-specific allowlist of pre-registered URIs using exact string comparison.",
     "level": 1,
     "status": "N/A",
@@ -2260,7 +3857,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.2",
     "chapterId": 10,
-    "title": "Verify V10.4.2",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that, if the authorization server returns the authorization code in the authorization response, it can be used only once for a token request. For the second valid request with an authorization code that has already been used to issue an access token, the authorization server must reject a token request and revoke any issued tokens related to the authorization code.",
     "level": 1,
     "status": "N/A",
@@ -2270,7 +3870,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.3",
     "chapterId": 10,
-    "title": "Verify V10.4.3",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that the authorization code is short-lived. The maximum lifetime can be up to 10 minutes for L1 and L2 applications and up to 1 minute for L3 applications.",
     "level": 1,
     "status": "N/A",
@@ -2280,7 +3883,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.4",
     "chapterId": 10,
-    "title": "Verify V10.4.4",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that for a given client, the authorization server only allows the usage of grants that this client needs to use. Note that the grants 'token' (Implicit flow) and 'password' (Resource Owner Password Credentials flow) must no longer be used.",
     "level": 1,
     "status": "N/A",
@@ -2290,22 +3896,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.5",
     "chapterId": 10,
-    "title": "Verify V10.4.5",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that the authorization server mitigates refresh token replay attacks for public clients, preferably using sender-constrained refresh tokens, i.e., Demonstrating Proof of Possession (DPoP) or Certificate-Bound Access Tokens using mutual TLS (mTLS). For L1 and L2 applications, refresh token rotation may be used. If refresh token rotation is used, the authorization server must invalidate the refresh token after usage, and revoke all refresh tokens for that authorization if an already used and invalidated refresh token is provided.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V10.4.6",
     "chapterId": 10,
-    "title": "Verify V10.4.6",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that, if the code grant is used, the authorization server mitigates authorization code interception attacks by requiring proof key for code exchange (PKCE). For authorization requests, the authorization server must require a valid 'code_challenge' value and must not accept a 'code_challenge_method' value of 'plain'. For a token request, it must require validation of the 'code_verifier' parameter.",
     "level": 2,
     "status": "N/A",
@@ -2315,7 +3922,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.7",
     "chapterId": 10,
-    "title": "Verify V10.4.7",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that if the authorization server supports unauthenticated dynamic client registration, it mitigates the risk of malicious client applications. It must validate client metadata such as any registered URIs, ensure the user's consent, and warn the user before processing an authorization request with an untrusted client application.",
     "level": 2,
     "status": "N/A",
@@ -2325,22 +3935,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.8",
     "chapterId": 10,
-    "title": "Verify V10.4.8",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that refresh tokens have an absolute expiration, including if sliding refresh token expiration is applied.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V10.4.9",
     "chapterId": 10,
-    "title": "Verify V10.4.9",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that refresh tokens and reference access tokens can be revoked by an authorized user using the authorization server user interface, to mitigate the risk of malicious clients or stolen tokens.",
     "level": 2,
     "status": "N/A",
@@ -2350,7 +3961,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.10",
     "chapterId": 10,
-    "title": "Verify V10.4.10",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that confidential client is authenticated for client-to-authorized server backchannel requests such as token requests, pushed authorization requests (PAR), and token revocation requests.",
     "level": 2,
     "status": "N/A",
@@ -2360,7 +3974,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.11",
     "chapterId": 10,
-    "title": "Verify V10.4.11",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that the authorization server configuration only assigns the required scopes to the OAuth client.",
     "level": 2,
     "status": "N/A",
@@ -2370,7 +3987,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.12",
     "chapterId": 10,
-    "title": "Verify V10.4.12",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that for a given client, the authorization server only allows the 'response_mode' value that this client needs to use. For example, by having the authorization server validate this value against the expected values or by using pushed authorization request (PAR) or JWT-secured Authorization Request (JAR).",
     "level": 3,
     "status": "N/A",
@@ -2380,7 +4000,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.13",
     "chapterId": 10,
-    "title": "Verify V10.4.13",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that grant type 'code' is always used together with pushed authorization requests (PAR).",
     "level": 3,
     "status": "N/A",
@@ -2390,7 +4013,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.14",
     "chapterId": 10,
-    "title": "Verify V10.4.14",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that the authorization server issues only sender-constrained (Proof-of-Possession) access tokens, either with certificate-bound access tokens using mutual TLS (mTLS) or DPoP-bound access tokens (Demonstration of Proof of Possession).",
     "level": 3,
     "status": "N/A",
@@ -2400,7 +4026,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.15",
     "chapterId": 10,
-    "title": "Verify V10.4.15",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that, for a server-side client (which is not executed on the end-user device), the authorization server ensures that the 'authorization_details' parameter value is from the client backend and that the user has not tampered with it. For example, by requiring the usage of pushed authorization request (PAR) or JWT-secured Authorization Request (JAR).",
     "level": 3,
     "status": "N/A",
@@ -2410,7 +4039,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.4.16",
     "chapterId": 10,
-    "title": "Verify V10.4.16",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.4",
+    "sectionName": "OAuth Authorization Server",
+    "title": "OAuth Authorization Server",
     "description": "Verify that the client is confidential and the authorization server requires the use of strong client authentication methods (based on public-key cryptography and resistant to replay attacks), such as mutual TLS ('tls_client_auth', 'self_signed_tls_client_auth') or private key JWT ('private_key_jwt').",
     "level": 3,
     "status": "N/A",
@@ -2420,7 +4052,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.5.1",
     "chapterId": 10,
-    "title": "Verify V10.5.1",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.5",
+    "sectionName": "OIDC Client",
+    "title": "OIDC Client",
     "description": "Verify that the client (as the relying party) mitigates ID Token replay attacks. For example, by ensuring that the 'nonce' claim in the ID Token matches the 'nonce' value sent in the authentication request to the OpenID Provider (in OAuth2 refereed to as the authorization request sent to the authorization server).",
     "level": 2,
     "status": "N/A",
@@ -2430,22 +4065,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.5.2",
     "chapterId": 10,
-    "title": "Verify V10.5.2",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.5",
+    "sectionName": "OIDC Client",
+    "title": "OIDC Client",
     "description": "Verify that the client uniquely identifies the user from ID Token claims, usually the 'sub' claim, which cannot be reassigned to other users (for the scope of an identity provider).",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V10.5.3",
     "chapterId": 10,
-    "title": "Verify V10.5.3",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.5",
+    "sectionName": "OIDC Client",
+    "title": "OIDC Client",
     "description": "Verify that the client rejects attempts by a malicious authorization server to impersonate another authorization server through authorization server metadata. The client must reject authorization server metadata if the issuer URL in the authorization server metadata does not exactly match the pre-configured issuer URL expected by the client.",
     "level": 2,
     "status": "N/A",
@@ -2455,7 +4091,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.5.4",
     "chapterId": 10,
-    "title": "Verify V10.5.4",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.5",
+    "sectionName": "OIDC Client",
+    "title": "OIDC Client",
     "description": "Verify that the client validates that the ID Token is intended to be used for that client (audience) by checking that the 'aud' claim from the token is equal to the 'client_id' value for the client.",
     "level": 2,
     "status": "N/A",
@@ -2465,7 +4104,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.5.5",
     "chapterId": 10,
-    "title": "Verify V10.5.5",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.5",
+    "sectionName": "OIDC Client",
+    "title": "OIDC Client",
     "description": "Verify that, when using OIDC back-channel logout, the relying party mitigates denial of service through forced logout and cross-JWT confusion in the logout flow. The client must verify that the logout token is correctly typed with a value of 'logout+jwt', contains the 'event' claim with the correct member name, and does not contain a 'nonce' claim. Note that it is also recommended to have a short expiration (e.g., 2 minutes).",
     "level": 2,
     "status": "N/A",
@@ -2475,7 +4117,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.6.1",
     "chapterId": 10,
-    "title": "Verify V10.6.1",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.6",
+    "sectionName": "OpenID Provider",
+    "title": "OpenID Provider",
     "description": "Verify that the OpenID Provider only allows values 'code', 'ciba', 'id_token', or 'id_token code' for response mode. Note that 'code' is preferred over 'id_token code' (the OIDC Hybrid flow), and 'token' (any Implicit flow) must not be used.",
     "level": 2,
     "status": "N/A",
@@ -2485,7 +4130,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.6.2",
     "chapterId": 10,
-    "title": "Verify V10.6.2",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.6",
+    "sectionName": "OpenID Provider",
+    "title": "OpenID Provider",
     "description": "Verify that the OpenID Provider mitigates denial of service through forced logout. By obtaining explicit confirmation from the end-user or, if present, validating parameters in the logout request (initiated by the relying party), such as the 'id_token_hint'.",
     "level": 2,
     "status": "N/A",
@@ -2495,7 +4143,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.7.1",
     "chapterId": 10,
-    "title": "Verify V10.7.1",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.7",
+    "sectionName": "Consent Management",
+    "title": "Consent Management",
     "description": "Verify that the authorization server ensures that the user consents to each authorization request. If the identity of the client cannot be assured, the authorization server must always explicitly prompt the user for consent.",
     "level": 2,
     "status": "N/A",
@@ -2505,7 +4156,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.7.2",
     "chapterId": 10,
-    "title": "Verify V10.7.2",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.7",
+    "sectionName": "Consent Management",
+    "title": "Consent Management",
     "description": "Verify that when the authorization server prompts for user consent, it presents sufficient and clear information about what is being consented to. When applicable, this should include the nature of the requested authorizations (typically based on scope, resource server, Rich Authorization Requests (RAR) authorization details), the identity of the authorized application, and the lifetime of these authorizations.",
     "level": 2,
     "status": "N/A",
@@ -2515,7 +4169,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V10.7.3",
     "chapterId": 10,
-    "title": "Verify V10.7.3",
+    "chapterName": "OAuth and OIDC",
+    "sectionId": "V10.7",
+    "sectionName": "Consent Management",
+    "title": "Consent Management",
     "description": "Verify that the user can review, modify, and revoke consents which the user has granted through the authorization server.",
     "level": 2,
     "status": "N/A",
@@ -2525,7 +4182,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.1.1",
     "chapterId": 11,
-    "title": "Verify V11.1.1",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.1",
+    "sectionName": "Cryptographic Inventory and Documentation",
+    "title": "Cryptographic Inventory and Documentation",
     "description": "Verify that there is a documented policy for management of cryptographic keys and a cryptographic key lifecycle that follows a key management standard such as NIST SP 800-57. This should include ensuring that keys are not overshared (for example, with more than two entities for shared secrets and more than one entity for private keys).",
     "level": 2,
     "status": "N/A",
@@ -2535,7 +4195,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.1.2",
     "chapterId": 11,
-    "title": "Verify V11.1.2",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.1",
+    "sectionName": "Cryptographic Inventory and Documentation",
+    "title": "Cryptographic Inventory and Documentation",
     "description": "Verify that a cryptographic inventory is performed, maintained, regularly updated, and includes all cryptographic keys, algorithms, and certificates used by the application. It must also document where keys can and cannot be used in the system, and the types of data that can and cannot be protected using the keys.",
     "level": 2,
     "status": "N/A",
@@ -2545,7 +4208,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.1.3",
     "chapterId": 11,
-    "title": "Verify V11.1.3",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.1",
+    "sectionName": "Cryptographic Inventory and Documentation",
+    "title": "Cryptographic Inventory and Documentation",
     "description": "Verify that cryptographic discovery mechanisms are employed to identify all instances of cryptography in the system, including encryption, hashing, and signing operations.",
     "level": 3,
     "status": "N/A",
@@ -2555,7 +4221,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.1.4",
     "chapterId": 11,
-    "title": "Verify V11.1.4",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.1",
+    "sectionName": "Cryptographic Inventory and Documentation",
+    "title": "Cryptographic Inventory and Documentation",
     "description": "Verify that a cryptographic inventory is maintained. This must include a documented plan that outlines the migration path to new cryptographic standards, such as post-quantum cryptography, in order to react to future threats.",
     "level": 3,
     "status": "N/A",
@@ -2565,7 +4234,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.2.1",
     "chapterId": 11,
-    "title": "Verify V11.2.1",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.2",
+    "sectionName": "Secure Cryptography Implementation",
+    "title": "Secure Cryptography Implementation",
     "description": "Verify that industry-validated implementations (including libraries and hardware-accelerated implementations) are used for cryptographic operations.",
     "level": 2,
     "status": "N/A",
@@ -2575,7 +4247,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.2.2",
     "chapterId": 11,
-    "title": "Verify V11.2.2",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.2",
+    "sectionName": "Secure Cryptography Implementation",
+    "title": "Secure Cryptography Implementation",
     "description": "Verify that the application is designed with crypto agility such that random number, authenticated encryption, MAC, or hashing algorithms, key lengths, rounds, ciphers and modes can be reconfigured, upgraded, or swapped at any time, to protect against cryptographic breaks. Similarly, it must also be possible to replace keys and passwords and re-encrypt data. This will allow for seamless upgrades to post-quantum cryptography (PQC), once high-assurance implementations of approved PQC schemes or standards are widely available.",
     "level": 2,
     "status": "N/A",
@@ -2585,7 +4260,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.2.3",
     "chapterId": 11,
-    "title": "Verify V11.2.3",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.2",
+    "sectionName": "Secure Cryptography Implementation",
+    "title": "Secure Cryptography Implementation",
     "description": "Verify that all cryptographic primitives utilize a minimum of 128-bits of security based on the algorithm, key size, and configuration. For example, a 256-bit ECC key provides roughly 128 bits of security where RSA requires a 3072-bit key to achieve 128 bits of security.",
     "level": 2,
     "status": "N/A",
@@ -2595,7 +4273,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.2.4",
     "chapterId": 11,
-    "title": "Verify V11.2.4",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.2",
+    "sectionName": "Secure Cryptography Implementation",
+    "title": "Secure Cryptography Implementation",
     "description": "Verify that all cryptographic operations are constant-time, with no 'short-circuit' operations in comparisons, calculations, or returns, to avoid leaking information.",
     "level": 3,
     "status": "N/A",
@@ -2605,7 +4286,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.2.5",
     "chapterId": 11,
-    "title": "Verify V11.2.5",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.2",
+    "sectionName": "Secure Cryptography Implementation",
+    "title": "Secure Cryptography Implementation",
     "description": "Verify that all cryptographic modules fail securely, and errors are handled in a way that does not enable vulnerabilities, such as Padding Oracle attacks.",
     "level": 3,
     "status": "N/A",
@@ -2615,7 +4299,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.3.1",
     "chapterId": 11,
-    "title": "Verify V11.3.1",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.3",
+    "sectionName": "Encryption Algorithms",
+    "title": "Encryption Algorithms",
     "description": "Verify that insecure block modes (e.g., ECB) and weak padding schemes (e.g., PKCS#1 v1.5) are not used.",
     "level": 1,
     "status": "N/A",
@@ -2625,7 +4312,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.3.2",
     "chapterId": 11,
-    "title": "Verify V11.3.2",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.3",
+    "sectionName": "Encryption Algorithms",
+    "title": "Encryption Algorithms",
     "description": "Verify that only approved ciphers and modes such as AES with GCM are used.",
     "level": 1,
     "status": "N/A",
@@ -2635,7 +4325,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.3.3",
     "chapterId": 11,
-    "title": "Verify V11.3.3",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.3",
+    "sectionName": "Encryption Algorithms",
+    "title": "Encryption Algorithms",
     "description": "Verify that encrypted data is protected against unauthorized modification preferably by using an approved authenticated encryption method or by combining an approved encryption method with an approved MAC algorithm.",
     "level": 2,
     "status": "N/A",
@@ -2645,7 +4338,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.3.4",
     "chapterId": 11,
-    "title": "Verify V11.3.4",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.3",
+    "sectionName": "Encryption Algorithms",
+    "title": "Encryption Algorithms",
     "description": "Verify that nonces, initialization vectors, and other single-use numbers are not used for more than one encryption key and data-element pair. The method of generation must be appropriate for the algorithm being used.",
     "level": 3,
     "status": "N/A",
@@ -2655,7 +4351,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.3.5",
     "chapterId": 11,
-    "title": "Verify V11.3.5",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.3",
+    "sectionName": "Encryption Algorithms",
+    "title": "Encryption Algorithms",
     "description": "Verify that any combination of an encryption algorithm and a MAC algorithm is operating in encrypt-then-MAC mode.",
     "level": 3,
     "status": "N/A",
@@ -2665,7 +4364,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.4.1",
     "chapterId": 11,
-    "title": "Verify V11.4.1",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.4",
+    "sectionName": "Hashing and Hash-based Functions",
+    "title": "Hashing and Hash-based Functions",
     "description": "Verify that only approved hash functions are used for general cryptographic use cases, including digital signatures, HMAC, KDF, and random bit generation. Disallowed hash functions, such as MD5, must not be used for any cryptographic purpose.",
     "level": 1,
     "status": "N/A",
@@ -2675,7 +4377,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.4.2",
     "chapterId": 11,
-    "title": "Verify V11.4.2",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.4",
+    "sectionName": "Hashing and Hash-based Functions",
+    "title": "Hashing and Hash-based Functions",
     "description": "Verify that passwords are stored using an approved, computationally intensive, key derivation function (also known as a \"password hashing function\"), with parameter settings configured based on current guidance. The settings should balance security and performance to make brute-force attacks sufficiently challenging for the required level of security.",
     "level": 2,
     "status": "N/A",
@@ -2685,22 +4390,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.4.3",
     "chapterId": 11,
-    "title": "Verify V11.4.3",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.4",
+    "sectionName": "Hashing and Hash-based Functions",
+    "title": "Hashing and Hash-based Functions",
     "description": "Verify that hash functions used in digital signatures, as part of data authentication or data integrity are collision resistant and have appropriate bit-lengths. If collision resistance is required, the output length must be at least 256 bits. If only resistance to second pre-image attacks is required, the output length must be at least 128 bits.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "API Gateway",
-        "color": "bg-purple-100 text-purple-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V11.4.4",
     "chapterId": 11,
-    "title": "Verify V11.4.4",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.4",
+    "sectionName": "Hashing and Hash-based Functions",
+    "title": "Hashing and Hash-based Functions",
     "description": "Verify that the application uses approved key derivation functions with key stretching parameters when deriving secret keys from passwords. The parameters in use must balance security and performance to prevent brute-force attacks from compromising the resulting cryptographic key.",
     "level": 2,
     "status": "N/A",
@@ -2710,7 +4416,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.5.1",
     "chapterId": 11,
-    "title": "Verify V11.5.1",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.5",
+    "sectionName": "Random Values",
+    "title": "Random Values",
     "description": "Verify that all random numbers and strings which are intended to be non-guessable must be generated using a cryptographically secure pseudo-random number generator (CSPRNG) and have at least 128 bits of entropy. Note that UUIDs do not respect this condition.",
     "level": 2,
     "status": "N/A",
@@ -2720,7 +4429,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.5.2",
     "chapterId": 11,
-    "title": "Verify V11.5.2",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.5",
+    "sectionName": "Random Values",
+    "title": "Random Values",
     "description": "Verify that the random number generation mechanism in use is designed to work securely, even under heavy demand.",
     "level": 3,
     "status": "N/A",
@@ -2730,7 +4442,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.6.1",
     "chapterId": 11,
-    "title": "Verify V11.6.1",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.6",
+    "sectionName": "Public Key Cryptography",
+    "title": "Public Key Cryptography",
     "description": "Verify that only approved cryptographic algorithms and modes of operation are used for key generation and seeding, and digital signature generation and verification. Key generation algorithms must not generate insecure keys vulnerable to known attacks, for example, RSA keys which are vulnerable to Fermat factorization.",
     "level": 2,
     "status": "N/A",
@@ -2740,7 +4455,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.6.2",
     "chapterId": 11,
-    "title": "Verify V11.6.2",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.6",
+    "sectionName": "Public Key Cryptography",
+    "title": "Public Key Cryptography",
     "description": "Verify that approved cryptographic algorithms are used for key exchange (such as Diffie-Hellman) with a focus on ensuring that key exchange mechanisms use secure parameters. This will prevent attacks on the key establishment process which could lead to adversary-in-the-middle attacks or cryptographic breaks.",
     "level": 3,
     "status": "N/A",
@@ -2750,7 +4468,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.7.1",
     "chapterId": 11,
-    "title": "Verify V11.7.1",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.7",
+    "sectionName": "In-Use Data Cryptography",
+    "title": "In-Use Data Cryptography",
     "description": "Verify that full memory encryption is in use that protects sensitive data while it is in use, preventing access by unauthorized users or processes.",
     "level": 3,
     "status": "N/A",
@@ -2760,22 +4481,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V11.7.2",
     "chapterId": 11,
-    "title": "Verify V11.7.2",
+    "chapterName": "Cryptography",
+    "sectionId": "V11.7",
+    "sectionName": "In-Use Data Cryptography",
+    "title": "In-Use Data Cryptography",
     "description": "Verify that data minimization ensures the minimal amount of data is exposed during processing, and ensure that data is encrypted immediately after use or as soon as feasible.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V12.1.1",
     "chapterId": 12,
-    "title": "Verify V12.1.1",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.1",
+    "sectionName": "General TLS Security Guidance",
+    "title": "General TLS Security Guidance",
     "description": "Verify that only the latest recommended versions of the TLS protocol are enabled, such as TLS 1.2 and TLS 1.3. The latest version of the TLS protocol must be the preferred option.",
     "level": 1,
     "status": "N/A",
@@ -2785,7 +4507,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V12.1.2",
     "chapterId": 12,
-    "title": "Verify V12.1.2",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.1",
+    "sectionName": "General TLS Security Guidance",
+    "title": "General TLS Security Guidance",
     "description": "Verify that only recommended cipher suites are enabled, with the strongest cipher suites set as preferred. L3 applications must only support cipher suites which provide forward secrecy.",
     "level": 2,
     "status": "N/A",
@@ -2795,7 +4520,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V12.1.3",
     "chapterId": 12,
-    "title": "Verify V12.1.3",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.1",
+    "sectionName": "General TLS Security Guidance",
+    "title": "General TLS Security Guidance",
     "description": "Verify that the application validates that mTLS client certificates are trusted before using the certificate identity for authentication or authorization.",
     "level": 2,
     "status": "N/A",
@@ -2805,7 +4533,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V12.1.4",
     "chapterId": 12,
-    "title": "Verify V12.1.4",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.1",
+    "sectionName": "General TLS Security Guidance",
+    "title": "General TLS Security Guidance",
     "description": "Verify that proper certification revocation, such as Online Certificate Status Protocol (OCSP) Stapling, is enabled and configured.",
     "level": 3,
     "status": "N/A",
@@ -2815,37 +4546,36 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V12.1.5",
     "chapterId": 12,
-    "title": "Verify V12.1.5",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.1",
+    "sectionName": "General TLS Security Guidance",
+    "title": "General TLS Security Guidance",
     "description": "Verify that Encrypted Client Hello (ECH) is enabled in the application's TLS settings to prevent exposure of sensitive metadata, such as the Server Name Indication (SNI), during TLS handshake processes.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V12.2.1",
     "chapterId": 12,
-    "title": "Verify V12.2.1",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.2",
+    "sectionName": "HTTPS Communication with External Facing Services",
+    "title": "HTTPS Communication with External Facing Services",
     "description": "Verify that TLS is used for all connectivity between a client and external facing, HTTP-based services, and does not fall back to insecure or unencrypted communications.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V12.2.2",
     "chapterId": 12,
-    "title": "Verify V12.2.2",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.2",
+    "sectionName": "HTTPS Communication with External Facing Services",
+    "title": "HTTPS Communication with External Facing Services",
     "description": "Verify that external facing services use publicly trusted TLS certificates.",
     "level": 1,
     "status": "N/A",
@@ -2855,7 +4585,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V12.3.1",
     "chapterId": 12,
-    "title": "Verify V12.3.1",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.3",
+    "sectionName": "General Service to Service Communication Security",
+    "title": "General Service to Service Communication Security",
     "description": "Verify that an encrypted protocol such as TLS is used for all inbound and outbound connections to and from the application, including monitoring systems, management tools, remote access and SSH, middleware, databases, mainframes, partner systems, or external APIs. The server must not fall back to insecure or unencrypted protocols.",
     "level": 2,
     "status": "N/A",
@@ -2865,7 +4598,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V12.3.2",
     "chapterId": 12,
-    "title": "Verify V12.3.2",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.3",
+    "sectionName": "General Service to Service Communication Security",
+    "title": "General Service to Service Communication Security",
     "description": "Verify that TLS clients validate certificates received before communicating with a TLS server.",
     "level": 2,
     "status": "N/A",
@@ -2875,22 +4611,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V12.3.3",
     "chapterId": 12,
-    "title": "Verify V12.3.3",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.3",
+    "sectionName": "General Service to Service Communication Security",
+    "title": "General Service to Service Communication Security",
     "description": "Verify that TLS or another appropriate transport encryption mechanism used for all connectivity between internal, HTTP-based services within the application, and does not fall back to insecure or unencrypted communications.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V12.3.4",
     "chapterId": 12,
-    "title": "Verify V12.3.4",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.3",
+    "sectionName": "General Service to Service Communication Security",
+    "title": "General Service to Service Communication Security",
     "description": "Verify that TLS connections between internal services use trusted certificates. Where internally generated or self-signed certificates are used, the consuming service must be configured to only trust specific internal CAs and specific self-signed certificates.",
     "level": 2,
     "status": "N/A",
@@ -2900,7 +4637,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V12.3.5",
     "chapterId": 12,
-    "title": "Verify V12.3.5",
+    "chapterName": "Secure Communication",
+    "sectionId": "V12.3",
+    "sectionName": "General Service to Service Communication Security",
+    "title": "General Service to Service Communication Security",
     "description": "Verify that services communicating internally within a system (intra-service communications) use strong authentication to ensure that each endpoint is verified. Strong authentication methods, such as TLS client authentication, must be employed to ensure identity, using public-key infrastructure and mechanisms that are resistant to replay attacks. For microservice architectures, consider using a service mesh to simplify certificate management and enhance security.",
     "level": 3,
     "status": "N/A",
@@ -2910,22 +4650,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.1.1",
     "chapterId": 13,
-    "title": "Verify V13.1.1",
+    "chapterName": "Configuration",
+    "sectionId": "V13.1",
+    "sectionName": "Configuration Documentation",
+    "title": "Configuration Documentation",
     "description": "Verify that all communication needs for the application are documented. This must include external services which the application relies upon and cases where an end user might be able to provide an external location to which the application will then connect.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V13.1.2",
     "chapterId": 13,
-    "title": "Verify V13.1.2",
+    "chapterName": "Configuration",
+    "sectionId": "V13.1",
+    "sectionName": "Configuration Documentation",
+    "title": "Configuration Documentation",
     "description": "Verify that for each service the application uses, the documentation defines the maximum number of concurrent connections (e.g., connection pool limits) and how the application behaves when that limit is reached, including any fallback or recovery mechanisms, to prevent denial of service conditions.",
     "level": 3,
     "status": "N/A",
@@ -2935,8 +4676,11 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.1.3",
     "chapterId": 13,
-    "title": "Verify V13.1.3",
-    "description": "Verify that the application documentation defines resource\u2011management strategies for every external system or service it uses (e.g., databases, file handles, threads, HTTP connections). This should include resource\u2011release procedures, timeout settings, failure handling, and where retry logic is implemented, specifying retry limits, delays, and back\u2011off algorithms. For synchronous HTTP request\u2013response operations it should mandate short timeouts and either disable retries or strictly limit retries to prevent cascading delays and resource exhaustion.",
+    "chapterName": "Configuration",
+    "sectionId": "V13.1",
+    "sectionName": "Configuration Documentation",
+    "title": "Configuration Documentation",
+    "description": "Verify that the application documentation defines resource‑management strategies for every external system or service it uses (e.g., databases, file handles, threads, HTTP connections). This should include resource‑release procedures, timeout settings, failure handling, and where retry logic is implemented, specifying retry limits, delays, and back‑off algorithms. For synchronous HTTP request–response operations it should mandate short timeouts and either disable retries or strictly limit retries to prevent cascading delays and resource exhaustion.",
     "level": 3,
     "status": "N/A",
     "traceability": [],
@@ -2945,22 +4689,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.1.4",
     "chapterId": 13,
-    "title": "Verify V13.1.4",
+    "chapterName": "Configuration",
+    "sectionId": "V13.1",
+    "sectionName": "Configuration Documentation",
+    "title": "Configuration Documentation",
     "description": "Verify that the application's documentation defines the secrets that are critical for the security of the application and a schedule for rotating them, based on the organization's threat model and business requirements.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V13.2.1",
     "chapterId": 13,
-    "title": "Verify V13.2.1",
+    "chapterName": "Configuration",
+    "sectionId": "V13.2",
+    "sectionName": "Backend Communication Configuration",
+    "title": "Backend Communication Configuration",
     "description": "Verify that communications between backend application components that don't support the application's standard user session mechanism, including APIs, middleware, and data layers, are authenticated. Authentication must use individual service accounts, short-term tokens, or certificate-based authentication and not unchanging credentials such as passwords, API keys, or shared accounts with privileged access.",
     "level": 2,
     "status": "N/A",
@@ -2970,7 +4715,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.2.2",
     "chapterId": 13,
-    "title": "Verify V13.2.2",
+    "chapterName": "Configuration",
+    "sectionId": "V13.2",
+    "sectionName": "Backend Communication Configuration",
+    "title": "Backend Communication Configuration",
     "description": "Verify that communications between backend application components, including local or operating system services, APIs, middleware, and data layers, are performed with accounts assigned the least necessary privileges.",
     "level": 2,
     "status": "N/A",
@@ -2980,7 +4728,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.2.3",
     "chapterId": 13,
-    "title": "Verify V13.2.3",
+    "chapterName": "Configuration",
+    "sectionId": "V13.2",
+    "sectionName": "Backend Communication Configuration",
+    "title": "Backend Communication Configuration",
     "description": "Verify that if a credential has to be used for service authentication, the credential being used by the consumer is not a default credential (e.g., root/root or admin/admin).",
     "level": 2,
     "status": "N/A",
@@ -2990,7 +4741,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.2.4",
     "chapterId": 13,
-    "title": "Verify V13.2.4",
+    "chapterName": "Configuration",
+    "sectionId": "V13.2",
+    "sectionName": "Backend Communication Configuration",
+    "title": "Backend Communication Configuration",
     "description": "Verify that an allowlist is used to define the external resources or systems with which the application is permitted to communicate (e.g., for outbound requests, data loads, or file access). This allowlist can be implemented at the application layer, web server, firewall, or a combination of different layers.",
     "level": 2,
     "status": "N/A",
@@ -3000,7 +4754,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.2.5",
     "chapterId": 13,
-    "title": "Verify V13.2.5",
+    "chapterName": "Configuration",
+    "sectionId": "V13.2",
+    "sectionName": "Backend Communication Configuration",
+    "title": "Backend Communication Configuration",
     "description": "Verify that the web or application server is configured with an allowlist of resources or systems to which the server can send requests or load data or files from.",
     "level": 2,
     "status": "N/A",
@@ -3010,7 +4767,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.2.6",
     "chapterId": 13,
-    "title": "Verify V13.2.6",
+    "chapterName": "Configuration",
+    "sectionId": "V13.2",
+    "sectionName": "Backend Communication Configuration",
+    "title": "Backend Communication Configuration",
     "description": "Verify that where the application connects to separate services, it follows the documented configuration for each connection, such as maximum parallel connections, behavior when maximum allowed connections is reached, connection timeouts, and retry strategies.",
     "level": 3,
     "status": "N/A",
@@ -3020,7 +4780,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.3.1",
     "chapterId": 13,
-    "title": "Verify V13.3.1",
+    "chapterName": "Configuration",
+    "sectionId": "V13.3",
+    "sectionName": "Secret Management",
+    "title": "Secret Management",
     "description": "Verify that a secrets management solution, such as a key vault, is used to securely create, store, control access to, and destroy backend secrets. These could include passwords, key material, integrations with databases and third-party systems, keys and seeds for time-based tokens, other internal secrets, and API keys. Secrets must not be included in application source code or included in build artifacts. For an L3 application, this must involve a hardware-backed solution such as an HSM.",
     "level": 2,
     "status": "N/A",
@@ -3030,22 +4793,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.3.2",
     "chapterId": 13,
-    "title": "Verify V13.3.2",
+    "chapterName": "Configuration",
+    "sectionId": "V13.3",
+    "sectionName": "Secret Management",
+    "title": "Secret Management",
     "description": "Verify that access to secret assets adheres to the principle of least privilege.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V13.3.3",
     "chapterId": 13,
-    "title": "Verify V13.3.3",
+    "chapterName": "Configuration",
+    "sectionId": "V13.3",
+    "sectionName": "Secret Management",
+    "title": "Secret Management",
     "description": "Verify that all cryptographic operations are performed using an isolated security module (such as a vault or hardware security module) to securely manage and protect key material from exposure outside of the security module.",
     "level": 3,
     "status": "N/A",
@@ -3055,22 +4819,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.3.4",
     "chapterId": 13,
-    "title": "Verify V13.3.4",
+    "chapterName": "Configuration",
+    "sectionId": "V13.3",
+    "sectionName": "Secret Management",
+    "title": "Secret Management",
     "description": "Verify that secrets are configured to expire and be rotated based on the application's documentation.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V13.4.1",
     "chapterId": 13,
-    "title": "Verify V13.4.1",
+    "chapterName": "Configuration",
+    "sectionId": "V13.4",
+    "sectionName": "Unintended Information Leakage",
+    "title": "Unintended Information Leakage",
     "description": "Verify that the application is deployed either without any source control metadata, including the .git or .svn folders, or in a way that these folders are inaccessible both externally and to the application itself.",
     "level": 1,
     "status": "N/A",
@@ -3080,7 +4845,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.4.2",
     "chapterId": 13,
-    "title": "Verify V13.4.2",
+    "chapterName": "Configuration",
+    "sectionId": "V13.4",
+    "sectionName": "Unintended Information Leakage",
+    "title": "Unintended Information Leakage",
     "description": "Verify that debug modes are disabled for all components in production environments to prevent exposure of debugging features and information leakage.",
     "level": 2,
     "status": "N/A",
@@ -3090,22 +4858,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.4.3",
     "chapterId": 13,
-    "title": "Verify V13.4.3",
+    "chapterName": "Configuration",
+    "sectionId": "V13.4",
+    "sectionName": "Unintended Information Leakage",
+    "title": "Unintended Information Leakage",
     "description": "Verify that web servers do not expose directory listings to clients unless explicitly intended.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V13.4.4",
     "chapterId": 13,
-    "title": "Verify V13.4.4",
+    "chapterName": "Configuration",
+    "sectionId": "V13.4",
+    "sectionName": "Unintended Information Leakage",
+    "title": "Unintended Information Leakage",
     "description": "Verify that using the HTTP TRACE method is not supported in production environments, to avoid potential information leakage.",
     "level": 2,
     "status": "N/A",
@@ -3115,7 +4884,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.4.5",
     "chapterId": 13,
-    "title": "Verify V13.4.5",
+    "chapterName": "Configuration",
+    "sectionId": "V13.4",
+    "sectionName": "Unintended Information Leakage",
+    "title": "Unintended Information Leakage",
     "description": "Verify that documentation (such as for internal APIs) and monitoring endpoints are not exposed unless explicitly intended.",
     "level": 2,
     "status": "N/A",
@@ -3125,7 +4897,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.4.6",
     "chapterId": 13,
-    "title": "Verify V13.4.6",
+    "chapterName": "Configuration",
+    "sectionId": "V13.4",
+    "sectionName": "Unintended Information Leakage",
+    "title": "Unintended Information Leakage",
     "description": "Verify that the application does not expose detailed version information of backend components.",
     "level": 3,
     "status": "N/A",
@@ -3135,22 +4910,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V13.4.7",
     "chapterId": 13,
-    "title": "Verify V13.4.7",
+    "chapterName": "Configuration",
+    "sectionId": "V13.4",
+    "sectionName": "Unintended Information Leakage",
+    "title": "Unintended Information Leakage",
     "description": "Verify that the web tier is configured to only serve files with specific file extensions to prevent unintentional information, configuration, and source code leakage.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V14.1.1",
     "chapterId": 14,
-    "title": "Verify V14.1.1",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.1",
+    "sectionName": "Data Protection Documentation",
+    "title": "Data Protection Documentation",
     "description": "Verify that all sensitive data created and processed by the application has been identified and classified into protection levels. This includes data that is only encoded and therefore easily decoded, such as Base64 strings or the plaintext payload inside a JWT. Protection levels need to take into account any data protection and privacy regulations and standards which the application is required to comply with.",
     "level": 2,
     "status": "N/A",
@@ -3160,7 +4936,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.1.2",
     "chapterId": 14,
-    "title": "Verify V14.1.2",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.1",
+    "sectionName": "Data Protection Documentation",
+    "title": "Data Protection Documentation",
     "description": "Verify that all sensitive data protection levels have a documented set of protection requirements. This must include (but not be limited to) requirements related to general encryption, integrity verification, retention, how the data is to be logged, access controls around sensitive data in logs, database-level encryption, privacy and privacy-enhancing technologies to be used, and other confidentiality requirements.",
     "level": 2,
     "status": "N/A",
@@ -3170,22 +4949,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.2.1",
     "chapterId": 14,
-    "title": "Verify V14.2.1",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.2",
+    "sectionName": "General Data Protection",
+    "title": "General Data Protection",
     "description": "Verify that sensitive data is only sent to the server in the HTTP message body or header fields, and that the URL and query string do not contain sensitive information, such as an API key or session token.",
     "level": 1,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V14.2.2",
     "chapterId": 14,
-    "title": "Verify V14.2.2",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.2",
+    "sectionName": "General Data Protection",
+    "title": "General Data Protection",
     "description": "Verify that the application prevents sensitive data from being cached in server components, such as load balancers and application caches, or ensures that the data is securely purged after use.",
     "level": 2,
     "status": "N/A",
@@ -3195,7 +4975,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.2.3",
     "chapterId": 14,
-    "title": "Verify V14.2.3",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.2",
+    "sectionName": "General Data Protection",
+    "title": "General Data Protection",
     "description": "Verify that defined sensitive data is not sent to untrusted parties (e.g., user trackers) to prevent unwanted collection of data outside of the application's control.",
     "level": 2,
     "status": "N/A",
@@ -3205,7 +4988,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.2.4",
     "chapterId": 14,
-    "title": "Verify V14.2.4",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.2",
+    "sectionName": "General Data Protection",
+    "title": "General Data Protection",
     "description": "Verify that controls around sensitive data related to encryption, integrity verification, retention, how the data is to be logged, access controls around sensitive data in logs, privacy and privacy-enhancing technologies, are implemented as defined in the documentation for the specific data's protection level.",
     "level": 2,
     "status": "N/A",
@@ -3215,7 +5001,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.2.5",
     "chapterId": 14,
-    "title": "Verify V14.2.5",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.2",
+    "sectionName": "General Data Protection",
+    "title": "General Data Protection",
     "description": "Verify that caching mechanisms are configured to only cache responses which have the expected content type for that resource and do not contain sensitive, dynamic content. The web server should return a 404 or 302 response when a non-existent file is accessed rather than returning a different, valid file. This should prevent Web Cache Deception attacks.",
     "level": 3,
     "status": "N/A",
@@ -3225,7 +5014,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.2.6",
     "chapterId": 14,
-    "title": "Verify V14.2.6",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.2",
+    "sectionName": "General Data Protection",
+    "title": "General Data Protection",
     "description": "Verify that the application only returns the minimum required sensitive data for the application's functionality. For example, only returning some of the digits of a credit card number and not the full number. If the complete data is required, it should be masked in the user interface unless the user specifically views it.",
     "level": 3,
     "status": "N/A",
@@ -3235,22 +5027,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.2.7",
     "chapterId": 14,
-    "title": "Verify V14.2.7",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.2",
+    "sectionName": "General Data Protection",
+    "title": "General Data Protection",
     "description": "Verify that sensitive information is subject to data retention classification, ensuring that outdated or unnecessary data is deleted automatically, on a defined schedule, or as the situation requires.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V14.2.8",
     "chapterId": 14,
-    "title": "Verify V14.2.8",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.2",
+    "sectionName": "General Data Protection",
+    "title": "General Data Protection",
     "description": "Verify that sensitive information is removed from the metadata of user-submitted files unless storage is consented to by the user.",
     "level": 3,
     "status": "N/A",
@@ -3260,7 +5053,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.3.1",
     "chapterId": 14,
-    "title": "Verify V14.3.1",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.3",
+    "sectionName": "Client-side Data Protection",
+    "title": "Client-side Data Protection",
     "description": "Verify that authenticated data is cleared from client storage, such as the browser DOM, after the client or session is terminated. The 'Clear-Site-Data' HTTP response header field may be able to help with this but the client-side should also be able to clear up if the server connection is not available when the session is terminated.",
     "level": 1,
     "status": "N/A",
@@ -3270,7 +5066,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.3.2",
     "chapterId": 14,
-    "title": "Verify V14.3.2",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.3",
+    "sectionName": "Client-side Data Protection",
+    "title": "Client-side Data Protection",
     "description": "Verify that the application sets sufficient anti-caching HTTP response header fields (i.e., Cache-Control: no-store) so that sensitive data is not cached in browsers.",
     "level": 2,
     "status": "N/A",
@@ -3280,7 +5079,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V14.3.3",
     "chapterId": 14,
-    "title": "Verify V14.3.3",
+    "chapterName": "Data Protection",
+    "sectionId": "V14.3",
+    "sectionName": "Client-side Data Protection",
+    "title": "Client-side Data Protection",
     "description": "Verify that data stored in browser storage (such as localStorage, sessionStorage, IndexedDB, or cookies) does not contain sensitive data, with the exception of session tokens.",
     "level": 2,
     "status": "N/A",
@@ -3290,7 +5092,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.1.1",
     "chapterId": 15,
-    "title": "Verify V15.1.1",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.1",
+    "sectionName": "Secure Coding and Architecture Documentation",
+    "title": "Secure Coding and Architecture Documentation",
     "description": "Verify that application documentation defines risk based remediation time frames for 3rd party component versions with vulnerabilities and for updating libraries in general, to minimize the risk from these components.",
     "level": 1,
     "status": "N/A",
@@ -3300,7 +5105,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.1.2",
     "chapterId": 15,
-    "title": "Verify V15.1.2",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.1",
+    "sectionName": "Secure Coding and Architecture Documentation",
+    "title": "Secure Coding and Architecture Documentation",
     "description": "Verify that an inventory catalog, such as software bill of materials (SBOM), is maintained of all third-party libraries in use, including verifying that components come from pre-defined, trusted, and continually maintained repositories.",
     "level": 2,
     "status": "N/A",
@@ -3310,7 +5118,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.1.3",
     "chapterId": 15,
-    "title": "Verify V15.1.3",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.1",
+    "sectionName": "Secure Coding and Architecture Documentation",
+    "title": "Secure Coding and Architecture Documentation",
     "description": "Verify that the application documentation identifies functionality which is time-consuming or resource-demanding. This must include how to prevent a loss of availability due to overusing this functionality and how to avoid a situation where building a response takes longer than the consumer's timeout. Potential defenses may include asynchronous processing, using queues, and limiting parallel processes per user and per application.",
     "level": 2,
     "status": "N/A",
@@ -3320,7 +5131,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.1.4",
     "chapterId": 15,
-    "title": "Verify V15.1.4",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.1",
+    "sectionName": "Secure Coding and Architecture Documentation",
+    "title": "Secure Coding and Architecture Documentation",
     "description": "Verify that application documentation highlights third-party libraries which are considered to be \"risky components\".",
     "level": 3,
     "status": "N/A",
@@ -3330,7 +5144,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.1.5",
     "chapterId": 15,
-    "title": "Verify V15.1.5",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.1",
+    "sectionName": "Secure Coding and Architecture Documentation",
+    "title": "Secure Coding and Architecture Documentation",
     "description": "Verify that application documentation highlights parts of the application where \"dangerous functionality\" is being used.",
     "level": 3,
     "status": "N/A",
@@ -3340,7 +5157,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.2.1",
     "chapterId": 15,
-    "title": "Verify V15.2.1",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.2",
+    "sectionName": "Security Architecture and Dependencies",
+    "title": "Security Architecture and Dependencies",
     "description": "Verify that the application only contains components which have not breached the documented update and remediation time frames.",
     "level": 1,
     "status": "N/A",
@@ -3350,7 +5170,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.2.2",
     "chapterId": 15,
-    "title": "Verify V15.2.2",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.2",
+    "sectionName": "Security Architecture and Dependencies",
+    "title": "Security Architecture and Dependencies",
     "description": "Verify that the application has implemented defenses against loss of availability due to functionality which is time-consuming or resource-demanding, based on the documented security decisions and strategies for this.",
     "level": 2,
     "status": "N/A",
@@ -3360,7 +5183,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.2.3",
     "chapterId": 15,
-    "title": "Verify V15.2.3",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.2",
+    "sectionName": "Security Architecture and Dependencies",
+    "title": "Security Architecture and Dependencies",
     "description": "Verify that the production environment only includes functionality that is required for the application to function, and does not expose extraneous functionality such as test code, sample snippets, and development functionality.",
     "level": 2,
     "status": "N/A",
@@ -3370,7 +5196,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.2.4",
     "chapterId": 15,
-    "title": "Verify V15.2.4",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.2",
+    "sectionName": "Security Architecture and Dependencies",
+    "title": "Security Architecture and Dependencies",
     "description": "Verify that third-party components and all of their transitive dependencies are included from the expected repository, whether internally owned or an external source, and that there is no risk of a dependency confusion attack.",
     "level": 3,
     "status": "N/A",
@@ -3380,7 +5209,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.2.5",
     "chapterId": 15,
-    "title": "Verify V15.2.5",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.2",
+    "sectionName": "Security Architecture and Dependencies",
+    "title": "Security Architecture and Dependencies",
     "description": "Verify that the application implements additional protections around parts of the application which are documented as containing \"dangerous functionality\" or using third-party libraries considered to be \"risky components\". This could include techniques such as sandboxing, encapsulation, containerization or network level isolation to delay and deter attackers who compromise one part of an application from pivoting elsewhere in the application.",
     "level": 3,
     "status": "N/A",
@@ -3390,7 +5222,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.3.1",
     "chapterId": 15,
-    "title": "Verify V15.3.1",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.3",
+    "sectionName": "Defensive Coding",
+    "title": "Defensive Coding",
     "description": "Verify that the application only returns the required subset of fields from a data object. For example, it should not return an entire data object, as some individual fields should not be accessible to users.",
     "level": 1,
     "status": "N/A",
@@ -3400,7 +5235,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.3.2",
     "chapterId": 15,
-    "title": "Verify V15.3.2",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.3",
+    "sectionName": "Defensive Coding",
+    "title": "Defensive Coding",
     "description": "Verify that where the application backend makes calls to external URLs, it is configured to not follow redirects unless it is intended functionality.",
     "level": 2,
     "status": "N/A",
@@ -3410,7 +5248,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.3.3",
     "chapterId": 15,
-    "title": "Verify V15.3.3",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.3",
+    "sectionName": "Defensive Coding",
+    "title": "Defensive Coding",
     "description": "Verify that the application has countermeasures to protect against mass assignment attacks by limiting allowed fields per controller and action, e.g., it is not possible to insert or update a field value when it was not intended to be part of that action.",
     "level": 2,
     "status": "N/A",
@@ -3420,22 +5261,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.3.4",
     "chapterId": 15,
-    "title": "Verify V15.3.4",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.3",
+    "sectionName": "Defensive Coding",
+    "title": "Defensive Coding",
     "description": "Verify that all proxying and middleware components transfer the user's original IP address correctly using trusted data fields that cannot be manipulated by the end user, and the application and web server use this correct value for logging and security decisions such as rate limiting, taking into account that even the original IP address may not be reliable due to dynamic IPs, VPNs, or corporate firewalls.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V15.3.5",
     "chapterId": 15,
-    "title": "Verify V15.3.5",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.3",
+    "sectionName": "Defensive Coding",
+    "title": "Defensive Coding",
     "description": "Verify that the application explicitly ensures that variables are of the correct type and performs strict equality and comparator operations. This is to avoid type juggling or type confusion vulnerabilities caused by the application code making an assumption about a variable type.",
     "level": 2,
     "status": "N/A",
@@ -3445,7 +5287,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.3.6",
     "chapterId": 15,
-    "title": "Verify V15.3.6",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.3",
+    "sectionName": "Defensive Coding",
+    "title": "Defensive Coding",
     "description": "Verify that JavaScript code is written in a way that prevents prototype pollution, for example, by using Set() or Map() instead of object literals.",
     "level": 2,
     "status": "N/A",
@@ -3455,7 +5300,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.3.7",
     "chapterId": 15,
-    "title": "Verify V15.3.7",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.3",
+    "sectionName": "Defensive Coding",
+    "title": "Defensive Coding",
     "description": "Verify that the application has defenses against HTTP parameter pollution attacks, particularly if the application framework makes no distinction about the source of request parameters (query string, body parameters, cookies, or header fields).",
     "level": 2,
     "status": "N/A",
@@ -3465,23 +5313,24 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.4.1",
     "chapterId": 15,
-    "title": "Verify V15.4.1",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.4",
+    "sectionName": "Safe Concurrency",
+    "title": "Safe Concurrency",
     "description": "Verify that shared objects in multi-threaded code (such as caches, files, or in-memory objects accessed by multiple threads) are accessed safely by using thread-safe types and synchronization mechanisms like locks or semaphores to avoid race conditions and data corruption.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V15.4.2",
     "chapterId": 15,
-    "title": "Verify V15.4.2",
-    "description": "Verify that checks on a resource's state, such as its existence or permissions, and the actions that depend on them are performed as a single atomic operation to prevent time-of-check to time-of-use (TOCTOU) race conditions. For example, checking if a file exists before opening it, or verifying a user\u2019s access before granting it.",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.4",
+    "sectionName": "Safe Concurrency",
+    "title": "Safe Concurrency",
+    "description": "Verify that checks on a resource's state, such as its existence or permissions, and the actions that depend on them are performed as a single atomic operation to prevent time-of-check to time-of-use (TOCTOU) race conditions. For example, checking if a file exists before opening it, or verifying a user’s access before granting it.",
     "level": 3,
     "status": "N/A",
     "traceability": [],
@@ -3490,7 +5339,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.4.3",
     "chapterId": 15,
-    "title": "Verify V15.4.3",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.4",
+    "sectionName": "Safe Concurrency",
+    "title": "Safe Concurrency",
     "description": "Verify that locks are used consistently to avoid threads getting stuck, whether by waiting on each other or retrying endlessly, and that locking logic stays within the code responsible for managing the resource to ensure locks cannot be inadvertently or maliciously modified by external classes or code.",
     "level": 3,
     "status": "N/A",
@@ -3500,7 +5352,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V15.4.4",
     "chapterId": 15,
-    "title": "Verify V15.4.4",
+    "chapterName": "Secure Coding and Architecture",
+    "sectionId": "V15.4",
+    "sectionName": "Safe Concurrency",
+    "title": "Safe Concurrency",
     "description": "Verify that resource allocation policies prevent thread starvation by ensuring fair access to resources, such as by leveraging thread pools, allowing lower-priority threads to proceed within a reasonable timeframe.",
     "level": 3,
     "status": "N/A",
@@ -3510,37 +5365,36 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.1.1",
     "chapterId": 16,
-    "title": "Verify V16.1.1",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.1",
+    "sectionName": "Security Logging Documentation",
+    "title": "Security Logging Documentation",
     "description": "Verify that an inventory exists documenting the logging performed at each layer of the application's technology stack, what events are being logged, log formats, where that logging is stored, how it is used, how access to it is controlled, and for how long logs are kept.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V16.2.1",
     "chapterId": 16,
-    "title": "Verify V16.2.1",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.2",
+    "sectionName": "General Logging",
+    "title": "General Logging",
     "description": "Verify that each log entry includes necessary metadata (such as when, where, who, what) that would allow for a detailed investigation of the timeline when an event happens.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Payment Gateway",
-        "color": "bg-yellow-100 text-yellow-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V16.2.2",
     "chapterId": 16,
-    "title": "Verify V16.2.2",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.2",
+    "sectionName": "General Logging",
+    "title": "General Logging",
     "description": "Verify that time sources for all logging components are synchronized, and that timestamps in security event metadata use UTC or include an explicit time zone offset. UTC is recommended to ensure consistency across distributed systems and to prevent confusion during daylight saving time transitions.",
     "level": 2,
     "status": "N/A",
@@ -3550,7 +5404,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.2.3",
     "chapterId": 16,
-    "title": "Verify V16.2.3",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.2",
+    "sectionName": "General Logging",
+    "title": "General Logging",
     "description": "Verify that the application only stores or broadcasts logs to the files and services that are documented in the log inventory.",
     "level": 2,
     "status": "N/A",
@@ -3560,7 +5417,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.2.4",
     "chapterId": 16,
-    "title": "Verify V16.2.4",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.2",
+    "sectionName": "General Logging",
+    "title": "General Logging",
     "description": "Verify that logs can be read and correlated by the log processor that is in use, preferably by using a common logging format.",
     "level": 2,
     "status": "N/A",
@@ -3570,7 +5430,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.2.5",
     "chapterId": 16,
-    "title": "Verify V16.2.5",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.2",
+    "sectionName": "General Logging",
+    "title": "General Logging",
     "description": "Verify that when logging sensitive data, the application enforces logging based on the data's protection level. For example, it may not be allowed to log certain data, such as credentials or payment details. Other data, such as session tokens, may only be logged by being hashed or masked, either in full or partially.",
     "level": 2,
     "status": "N/A",
@@ -3580,22 +5443,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.3.1",
     "chapterId": 16,
-    "title": "Verify V16.3.1",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.3",
+    "sectionName": "Security Events",
+    "title": "Security Events",
     "description": "Verify that all authentication operations are logged, including successful and unsuccessful attempts. Additional metadata, such as the type of authentication or factors used, should also be collected.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Notification Service",
-        "color": "bg-pink-100 text-pink-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V16.3.2",
     "chapterId": 16,
-    "title": "Verify V16.3.2",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.3",
+    "sectionName": "Security Events",
+    "title": "Security Events",
     "description": "Verify that failed authorization attempts are logged. For L3, this must include logging all authorization decisions, including logging when sensitive data is accessed (without logging the sensitive data itself).",
     "level": 2,
     "status": "N/A",
@@ -3605,7 +5469,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.3.3",
     "chapterId": 16,
-    "title": "Verify V16.3.3",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.3",
+    "sectionName": "Security Events",
+    "title": "Security Events",
     "description": "Verify that the application logs the security events that are defined in the documentation and also logs attempts to bypass the security controls, such as input validation, business logic, and anti-automation.",
     "level": 2,
     "status": "N/A",
@@ -3615,7 +5482,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.3.4",
     "chapterId": 16,
-    "title": "Verify V16.3.4",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.3",
+    "sectionName": "Security Events",
+    "title": "Security Events",
     "description": "Verify that the application logs unexpected errors and security control failures such as backend TLS failures.",
     "level": 2,
     "status": "N/A",
@@ -3625,7 +5495,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.4.1",
     "chapterId": 16,
-    "title": "Verify V16.4.1",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.4",
+    "sectionName": "Log Protection",
+    "title": "Log Protection",
     "description": "Verify that all logging components appropriately encode data to prevent log injection.",
     "level": 2,
     "status": "N/A",
@@ -3635,7 +5508,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.4.2",
     "chapterId": 16,
-    "title": "Verify V16.4.2",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.4",
+    "sectionName": "Log Protection",
+    "title": "Log Protection",
     "description": "Verify that logs are protected from unauthorized access and cannot be modified.",
     "level": 2,
     "status": "N/A",
@@ -3645,7 +5521,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.4.3",
     "chapterId": 16,
-    "title": "Verify V16.4.3",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.4",
+    "sectionName": "Log Protection",
+    "title": "Log Protection",
     "description": "Verify that logs are securely transmitted to a logically separate system for analysis, detection, alerting, and escalation. The aim is to ensure that if the application is breached, the logs are not compromised.",
     "level": 2,
     "status": "N/A",
@@ -3655,7 +5534,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.5.1",
     "chapterId": 16,
-    "title": "Verify V16.5.1",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.5",
+    "sectionName": "Error Handling",
+    "title": "Error Handling",
     "description": "Verify that a generic message is returned to the consumer when an unexpected or security-sensitive error occurs, ensuring no exposure of sensitive internal system data such as stack traces, queries, secret keys, and tokens.",
     "level": 2,
     "status": "N/A",
@@ -3665,7 +5547,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.5.2",
     "chapterId": 16,
-    "title": "Verify V16.5.2",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.5",
+    "sectionName": "Error Handling",
+    "title": "Error Handling",
     "description": "Verify that the application continues to operate securely when external resource access fails, for example, by using patterns such as circuit breakers or graceful degradation.",
     "level": 2,
     "status": "N/A",
@@ -3675,7 +5560,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.5.3",
     "chapterId": 16,
-    "title": "Verify V16.5.3",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.5",
+    "sectionName": "Error Handling",
+    "title": "Error Handling",
     "description": "Verify that the application fails gracefully and securely, including when an exception occurs, preventing fail-open conditions such as processing a transaction despite errors resulting from validation logic.",
     "level": 2,
     "status": "N/A",
@@ -3685,22 +5573,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V16.5.4",
     "chapterId": 16,
-    "title": "Verify V16.5.4",
+    "chapterName": "Security Logging and Error Handling",
+    "sectionId": "V16.5",
+    "sectionName": "Error Handling",
+    "title": "Error Handling",
     "description": "Verify that a \"last resort\" error handler is defined which will catch all unhandled exceptions. This is both to avoid losing error details that must go to log files and to ensure that an error does not take down the entire application process, leading to a loss of availability.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Main Database",
-        "color": "bg-green-100 text-green-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V17.1.1",
     "chapterId": 17,
-    "title": "Verify V17.1.1",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.1",
+    "sectionName": "TURN Server",
+    "title": "TURN Server",
     "description": "Verify that the Traversal Using Relays around NAT (TURN) service only allows access to IP addresses that are not reserved for special purposes (e.g., internal networks, broadcast, loopback). Note that this applies to both IPv4 and IPv6 addresses.",
     "level": 2,
     "status": "N/A",
@@ -3710,7 +5599,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V17.1.2",
     "chapterId": 17,
-    "title": "Verify V17.1.2",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.1",
+    "sectionName": "TURN Server",
+    "title": "TURN Server",
     "description": "Verify that the Traversal Using Relays around NAT (TURN) service is not susceptible to resource exhaustion when legitimate users attempt to open a large number of ports on the TURN server.",
     "level": 3,
     "status": "N/A",
@@ -3720,7 +5612,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V17.2.1",
     "chapterId": 17,
-    "title": "Verify V17.2.1",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.2",
+    "sectionName": "Media",
+    "title": "Media",
     "description": "Verify that the key for the Datagram Transport Layer Security (DTLS) certificate is managed and protected based on the documented policy for management of cryptographic keys.",
     "level": 2,
     "status": "N/A",
@@ -3730,22 +5625,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V17.2.2",
     "chapterId": 17,
-    "title": "Verify V17.2.2",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.2",
+    "sectionName": "Media",
+    "title": "Media",
     "description": "Verify that the media server is configured to use and support approved Datagram Transport Layer Security (DTLS) cipher suites and a secure protection profile for the DTLS Extension for establishing keys for the Secure Real-time Transport Protocol (DTLS-SRTP).",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V17.2.3",
     "chapterId": 17,
-    "title": "Verify V17.2.3",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.2",
+    "sectionName": "Media",
+    "title": "Media",
     "description": "Verify that Secure Real-time Transport Protocol (SRTP) authentication is checked at the media server to prevent Real-time Transport Protocol (RTP) injection attacks from leading to either a Denial of Service condition or audio or video media insertion into media streams.",
     "level": 2,
     "status": "N/A",
@@ -3755,7 +5651,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V17.2.4",
     "chapterId": 17,
-    "title": "Verify V17.2.4",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.2",
+    "sectionName": "Media",
+    "title": "Media",
     "description": "Verify that the media server is able to continue processing incoming media traffic when encountering malformed Secure Real-time Transport Protocol (SRTP) packets.",
     "level": 2,
     "status": "N/A",
@@ -3765,7 +5664,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V17.2.5",
     "chapterId": 17,
-    "title": "Verify V17.2.5",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.2",
+    "sectionName": "Media",
+    "title": "Media",
     "description": "Verify that the media server is able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users.",
     "level": 3,
     "status": "N/A",
@@ -3775,22 +5677,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V17.2.6",
     "chapterId": 17,
-    "title": "Verify V17.2.6",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.2",
+    "sectionName": "Media",
+    "title": "Media",
     "description": "Verify that the media server is not susceptible to the \"ClientHello\" Race Condition vulnerability in Datagram Transport Layer Security (DTLS) by checking if the media server is publicly known to be vulnerable or by performing the race condition test.",
     "level": 3,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V17.2.7",
     "chapterId": 17,
-    "title": "Verify V17.2.7",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.2",
+    "sectionName": "Media",
+    "title": "Media",
     "description": "Verify that any audio or video recording mechanisms associated with the media server are able to continue processing incoming media traffic during a flood of Secure Real-time Transport Protocol (SRTP) packets from legitimate users.",
     "level": 3,
     "status": "N/A",
@@ -3800,7 +5703,10 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V17.2.8",
     "chapterId": 17,
-    "title": "Verify V17.2.8",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.2",
+    "sectionName": "Media",
+    "title": "Media",
     "description": "Verify that the Datagram Transport Layer Security (DTLS) certificate is checked against the Session Description Protocol (SDP) fingerprint attribute, terminating the media stream if the check fails, to ensure the authenticity of the media stream.",
     "level": 3,
     "status": "N/A",
@@ -3810,22 +5716,23 @@ export const asvsRequirements: ASVSRequirement[] = [
   {
     "id": "V17.3.1",
     "chapterId": 17,
-    "title": "Verify V17.3.1",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.3",
+    "sectionName": "Signaling",
+    "title": "Signaling",
     "description": "Verify that the signaling server is able to continue processing legitimate incoming signaling messages during a flood attack. This should be achieved by implementing rate limiting at the signaling level.",
     "level": 2,
     "status": "N/A",
-    "traceability": [
-      {
-        "id": "Auth Service",
-        "color": "bg-blue-100 text-blue-700"
-      }
-    ],
+    "traceability": [],
     "notes": ""
   },
   {
     "id": "V17.3.2",
     "chapterId": 17,
-    "title": "Verify V17.3.2",
+    "chapterName": "WebRTC",
+    "sectionId": "V17.3",
+    "sectionName": "Signaling",
+    "title": "Signaling",
     "description": "Verify that the signaling server is able to continue processing legitimate signaling messages when encountering malformed signaling message that could cause a denial of service condition. This could include implementing input validation, safely handling integer overflows, preventing buffer overflows, and employing other robust error-handling techniques.",
     "level": 2,
     "status": "N/A",
@@ -3833,3 +5740,19 @@ export const asvsRequirements: ASVSRequirement[] = [
     "notes": ""
   }
 ];
+
+/**
+ * Returns requirement IDs affected by a given triage question.
+ */
+export function getRequirementsForTriage(question: ASVSTriageQuestion, allReqs: ASVSRequirement[] = asvsRequirements): string[] {
+  if (question.targetScope === "chapter" && question.chapterId !== undefined) {
+    return allReqs.filter(r => r.chapterId === question.chapterId).map(r => r.id);
+  }
+  if (question.targetScope === "section" && question.sectionId) {
+    return allReqs.filter(r => r.sectionId === question.sectionId || r.id.startsWith(question.sectionId + ".")).map(r => r.id);
+  }
+  if (question.targetScope === "custom" && question.reqIds) {
+    return question.reqIds;
+  }
+  return [];
+}

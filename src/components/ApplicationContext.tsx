@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Save, Info, ChevronDown, Check, X } from "lucide-react";
+import { useParams } from "react-router-dom";
+import { Save, Info, ChevronDown, Check, X, SlidersHorizontal } from "lucide-react";
+import { ProjectCategorizationModal } from "./ProjectCategorizationModal";
 
 /**
  * Compliance Standards list / codebook (Číselník)
@@ -30,12 +32,22 @@ const USER_ROLES = [
 ];
 
 export function ApplicationContext() {
-  const [formData, setFormData] = useState({
-    businessPurpose: "E-commerce platform for retail customers.",
-    dataClassification: "Confidential",
-    complianceRequirements: ["GDPR", "PCI-DSS"] as string[],
-    userTypes: ["Unauthenticated", "Customer", "Admin"] as string[],
-    internetFacing: true,
+  const { id: analysisId } = useParams<{ id: string }>();
+  const contextStorageKey = `atap_context_${analysisId || "default"}`;
+  const [isCategorizationModalOpen, setIsCategorizationModalOpen] = useState(false);
+  const [isSaved, setIsSaved] = useState(false);
+  const [formData, setFormData] = useState(() => {
+    try {
+      const stored = localStorage.getItem(`atap_context_${analysisId || "default"}`);
+      if (stored) return JSON.parse(stored);
+    } catch (e) {}
+    return {
+      businessPurpose: "E-commerce platform for retail customers.",
+      dataClassification: "Confidential",
+      complianceRequirements: ["GDPR", "PCI-DSS"] as string[],
+      userTypes: ["Unauthenticated", "Customer", "Admin"] as string[],
+      internetFacing: true,
+    };
   });
 
   const [isComplianceOpen, setIsComplianceOpen] = useState(false);
@@ -93,9 +105,16 @@ export function ApplicationContext() {
     });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Application context saved successfully.");
+  const handleSubmit = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    try {
+      localStorage.setItem(contextStorageKey, JSON.stringify(formData));
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2500);
+      window.dispatchEvent(new Event("storage_workspace_update"));
+    } catch (err) {
+      console.error("Failed to save application context", err);
+    }
   };
 
   const filteredCompliance = COMPLIANCE_STANDARDS.filter(std =>
@@ -110,18 +129,34 @@ export function ApplicationContext() {
 
   return (
     <div className="flex flex-col h-full bg-slate-50 p-6 overflow-auto">
-      <div className="flex items-center justify-between mb-6 border-b border-slate-200 pb-4">
+      <div className="flex items-center justify-between mb-6 border-b border-slate-200 pb-4 flex-wrap gap-3">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Application Context</h2>
           <p className="text-sm text-slate-500 mt-1">Define the business and security context of the application.</p>
         </div>
-        <button 
-          onClick={handleSubmit}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700 transition-colors cursor-pointer"
-        >
-          <Save size={16} />
-          Save Context
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setIsCategorizationModalOpen(true)}
+            className="flex items-center gap-1.5 px-3.5 py-2 bg-white text-blue-700 border border-blue-200 rounded-md text-sm font-semibold hover:bg-blue-50 transition-colors cursor-pointer shadow-xs"
+          >
+            <SlidersHorizontal size={15} className="text-blue-600" />
+            <span>Kategorizácia projektu (ASVS)</span>
+          </button>
+          <button 
+            type="button"
+            id="save-context-btn"
+            onClick={() => handleSubmit()}
+            className={`flex items-center gap-2 px-4 py-2 text-sm font-semibold rounded-md shadow-sm transition-all cursor-pointer ${
+              isSaved 
+                ? "bg-emerald-600 text-white" 
+                : "bg-blue-600 hover:bg-blue-700 text-white"
+            }`}
+          >
+            {isSaved ? <Check size={16} /> : <Save size={16} />}
+            <span>{isSaved ? "Saved Context" : "Save Context"}</span>
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-3xl">
@@ -338,6 +373,16 @@ export function ApplicationContext() {
           </div>
         </form>
       </div>
+
+      <ProjectCategorizationModal
+        isOpen={isCategorizationModalOpen}
+        onClose={() => setIsCategorizationModalOpen(false)}
+        currentLevel="2"
+        onApplyLevel={(level) => {
+          // Can be synced to project settings
+        }}
+        analysisId={analysisId}
+      />
     </div>
   );
 }

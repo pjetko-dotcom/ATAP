@@ -64,9 +64,9 @@ export function FindingsAndGaps() {
       let findingCounter = findings.length + 1;
       
       // 2. Identify missing or partial ASVS requirements from the workspace data
-      const asvsKey = `atap_asvs_${analysisId || "default"}`;
+      const asvsKey = `atap_asvs_v5_${analysisId || "default"}`;
       let activeReqs: ASVSRequirement[] = asvsRequirements;
-      const stored = localStorage.getItem(asvsKey);
+      const stored = localStorage.getItem(asvsKey) || localStorage.getItem(`atap_asvs_${analysisId || "default"}`);
       if (stored) {
         try {
           activeReqs = JSON.parse(stored);
