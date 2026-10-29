@@ -21,6 +21,7 @@ import { VersionHistoryModal } from "./VersionHistoryModal";
 import { VersionDiffModal } from "./VersionDiffModal";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { RenameProjectModal } from "./RenameProjectModal";
+import { LOCAL_ACTIVITY_ACTOR } from "../utils/activityLog";
 
 const COMPONENT_ICONS: Record<string, React.ComponentType<any>> = {
   "Frontend App": LayoutTemplate,
@@ -120,7 +121,7 @@ function AnalysisLayoutInner() {
   // If viewing historical snapshot, use snapshot data for sidebar
   const displayReqs = isHistorical && activeSnapshot?.data?.asvsReqs ? activeSnapshot.data.asvsReqs : reqs;
   const displayLogs = isHistorical && activeSnapshot?.data?.logs ? activeSnapshot.data.logs : (logs.length > 0 ? logs : [
-    { id: "1", action: "Created Analysis Workspace", user: "Erik Novák", time: "Just now" }
+    { id: "1", action: "Created Analysis Workspace", user: LOCAL_ACTIVITY_ACTOR, time: "Just now" }
   ]);
 
   const totalReqs = displayReqs.length;
@@ -155,7 +156,7 @@ function AnalysisLayoutInner() {
     const newLog = {
       id: Date.now().toString(),
       action: `Note added: "${newNoteText}"`,
-      user: "Erik Novák",
+      user: LOCAL_ACTIVITY_ACTOR,
       time: "Just now"
     };
 
@@ -175,7 +176,7 @@ function AnalysisLayoutInner() {
       const saveLog = {
         id: Date.now().toString(),
         action: `Analýza úspešne uložená (ASVS L${currentAnalysis.asvsLevel}, v${currentWorkingVersion})`,
-        user: "Erik Novák",
+        user: LOCAL_ACTIVITY_ACTOR,
         time: "Práve teraz"
       };
       const updatedLogs = [saveLog, ...logs];

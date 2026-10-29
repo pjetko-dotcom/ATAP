@@ -7,6 +7,7 @@
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
 import { Shield, LayoutDashboard, FileText, Component, Lock, AlertTriangle, CheckCircle, FileDown, History, HelpCircle, X, Menu, Pin, PinOff, ChevronRight } from "lucide-react";
+import { LOCAL_ACTIVITY_ACTOR } from "../utils/activityLog";
 
 /**
  * Main Layout component.
@@ -178,8 +179,8 @@ export function Layout() {
           <div className="p-6 pt-2 flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-slate-700"></div>
             <div className="text-xs">
-              <p className="text-white font-medium">Erik Novák</p>
-              <p className="opacity-50 uppercase tracking-widest">Lead Analyst</p>
+              <p className="text-white font-medium">{LOCAL_ACTIVITY_ACTOR}</p>
+              <p className="opacity-50 uppercase tracking-widest">Offline profile</p>
             </div>
           </div>
         </div>

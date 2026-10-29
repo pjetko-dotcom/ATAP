@@ -1,7 +1,10 @@
 import ExcelJS from "exceljs";
-import { saveAs } from "file-saver";
+import FileSaver from "file-saver";
 import { ASVSRequirement, asvsChapters } from "../data/asvsData";
 import { getVerificationGuide } from "./verificationGuide";
+import { sanitizeCsvCell } from "./csv";
+
+const { saveAs } = FileSaver;
 
 export interface ExportOptions {
   analysisId?: string;
@@ -415,26 +418,21 @@ export function exportASVSToCSV(
   }
 
   // Helper to prevent CSV / Formula Injection (CWE-1236)
-  const sanitizeCsvField = (val: string | undefined | null): string => {
-    if (!val) return "";
-    let str = String(val).replace(/"/g, '""');
-    // If the string starts with formula characters, prefix with single quote
-    if (/^[=+\-@\t\r]/.test(str)) {
-      str = "'" + str;
-    }
-    return str;
-  };
-
   const header = "Requirement ID,Chapter ID,Chapter Name,Section ID,Section Name,Level,Requirement Description,Status,Triage Justification,Notes\n";
   const csvRows = filteredReqs.map(r => {
     const chapter = asvsChapters.find(c => c.id === r.chapterId);
-    const chapterName = sanitizeCsvField(chapter?.name || "");
-    const secName = sanitizeCsvField(r.sectionName || r.section_name || r.title || "");
-    const secId = sanitizeCsvField(r.sectionId || "");
-    const desc = sanitizeCsvField(r.description || "");
-    const triage = sanitizeCsvField(r.triageReason || "");
-    const notes = sanitizeCsvField(r.notes || "");
-    return `"${r.id}","V${r.chapterId}","${chapterName}","${secId}","${secName}",${r.level},"${desc}","${r.status}","${triage}","${notes}"`;
+    return [
+      sanitizeCsvCell(r.id),
+      sanitizeCsvCell(`V${r.chapterId}`),
+      sanitizeCsvCell(chapter?.name || ""),
+      sanitizeCsvCell(r.sectionId || ""),
+      sanitizeCsvCell(r.sectionName || r.section_name || r.title || ""),
+      sanitizeCsvCell(r.level),
+      sanitizeCsvCell(r.description || ""),
+      sanitizeCsvCell(r.status),
+      sanitizeCsvCell(r.triageReason || ""),
+      sanitizeCsvCell(r.notes || ""),
+    ].join(",");
   }).join("\n");
 
   // Include UTF-8 BOM (\uFEFF) so Excel on Windows opens diacritics / special characters correctly
@@ -454,4 +452,3 @@ export function exportASVSToCSV(
     URL.revokeObjectURL(url);
   }
 }
-

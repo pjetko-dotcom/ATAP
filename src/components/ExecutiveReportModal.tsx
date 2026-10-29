@@ -332,7 +332,7 @@ export function ExecutiveReportModal({
                 <span className="text-slate-400 uppercase font-semibold text-[10px] block">Vypracoval bezpečnostný audítor</span>
                 <div className="pt-8 border-b border-dashed border-slate-300"></div>
                 <div className="flex justify-between text-slate-600 text-[11px]">
-                  <span>Meno: Erik Novák</span>
+                  <span>Meno: ______________________</span>
                   <span>Dátum: {new Date().toLocaleDateString("sk-SK")}</span>
                 </div>
               </div>

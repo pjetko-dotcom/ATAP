@@ -2,11 +2,23 @@ import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import {defineConfig} from 'vite';
+import { getContentSecurityPolicy } from './contentSecurityPolicy.ts';
 
 export default defineConfig(() => {
   return {
     base: './',
-    plugins: [react(), tailwindcss()],
+    plugins: [
+      react(),
+      tailwindcss(),
+      {
+        name: 'atap-content-security-policy',
+        transformIndexHtml(html, context) {
+          const policy = getContentSecurityPolicy(context.bundle === undefined);
+          const meta = `<meta http-equiv="Content-Security-Policy" content="${policy}">`;
+          return html.replace('</head>', `  ${meta}\n  </head>`);
+        },
+      },
+    ],
     resolve: {
       alias: {
         '@': path.resolve(import.meta.dirname, '.'),

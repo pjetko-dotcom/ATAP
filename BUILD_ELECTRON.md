@@ -87,6 +87,7 @@ npm run electron:dev
 1. Spustí lokálny vývojový server Vite na porte `3000`.
 2. Pomocou nástroja `wait-on` počká, kým server odpovie na `http://localhost:3000`.
 3. Otvorí natívne Electron okno s načítanou aplikáciou a automaticky sprístupní **Chrome DevTools** (F12) na ladenie chýb a konzoly.
+4. V development režime sú povolené Vite/HMR CSP zdroje a DevTools; tieto výnimky sa nepoužívajú v produkčnom Electron builde.
 
 ---
 
@@ -117,6 +118,12 @@ npm run electron:build
 1. **Frontend Build:** `vite build` vytvorí optimalizovaný bundle v priečinku `dist/` s relatívnymi cestami (`base: './'`).
 2. **Backend Server Bundle:** `esbuild` pripraví standalone `dist/server.cjs`.
 3. **Electron Builder Packaging:** `electron-builder` zoberie obsah `dist/` a `electron/` a vytvorí binárne súbory pre Windows podľa konfigurácie v `package.json`.
+
+### Bezpečnostné obmedzenia
+* Produkčná aplikácia povoľuje navigáciu iba na aplikačný HTML súbor. HTTPS externé odkazy sa otvárajú mimo aplikácie v systémovom prehliadači; iné protokoly sú blokované.
+* Renderer beží so sandboxom, bez Node integrácie a s izolovaným kontextom. DevTools sú dostupné len počas vývoja.
+* Produkčná CSP povoľuje iba deklarované zdroje aplikácie a AI API. Pri pridaní externého zdroja aktualizujte `contentSecurityPolicy.ts` zámerne a otestujte vývojový aj produkčný režim.
+* Údaje a audit log sú lokálne v `localStorage`; log je upraviteľný a nepovažuje sa za nemenný bezpečnostný audit.
 
 ---
 

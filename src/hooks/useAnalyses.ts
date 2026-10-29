@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnalysisVersionSnapshot } from '../types/versioning';
 import { asvsRequirements } from '../data/asvsData';
+import { LOCAL_ACTIVITY_ACTOR } from '../utils/activityLog';
 
 export interface Analysis {
   id: string;
@@ -21,7 +22,7 @@ const SEED_V1_SNAPSHOT: AnalysisVersionSnapshot = {
   version: "1.0",
   label: "Iniciálny bezpečnostný baseline",
   createdAt: "2026-03-10T10:00:00.000Z",
-  createdBy: "Erik Novák",
+  createdBy: LOCAL_ACTIVITY_ACTOR,
   status: "Final",
   changeSummary: "Iniciálna verzia bezpečnostnej analýzy pred vstupom do auditu. Identifikované kľúčové riziká v autentifikácii a parameter tampering.",
   asvsLevel: "2",
@@ -234,7 +235,7 @@ export function useAnalyses() {
         const newLog = {
           id: Date.now().toString(),
           action: oldName ? `Projekt premenovaný z "${oldName}" na "${trimmed}".` : `Projekt premenovaný na "${trimmed}".`,
-          user: "Erik Novák",
+          user: LOCAL_ACTIVITY_ACTOR,
           time: "Práve teraz"
         };
         localStorage.setItem(logsKey, JSON.stringify([newLog, ...prevLogs]));
@@ -318,7 +319,7 @@ export function useAnalyses() {
       version: versionNumber,
       label: params.label || `Finálna verzia ${versionNumber}`,
       createdAt: new Date().toISOString(),
-      createdBy: params.createdBy || "Erik Novák",
+      createdBy: params.createdBy || LOCAL_ACTIVITY_ACTOR,
       status: "Final",
       changeSummary: params.changeSummary || `Verzia ${versionNumber} bola finalizovaná a uzatvorená.`,
       asvsLevel: targetAnalysis.asvsLevel || "2",
@@ -348,7 +349,7 @@ export function useAnalyses() {
     const auditLog = {
       id: Date.now().toString(),
       action: `Verzia v${versionNumber} bola úspešne finalizovaná a uzamknutá (Status: Final).`,
-      user: params.createdBy || "Erik Novák",
+      user: params.createdBy || LOCAL_ACTIVITY_ACTOR,
       time: "Práve teraz"
     };
     try {
@@ -408,7 +409,7 @@ export function useAnalyses() {
       const newLog = {
         id: Date.now().toString(),
         action: `Vytvorená nová pracovná verzia v${newVersionNumber} (zo stavu v${targetAnalysis.currentVersion}).`,
-        user: "Erik Novák",
+        user: LOCAL_ACTIVITY_ACTOR,
         time: "Práve teraz"
       };
       localStorage.setItem(logsKey, JSON.stringify([newLog, ...prevLogs]));
@@ -434,4 +435,3 @@ export function useAnalyses() {
     createNewVersion 
   };
 }
-

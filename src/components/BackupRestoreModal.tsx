@@ -22,7 +22,9 @@ import {
   exportSingleProjectBackup, 
   exportAllProjectsBackup, 
   restoreBackup, 
-  RestoreResult 
+  RestoreResult,
+  MAX_BACKUP_SIZE,
+  validateBackup,
 } from "../utils/backupRestore";
 
 interface BackupRestoreModalProps {
@@ -86,23 +88,50 @@ export function BackupRestoreModal({
     const file = e.target.files?.[0];
     if (!file) return;
 
-    setSelectedFile(file);
     setStatusMessage(null);
+    setFileContent(null);
+    setParsedPreview(null);
+    if (file.size > MAX_BACKUP_SIZE) {
+      setSelectedFile(null);
+      setStatusMessage({
+        type: "error",
+        text: "Súbor zálohy presahuje maximálnu povolenú veľkosť (25 MB)."
+      });
+      e.target.value = "";
+      return;
+    }
+
+    setSelectedFile(file);
 
     const reader = new FileReader();
     reader.onload = (event) => {
       try {
-        const text = event.target?.result as string;
+        const text = event.target?.result;
+        if (typeof text !== "string") {
+          throw new Error("Súbor sa nepodarilo prečítať ako text.");
+        }
+        const validationError = validateBackup(text);
+        if (validationError) {
+          setFileContent(null);
+          setParsedPreview(null);
+          setStatusMessage({ type: "error", text: validationError });
+          return;
+        }
         setFileContent(text);
-        const parsed = JSON.parse(text);
-        setParsedPreview(parsed);
-      } catch (err) {
+        setParsedPreview(JSON.parse(text));
+      } catch {
+        setFileContent(null);
         setParsedPreview(null);
         setStatusMessage({
           type: "error",
           text: "Zvolený súbor neobsahuje platný JSON formát."
         });
       }
+    };
+    reader.onerror = () => {
+      setFileContent(null);
+      setParsedPreview(null);
+      setStatusMessage({ type: "error", text: "Súbor sa nepodarilo prečítať." });
     };
     reader.readAsText(file);
   };

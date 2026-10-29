@@ -1,9 +1,13 @@
-const { app, BrowserWindow, Menu, shell, ipcMain } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
 const path = require('path');
+const { fileURLToPath } = require('url');
 
 let mainWindow;
 
 function createWindow() {
+  const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_DEV === 'true';
+  const appPagePath = path.resolve(__dirname, '../dist/index.html');
+
   mainWindow = new BrowserWindow({
     width: 1366,
     height: 850,
@@ -16,39 +20,54 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       webSecurity: true,
+      sandbox: true,
+      devTools: isDev,
     },
     autoHideMenuBar: false,
   });
-
-  const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_DEV === 'true';
 
   if (isDev) {
     mainWindow.loadURL('http://localhost:3000');
     mainWindow.webContents.openDevTools();
   } else {
     // Load static HTML file for standalone 100% offline usage
-    mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
+    mainWindow.loadFile(appPagePath);
   }
+
+  const openExternalHttpsUrl = (url) => {
+    try {
+      if (new URL(url).protocol === 'https:') {
+        shell.openExternal(url).catch((error) => {
+          console.error('Failed to open external URL:', error);
+        });
+      }
+    } catch (error) {
+      console.error('Rejected invalid external URL:', error);
+    }
+  };
 
   // Handle external links safely in system default browser (deny in-app popups)
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (url.startsWith('http:') || url.startsWith('https:')) {
-      shell.openExternal(url);
-    }
+    openExternalHttpsUrl(url);
     return { action: 'deny' };
   });
 
-  // Prevent navigation to unknown remote domains
+  // Keep the main frame on the app page; external HTTPS links open in the system browser.
   mainWindow.webContents.on('will-navigate', (event, navigationUrl) => {
-    const parsed = new URL(navigationUrl);
-    if (parsed.protocol === 'http:' && (parsed.hostname === 'localhost' || parsed.hostname === '127.0.0.1')) {
-      return;
+    try {
+      const parsed = new URL(navigationUrl);
+      if (isDev && parsed.origin === 'http://localhost:3000') {
+        return;
+      }
+      if (!isDev && parsed.protocol === 'file:' && fileURLToPath(parsed) === appPagePath) {
+        return;
+      }
+    } catch (error) {
+      console.error('Rejected invalid navigation URL:', error);
     }
-    if (parsed.protocol === 'file:') {
-      return;
-    }
+
     event.preventDefault();
-    shell.openExternal(navigationUrl);
+    openExternalHttpsUrl(navigationUrl);
   });
 
   mainWindow.on('closed', () => {
@@ -57,7 +76,7 @@ function createWindow() {
 }
 
 // Application Menu Setup
-function createMenu() {
+function createMenu(isDev) {
   const menuTemplate = [
     {
       label: 'Súbor',
@@ -87,8 +106,10 @@ function createMenu() {
         { label: 'Priblížiť', role: 'zoomIn' },
         { label: 'Oddialiť', role: 'zoomOut' },
         { label: 'Resetovať priblíženie', role: 'resetZoom' },
-        { type: 'separator' },
-        { label: 'Vývojárske nástroje', role: 'toggleDevTools' }
+        ...(isDev ? [
+          { type: 'separator' },
+          { label: 'Vývojárske nástroje', role: 'toggleDevTools' }
+        ] : [])
       ]
     },
     {
@@ -103,7 +124,6 @@ function createMenu() {
         {
           label: 'O aplikácii ATAP',
           click: () => {
-            const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: 'O aplikácii ATAP',
@@ -122,7 +142,8 @@ function createMenu() {
 }
 
 app.whenReady().then(() => {
-  createMenu();
+  const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_DEV === 'true';
+  createMenu(isDev);
   createWindow();
 
   app.on('activate', () => {

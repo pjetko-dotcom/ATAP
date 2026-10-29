@@ -5,19 +5,21 @@
  * 
  * @module backupRestore
  */
-import { saveAs } from "file-saver";
+import FileSaver from "file-saver";
+
+const { saveAs } = FileSaver;
 
 export interface ProjectBackupData {
   version: "1.0";
   exportedAt: string;
-  project: any;
-  asvsReqs?: any[];
-  auditLogs?: any[];
+  project: Record<string, unknown>;
+  asvsReqs?: unknown[];
+  auditLogs?: unknown[];
   triageAnswers?: Record<string, boolean>;
-  context?: any;
+  context?: Record<string, unknown>;
   targetLevel?: number | "all";
-  architecture?: any;
-  threats?: any[];
+  architecture?: Record<string, unknown>;
+  threats?: unknown[];
 }
 
 export interface FullBackupArchive {
@@ -72,7 +74,8 @@ export function exportSingleProjectBackup(analysisId: string): boolean {
   const backup = getProjectBackupObject(analysisId);
   if (!backup) return false;
 
-  const sanitizedName = (backup.project.name || "project")
+  const projectName = typeof backup.project.name === "string" ? backup.project.name : "project";
+  const sanitizedName = projectName
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, "_");
   const fileName = `ATAP_backup_${sanitizedName}_v${backup.project.currentVersion || "1.0"}_${new Date().toISOString().split("T")[0]}.json`;
@@ -125,6 +128,129 @@ export interface RestoreResult {
   error?: string;
 }
 
+export const MAX_BACKUP_SIZE = 25 * 1024 * 1024;
+const MAX_PROJECTS_PER_BACKUP = 100;
+const PROJECT_STORAGE_SUFFIXES = [
+  "asvs_v5",
+  "logs_v5",
+  "triage_v5",
+  "context",
+  "asvs_target_level",
+  "architecture",
+  "threats",
+] as const;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function containsUnsafeKeys(value: unknown, depth = 0): boolean {
+  if (depth > 50) return true;
+  if (Array.isArray(value)) return value.some(item => containsUnsafeKeys(item, depth + 1));
+  if (!isRecord(value)) return false;
+
+  return Object.entries(value).some(([key, child]) =>
+    key === "__proto__" || key === "constructor" || key === "prototype" ||
+    containsUnsafeKeys(child, depth + 1)
+  );
+}
+
+function isRecordArray(value: unknown, maxLength: number): value is Record<string, unknown>[] {
+  return Array.isArray(value) && value.length <= maxLength && value.every(isRecord);
+}
+
+function getBackupItems(parsed: unknown): { items: ProjectBackupData[] } | { error: string } {
+  if (!isRecord(parsed) || containsUnsafeKeys(parsed)) {
+    return { error: "Záloha obsahuje neplatnú alebo nebezpečnú štruktúru." };
+  }
+
+  let candidates: unknown[];
+  if (parsed.type === "atap_full_backup" && parsed.backupFormatVersion === "1.0" && Array.isArray(parsed.projects)) {
+    candidates = parsed.projects;
+  } else if (parsed.version === "1.0" && isRecord(parsed.project)) {
+    candidates = [parsed];
+  } else {
+    return { error: "Neplatný formát zálohy. Súbor neobsahuje platnú štruktúru ATAP projektu." };
+  }
+
+  if (candidates.length === 0 || candidates.length > MAX_PROJECTS_PER_BACKUP) {
+    return { error: `Záloha musí obsahovať 1 až ${MAX_PROJECTS_PER_BACKUP} projektov.` };
+  }
+
+  const items: ProjectBackupData[] = [];
+  for (const candidate of candidates) {
+    if (!isRecord(candidate) || candidate.version !== "1.0" || !isRecord(candidate.project)) {
+      return { error: "Záloha obsahuje projekt v nepodporovanom formáte." };
+    }
+
+    const project = candidate.project;
+    if (
+      typeof project.id !== "string" ||
+      !/^[A-Za-z0-9_-]{1,128}$/.test(project.id) ||
+      typeof project.name !== "string" ||
+      project.name.trim().length === 0 ||
+      project.name.trim().length > 150
+    ) {
+      return { error: "Projekt v zálohe nemá platný identifikátor alebo názov." };
+    }
+
+    if (candidate.asvsReqs !== undefined && !isRecordArray(candidate.asvsReqs, 5000)) {
+      return { error: "ASVS požiadavky v zálohe majú neplatný formát." };
+    }
+    if (candidate.auditLogs !== undefined && !isRecordArray(candidate.auditLogs, 50000)) {
+      return { error: "Audit log v zálohe má neplatný formát." };
+    }
+    if (
+      candidate.triageAnswers !== undefined &&
+      (!isRecord(candidate.triageAnswers) || Object.values(candidate.triageAnswers).some(value => typeof value !== "boolean"))
+    ) {
+      return { error: "Triage odpovede v zálohe majú neplatný formát." };
+    }
+    if (candidate.context !== undefined && !isRecord(candidate.context)) {
+      return { error: "Kontext projektu v zálohe má neplatný formát." };
+    }
+    if (
+      candidate.targetLevel !== undefined &&
+      candidate.targetLevel !== "all" &&
+      !(typeof candidate.targetLevel === "number" && [1, 2, 3].includes(candidate.targetLevel))
+    ) {
+      return { error: "Cieľová ASVS úroveň v zálohe je neplatná." };
+    }
+    if (
+      candidate.architecture !== undefined &&
+      (!isRecord(candidate.architecture) ||
+        (candidate.architecture.components !== undefined && !isRecordArray(candidate.architecture.components, 5000)) ||
+        (candidate.architecture.flows !== undefined && !isRecordArray(candidate.architecture.flows, 10000)))
+    ) {
+      return { error: "Architektúra v zálohe má neplatný formát." };
+    }
+    if (candidate.threats !== undefined && !isRecordArray(candidate.threats, 10000)) {
+      return { error: "Register hrozieb v zálohe má neplatný formát." };
+    }
+
+    items.push(candidate as unknown as ProjectBackupData);
+  }
+
+  return { items };
+}
+
+function parseBackup(jsonString: string): { items: ProjectBackupData[] } | { error: string } {
+  if (!jsonString || jsonString.length > MAX_BACKUP_SIZE) {
+    return { error: "Súbor zálohy je prázdny alebo presahuje maximálnu povolenú veľkosť (25 MB)." };
+  }
+
+  try {
+    return getBackupItems(JSON.parse(jsonString) as unknown);
+  } catch {
+    return { error: "Súbor zálohy neobsahuje platný JSON." };
+  }
+}
+
+export function validateBackup(jsonString: string): string | null {
+  const parsed = parseBackup(jsonString);
+  return "error" in parsed ? parsed.error : null;
+}
+
 /**
  * Validates and restores backup JSON into localStorage.
  * Supports both single project backup and full archive.
@@ -133,72 +259,41 @@ export interface RestoreResult {
  */
 export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' = 'new_id'): RestoreResult {
   try {
-    // Security: Check payload size to prevent browser freeze/memory DoS (max 25MB)
-    if (!jsonString || jsonString.length > 25 * 1024 * 1024) {
-      return {
-        success: false,
-        importedCount: 0,
-        projectNames: [],
-        error: "Súbor zálohy je prázdny alebo presahuje maximálnu povolenú veľkosť (25 MB)."
-      };
+    if (mode !== "new_id" && mode !== "overwrite") {
+      return { success: false, importedCount: 0, projectNames: [], error: "Neplatný režim obnovy zálohy." };
     }
 
-    // Security: Prototype pollution guard
-    if (jsonString.includes('"__proto__"') || jsonString.includes('"constructor"') || jsonString.includes('"prototype"')) {
-      return {
-        success: false,
-        importedCount: 0,
-        projectNames: [],
-        error: "Bezpečnostné varovanie: Záloha obsahuje podozrivé kľúče objektov (Prototype Pollution guard)."
-      };
-    }
-
-    const parsed = JSON.parse(jsonString);
-
-    let itemsToRestore: ProjectBackupData[] = [];
-
-    if (parsed.type === "atap_full_backup" && Array.isArray(parsed.projects)) {
-      itemsToRestore = parsed.projects;
-    } else if (parsed.project && parsed.version) {
-      itemsToRestore = [parsed as ProjectBackupData];
-    } else {
-      return {
-        success: false,
-        importedCount: 0,
-        projectNames: [],
-        error: "Neplatný formát zálohy. Súbor neobsahuje platnú štruktúru ATAP projektu."
-      };
-    }
-
-    if (itemsToRestore.length === 0) {
-      return {
-        success: false,
-        importedCount: 0,
-        projectNames: [],
-        error: "Záloha neobsahuje žiadne projekty na obnovu."
-      };
+    const parsed = parseBackup(jsonString);
+    if ("error" in parsed) {
+      return { success: false, importedCount: 0, projectNames: [], error: parsed.error };
     }
 
     // Load existing analyses list
     const rawAnalyses = localStorage.getItem("atap_analyses");
-    let currentAnalyses: any[] = rawAnalyses ? JSON.parse(rawAnalyses) : [];
-    if (!Array.isArray(currentAnalyses)) currentAnalyses = [];
+    const parsedAnalyses: unknown = rawAnalyses ? JSON.parse(rawAnalyses) : [];
+    if (!Array.isArray(parsedAnalyses) || !parsedAnalyses.every(isRecord)) {
+      return { success: false, importedCount: 0, projectNames: [], error: "Existujúci zoznam projektov je poškodený; obnova bola zrušená." };
+    }
 
+    let currentAnalyses = parsedAnalyses;
     const restoredNames: string[] = [];
+    const writes = new Map<string, string | null>();
 
-    for (const item of itemsToRestore) {
+    for (const item of parsed.items) {
       const origProj = item.project;
-      if (!origProj || !origProj.name || typeof origProj.name !== "string") continue;
-
-      let targetId = String(origProj.id || "").replace(/[^a-zA-Z0-9_-]/g, "");
-      let targetName = String(origProj.name).trim().slice(0, 150);
+      let targetId = String(origProj.id);
+      let targetName = String(origProj.name).trim();
 
       if (mode === 'new_id') {
-        targetId = `proj_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-        // Check if name already exists, add (Obnovené) suffix if needed
-        const nameExists = currentAnalyses.some(a => a.name.toLowerCase() === origProj.name.toLowerCase());
+        targetId = `proj_${crypto.randomUUID()}`;
+        while (currentAnalyses.some(analysis => analysis.id === targetId)) {
+          targetId = `proj_${crypto.randomUUID()}`;
+        }
+        const nameExists = currentAnalyses.some(
+          analysis => typeof analysis.name === "string" && analysis.name.toLowerCase() === targetName.toLowerCase()
+        );
         if (nameExists) {
-          targetName = `${origProj.name} (Obnovené)`;
+          targetName = `${targetName.slice(0, 137)} (Obnovené)`;
         }
       }
 
@@ -211,37 +306,60 @@ export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' =
       // If overwrite mode, remove existing project metadata
       if (mode === 'overwrite') {
         currentAnalyses = currentAnalyses.filter(a => a.id !== targetId);
+        for (const suffix of PROJECT_STORAGE_SUFFIXES) {
+          writes.set(`atap_${suffix}_${targetId}`, null);
+        }
       }
       currentAnalyses.unshift(newProjMeta);
 
-      // Restore specific storage items
-      if (item.asvsReqs) {
-        localStorage.setItem(`atap_asvs_v5_${targetId}`, JSON.stringify(item.asvsReqs));
-      }
-      if (item.auditLogs) {
-        localStorage.setItem(`atap_logs_v5_${targetId}`, JSON.stringify(item.auditLogs));
-      }
-      if (item.triageAnswers) {
-        localStorage.setItem(`atap_triage_v5_${targetId}`, JSON.stringify(item.triageAnswers));
-      }
-      if (item.context) {
-        localStorage.setItem(`atap_context_${targetId}`, JSON.stringify(item.context));
-      }
-      if (item.targetLevel !== undefined) {
-        localStorage.setItem(`atap_asvs_target_level_${targetId}`, String(item.targetLevel));
-      }
-      if (item.architecture) {
-        localStorage.setItem(`atap_architecture_${targetId}`, JSON.stringify(item.architecture));
-      }
-      if (item.threats) {
-        localStorage.setItem(`atap_threats_${targetId}`, JSON.stringify(item.threats));
+      const projectData: Array<[string, unknown]> = [
+        [`atap_asvs_v5_${targetId}`, item.asvsReqs],
+        [`atap_logs_v5_${targetId}`, item.auditLogs],
+        [`atap_triage_v5_${targetId}`, item.triageAnswers],
+        [`atap_context_${targetId}`, item.context],
+        [`atap_asvs_target_level_${targetId}`, item.targetLevel],
+        [`atap_architecture_${targetId}`, item.architecture],
+        [`atap_threats_${targetId}`, item.threats],
+      ];
+      for (const [key, value] of projectData) {
+        if (value !== undefined) writes.set(key, JSON.stringify(value));
       }
 
       restoredNames.push(targetName);
     }
 
-    // Save updated analyses list
-    localStorage.setItem("atap_analyses", JSON.stringify(currentAnalyses));
+    writes.set("atap_analyses", JSON.stringify(currentAnalyses));
+
+    const previousValues = new Map<string, string | null>();
+    for (const key of writes.keys()) {
+      previousValues.set(key, localStorage.getItem(key));
+    }
+
+    try {
+      for (const [key, value] of writes) {
+        if (value === null) localStorage.removeItem(key);
+        else localStorage.setItem(key, value);
+      }
+    } catch (writeError) {
+      let rollbackFailed = false;
+      for (const [key, value] of [...previousValues].reverse()) {
+        try {
+          if (value === null) localStorage.removeItem(key);
+          else localStorage.setItem(key, value);
+        } catch {
+          rollbackFailed = true;
+        }
+      }
+      const reason = writeError instanceof Error ? writeError.message : String(writeError);
+      return {
+        success: false,
+        importedCount: 0,
+        projectNames: [],
+        error: rollbackFailed
+          ? `Obnova zlyhala (${reason}) a úplné vrátenie zmien sa nepodarilo. Skontrolujte úložisko a obnovte zálohu.`
+          : `Obnova zlyhala (${reason}); zmeny boli vrátené.`,
+      };
+    }
 
     // Dispatch update events to reload all workspace hooks and views
     window.dispatchEvent(new Event("storage_workspace_update"));
@@ -252,12 +370,13 @@ export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' =
       importedCount: restoredNames.length,
       projectNames: restoredNames
     };
-  } catch (err: any) {
+  } catch (err) {
+    const reason = err instanceof Error ? err.message : String(err);
     return {
       success: false,
       importedCount: 0,
       projectNames: [],
-      error: `Chyba pri spracovaní JSON súboru: ${err.message || String(err)}`
+      error: `Chyba pri spracovaní JSON súboru: ${reason}`
     };
   }
 }

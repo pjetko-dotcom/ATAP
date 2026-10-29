@@ -18,8 +18,11 @@ V repozitári sú pripravené podrobné sprievodcovské dokumenty:
 * **[📦 Sprievodca Migráciou Projektu a Vývojárskou Architektúrou (MIGRATION_AND_DEVELOPMENT.md)](./MIGRATION_AND_DEVELOPMENT.md)**:
   * Postup pri prenose projektu na iný počítač, do nového Git repozitára alebo na CI/CD server.
   * Kompletná schéma adresárov a súborov.
-  * Architektúra perzistencie (LocalStorage, JSON import/export, Audit Trail, Drizzle ORM).
+  * Architektúra perzistencie (LocalStorage, JSON import/export, lokálny activity log, Drizzle ORM).
   * Duálne smerovanie (`HashRouter` pre offline desktop vs. `BrowserRouter` pre web).
+
+* **[🔐 Bezpečnostné následné kroky (SECURITY_FOLLOW_UPS.md)](./SECURITY_FOLLOW_UPS.md)**:
+  * Záznam realizovaných bezpečnostných opatrení a otvorených odporúčaní na ďalšie iterácie.
 
 ---
 
@@ -77,6 +80,7 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 | `dev` | `npm run dev` | Spustí lokálny dev server na porte 3000 |
 | `build` | `npm run build` | Vytvorí produkčný webový build v `dist/` |
 | `lint` | `npm run lint` | Skontroluje integritu TypeScript typov (`tsc --noEmit`) |
+| `test` | `npm test` | Spustí cielené testy záloh, CSV sanitizácie a CSP |
 | `clean` | `npm run clean` | Vyčistí priečinky `dist/`, `server.cjs` a `release/` |
 | `electron:dev` | `npm run electron:dev` | Vývojový režim pre desktop s Vite hot-reloadom |
 | `electron:preview` | `npm run electron:preview` | Otestuje produkčný lokálny build v Electrone |
@@ -84,14 +88,18 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 
 ---
 
-## 🔒 Bezpečnostný Profil Desktop Aplikácie
+## 🔒 Bezpečnostný Profil
 
-Desktopová verzia aplikácie spĺňa bezpečnostné osvedčené postupy pre Electron:
-* **Context Isolation:** Zapnutá (`contextIsolation: true`).
-* **Node Integration:** Vypnutá (`nodeIntegration: false`) v renderer procese.
-* **Web Security:** Striktne zapnutá (`webSecurity: true`).
-* **Sandbox & Bezpečná navigácia:** Externé odkazy sa otvárajú výhradne v predvolenom webovom prehliadači používateľa (`shell.openExternal`), in-app navigácia mimo aplikáciu je blokovaná.
-* **100% Offline & Bezpečie Dát:** Aplikácia neodosiela žiadne telemetrické ani firemné bezpečnostné dáta do cloudu.
+* Express API štandardne počúva iba na `127.0.0.1`; pre zmenu portu použite `PORT`. API nie je autentifikované a nie je určené na priame vystavenie do siete.
+* Produkčná CSP sa uplatňuje cez serverovú hlavičku a HTML meta tag. Vývoj povoľuje dodatočné Vite/HMR zdroje, ktoré sa do produkčnej CSP nepridávajú.
+* Import záloh kontroluje štruktúru a veľkosť (25 MiB, najviac 100 projektov); obnova sa pokúsi vrátiť pôvodné hodnoty pri zlyhaní zápisu.
+* CSV export ošetruje všetky bunky proti formula injection a správne escapuje úvodzovky.
+* Electron desktopová verzia používa:
+  * **Context Isolation:** Zapnutá (`contextIsolation: true`).
+  * **Node Integration:** Vypnutá (`nodeIntegration: false`) v renderer procese.
+  * **Web Security:** Striktne zapnutá (`webSecurity: true`).
+  * **Sandbox & Bezpečná navigácia:** Produkčná navigácia je obmedzená na aplikačnú stránku; HTTPS externé odkazy sa otvárajú v systémovom prehliadači.
+* Activity log sa uchováva lokálne a možno ho upraviť. Nejde o dôveryhodný ani nemenný bezpečnostný audit; ďalšie kroky sú popísané v [SECURITY_FOLLOW_UPS.md](./SECURITY_FOLLOW_UPS.md).
 
 ---
 

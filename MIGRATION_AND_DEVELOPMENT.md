@@ -130,12 +130,20 @@ Nasledujúci prehľad uvádza technický stack aplikácie spolu so zhodnotením 
 1. **Lokálne úložisko (LocalStorage & State):**
    * Všetky analýzy, stav OWASP ASVS 5.0 požiadaviek (Implemented, Partial, Missing, N/A), STRIDE hrozby, matica rizík (5x5 Risk Matrix), kontext aplikácie a audit log sú uložené lokálne.
    * Dáta pretrvávajú medzi reštartmi aplikácie aj reštartmi počítača.
-2. **Správa verzií a audit (Audit Trail):**
-   * Modul `src/context/AnalysisVersionContext.tsx` a `src/utils/backupRestore.ts` sledujú históriu zmien, vytváranie snapshotov verzií a auditné záznamy.
+2. **História a activity log:**
+   * Klientské moduly uchovávajú históriu zmien, snapshoty verzií a activity log v `localStorage`.
+   * Tieto záznamy sú používateľsky upraviteľné a bez autentifikácie/serverového append-only úložiska nie sú dôveryhodným bezpečnostným auditom.
 3. **Zálohovanie a Prenosnosť dát (JSON Export/Import):**
-   * Užívateľ môže kedykoľvek vyexportovať kompletný stav projektu do štruktúrovaného `.json` súboru a naimportovať ho na inom počítači alebo inom inštalovanom klientovi.
+   * Import kontroluje štruktúru, nebezpečné objektové kľúče, veľkosť súboru (25 MiB) a počet projektov (100); pri chybe zápisu obnovuje predchádzajúce hodnoty.
+   * Užívateľ môže vyexportovať stav projektu do `.json` súboru a importovať ho na inom počítači alebo klientovi.
 4. **Excel a CSV Export:**
-   * Nástroj `src/utils/exportToExcel.ts` umožňuje generovať oficiálne audítorské reporty pre manažment a compliance tímy.
+   * Nástroj `src/utils/exportToExcel.ts` umožňuje generovať reporty; CSV bunky sú escapované a chránené pred formula injection.
+
+### Bezpečnostné hranice nasadenia
+* Express server binduje na `127.0.0.1` a API nemá autentifikáciu. Nepoužívajte ho ako zdieľané sieťové API bez doplnenia autentifikácie a autorizácie.
+* Produkčná CSP je definovaná v `contentSecurityPolicy.ts`; vývojová politika navyše povoľuje Vite/HMR.
+* Electron renderer používa sandbox a obmedzenú navigáciu. HTTPS externé odkazy sa otvárajú v systémovom prehliadači.
+* Ďalšie otvorené odporúčania sú evidované v [SECURITY_FOLLOW_UPS.md](./SECURITY_FOLLOW_UPS.md).
 
 ### B. OWASP ASVS 5.0 Databáza
 * Aplikácia obsahuje plnú implementáciu OWASP ASVS verzie 5.0.

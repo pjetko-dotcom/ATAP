@@ -47,7 +47,7 @@ export interface AnalysisVersionSnapshot {
   version: string;             // e.g. "1.0", "1.1", "2.0"
   label?: string;              // e.g. "Production Baseline", "Q3 Security Audit"
   createdAt: string;           // ISO date string (e.g. "2026-03-10T10:00:00.000Z")
-  createdBy: string;           // e.g. "Erik Novák"
+  createdBy: string;           // Self-reported; not authenticated
   status: "Draft" | "Final";   // Final = immutable snapshot; Draft = in progress
   changeSummary?: string;      // Description of changes or release notes
   asvsLevel: string;           // e.g. "2"

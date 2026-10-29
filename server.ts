@@ -4,10 +4,13 @@ import { createServer as createViteServer } from "vite";
 import { db } from "./src/db/index.js";
 import { asvsRequirements, analyses, applications, components, threats, assessmentRecords, findings } from "./src/db/schema.js";
 import { eq } from "drizzle-orm";
+import { getContentSecurityPolicy } from "./contentSecurityPolicy.js";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = Number(process.env.PORT) || 3000;
+  const HOST = "127.0.0.1";
+  const isProduction = process.env.NODE_ENV === "production";
 
   // Security Hardening: Disable Express fingerprinting
   app.disable("x-powered-by");
@@ -15,10 +18,14 @@ async function startServer() {
   // Security Hardening: Standard HTTP Security Headers
   app.use((req, res, next) => {
     res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("X-Frame-Options", "SAMEORIGIN");
-    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Content-Security-Policy", getContentSecurityPolicy(!isProduction));
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+    next();
+  });
+
+  app.use("/api", (_req, res, next) => {
+    res.setHeader("Cache-Control", "no-store");
     next();
   });
 
@@ -72,7 +79,7 @@ async function startServer() {
   });
 
   // Vite middleware for development
-  if (process.env.NODE_ENV !== "production") {
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
@@ -89,8 +96,8 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.listen(PORT, HOST, () => {
+    console.log(`Server running on http://${HOST}:${PORT}`);
   });
 }
 

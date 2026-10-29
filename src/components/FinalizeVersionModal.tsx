@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { X, Lock, CheckCircle, ShieldCheck } from "lucide-react";
 import { useAnalysisVersion } from "../context/AnalysisVersionContext";
+import { LOCAL_ACTIVITY_ACTOR } from "../utils/activityLog";
 
 export function FinalizeVersionModal() {
   const { 
@@ -14,7 +15,7 @@ export function FinalizeVersionModal() {
   const [versionNumber, setVersionNumber] = useState(currentWorkingVersion || "1.0");
   const [label, setLabel] = useState(`Finálna verzia v${currentWorkingVersion || "1.0"}`);
   const [changeSummary, setChangeSummary] = useState("Ukončená a schválená bezpečnostná analýza. Všetky prioritné hrozby a požiadavky OWASP ASVS boli verifikované.");
-  const [createdBy, setCreatedBy] = useState("Erik Novák");
+  const [createdBy, setCreatedBy] = useState(LOCAL_ACTIVITY_ACTOR);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (!isFinalizeModalOpen) return null;
@@ -86,15 +87,16 @@ export function FinalizeVersionModal() {
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">Schválil / Autor</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">Zadaný autor (neoverené)</label>
               <input 
                 type="text" 
                 value={createdBy}
                 onChange={(e) => setCreatedBy(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg text-sm text-slate-800 focus:bg-white focus:border-blue-500 focus:outline-none"
-                placeholder="Meno audítora / analytika"
+                placeholder="Meno autora"
                 required
               />
+              <p className="mt-1 text-xs text-amber-700">Meno sa ukladá lokálne a nie je overené prihlásením.</p>
             </div>
           </div>
 
