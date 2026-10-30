@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnalysisVersionSnapshot } from '../types/versioning';
 import { asvsRequirements } from '../data/asvsData';
-import { LOCAL_ACTIVITY_ACTOR } from '../utils/activityLog';
+import { getCurrentUserName, LOCAL_ACTIVITY_ACTOR } from '../utils/activityLog';
 
 export interface Analysis {
   id: string;
@@ -235,7 +235,7 @@ export function useAnalyses() {
         const newLog = {
           id: Date.now().toString(),
           action: oldName ? `Projekt premenovaný z "${oldName}" na "${trimmed}".` : `Projekt premenovaný na "${trimmed}".`,
-          user: LOCAL_ACTIVITY_ACTOR,
+          user: getCurrentUserName(),
           time: "Práve teraz"
         };
         localStorage.setItem(logsKey, JSON.stringify([newLog, ...prevLogs]));
@@ -319,7 +319,7 @@ export function useAnalyses() {
       version: versionNumber,
       label: params.label || `Finálna verzia ${versionNumber}`,
       createdAt: new Date().toISOString(),
-      createdBy: params.createdBy || LOCAL_ACTIVITY_ACTOR,
+      createdBy: params.createdBy || getCurrentUserName(),
       status: "Final",
       changeSummary: params.changeSummary || `Verzia ${versionNumber} bola finalizovaná a uzatvorená.`,
       asvsLevel: targetAnalysis.asvsLevel || "2",
@@ -349,7 +349,7 @@ export function useAnalyses() {
     const auditLog = {
       id: Date.now().toString(),
       action: `Verzia v${versionNumber} bola úspešne finalizovaná a uzamknutá (Status: Final).`,
-      user: params.createdBy || LOCAL_ACTIVITY_ACTOR,
+      user: params.createdBy || getCurrentUserName(),
       time: "Práve teraz"
     };
     try {
@@ -409,7 +409,7 @@ export function useAnalyses() {
       const newLog = {
         id: Date.now().toString(),
         action: `Vytvorená nová pracovná verzia v${newVersionNumber} (zo stavu v${targetAnalysis.currentVersion}).`,
-        user: LOCAL_ACTIVITY_ACTOR,
+        user: getCurrentUserName(),
         time: "Práve teraz"
       };
       localStorage.setItem(logsKey, JSON.stringify([newLog, ...prevLogs]));

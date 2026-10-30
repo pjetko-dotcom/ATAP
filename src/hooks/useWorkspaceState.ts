@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { asvsRequirements, ASVSRequirement, asvsTriageQuestions, getRequirementsForTriage } from "../data/asvsData";
-import { LOCAL_ACTIVITY_ACTOR } from "../utils/activityLog";
+import { getCurrentUserName } from "../utils/activityLog";
 
 export interface AuditLog {
   id: string;
@@ -88,7 +88,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
         if (Array.isArray(parsed)) return parsed;
       }
     } catch (e) {}
-    return [{ id: "1", action: "Created Analysis Workspace", user: LOCAL_ACTIVITY_ACTOR, time: "Just now" }];
+    return [{ id: "1", action: "Created Analysis Workspace", user: getCurrentUserName(), time: "Just now" }];
   });
   const [activeReqId, setActiveReqId] = useState<string | null>(() => {
     if (typeof window === 'undefined') return null;
@@ -186,7 +186,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
     const newLog: AuditLog = {
       id: Date.now().toString(),
       action,
-      user: LOCAL_ACTIVITY_ACTOR,
+      user: getCurrentUserName(),
       time: "Just now"
     };
     const updatedLogs = [newLog, ...logs];
@@ -221,7 +221,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
     const newLog: AuditLog = {
       id: Date.now().toString(),
       action: `Hromadne zmenený stav pre ${reqIds.length} požiadaviek na "${status}"${reason ? ` (dôvod: ${reason})` : ""}`,
-      user: LOCAL_ACTIVITY_ACTOR,
+      user: getCurrentUserName(),
       time: "Just now"
     };
     const updatedLogs = [newLog, ...logs];
@@ -246,7 +246,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
     const newLog: AuditLog = {
       id: Date.now().toString(),
       action: `Hromadné doplnenie poznámky/evidencie pre ${reqIds.length} požiadaviek`,
-      user: LOCAL_ACTIVITY_ACTOR,
+      user: getCurrentUserName(),
       time: "Just now"
     };
     const updatedLogs = [newLog, ...logs];

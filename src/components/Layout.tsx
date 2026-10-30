@@ -6,8 +6,8 @@
  */
 import { useState, useEffect } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Shield, LayoutDashboard, FileText, Component, Lock, AlertTriangle, CheckCircle, FileDown, History, HelpCircle, X, Menu, Pin, PinOff, ChevronRight } from "lucide-react";
-import { LOCAL_ACTIVITY_ACTOR } from "../utils/activityLog";
+import { Shield, LayoutDashboard, FileText, Component, Lock, AlertTriangle, CheckCircle, FileDown, History, HelpCircle, X, Menu, Pin, PinOff, ChevronRight, Pencil, UserRound } from "lucide-react";
+import { getCurrentUserName, setCurrentUserName } from "../utils/activityLog";
 
 /**
  * Main Layout component.
@@ -20,16 +20,64 @@ export function Layout() {
   const location = useLocation();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [userName, setUserName] = useState(getCurrentUserName);
+  const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
+  const [userNameDraft, setUserNameDraft] = useState(userName);
+  const [profileError, setProfileError] = useState<string | null>(null);
   
   // Sidebar state
   const [isSidebarLocked, setIsSidebarLocked] = useState(false);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
-  const isExpanded = isSidebarLocked || isSidebarHovered;
+  const isExpanded = isSidebarLocked || isSidebarHovered || isMobileMenuOpen;
   
   // Close mobile menu on navigation
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const syncUserName = () => setUserName(getCurrentUserName());
+    window.addEventListener("storage", syncUserName);
+    window.addEventListener("local_profile_update", syncUserName);
+    return () => {
+      window.removeEventListener("storage", syncUserName);
+      window.removeEventListener("local_profile_update", syncUserName);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isProfileEditorOpen) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setIsProfileEditorOpen(false);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isProfileEditorOpen]);
+
+  const openProfileEditor = () => {
+    setUserNameDraft(userName);
+    setProfileError(null);
+    setIsProfileEditorOpen(true);
+  };
+
+  const saveProfile = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const trimmedName = userNameDraft.trim();
+    if (!trimmedName) {
+      setProfileError("Meno nemôže byť prázdne.");
+      return;
+    }
+
+    try {
+      setCurrentUserName(trimmedName);
+      setUserName(trimmedName);
+      setIsProfileEditorOpen(false);
+      window.dispatchEvent(new Event("local_profile_update"));
+    } catch (error) {
+      console.error("Failed to save local profile name", error);
+      setProfileError("Meno sa nepodarilo uložiť. Skontrolujte dostupné úložisko prehliadača.");
+    }
+  };
 
   // Extract analysis ID from the current route path to maintain contextual links.
   const match = location.pathname.match(/\/analysis\/([^\/]+)/);
@@ -176,12 +224,21 @@ export function Layout() {
             <div className="shrink-0"><HelpCircle size={16} /></div>
             <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Help & Documentation</span>
           </button>
-          <div className="p-6 pt-2 flex items-center gap-3">
+          <div className="p-4 pt-2 flex items-center gap-2">
             <div className="w-8 h-8 rounded-full bg-slate-700"></div>
-            <div className="text-xs">
-              <p className="text-white font-medium">{LOCAL_ACTIVITY_ACTOR}</p>
-              <p className="opacity-50 uppercase tracking-widest">Offline profile</p>
+            <div className={`min-w-0 flex-1 text-xs transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"}`}>
+              <p className="truncate text-white font-medium">{userName}</p>
+              <p className="opacity-50 uppercase tracking-widest">Lokálny profil</p>
             </div>
+            <button
+              type="button"
+              onClick={openProfileEditor}
+              aria-label="Premenovať profil"
+              title="Premenovať profil"
+              className={`shrink-0 rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors ${isExpanded ? "" : "hidden"}`}
+            >
+              <Pencil size={14} />
+            </button>
           </div>
         </div>
       </aside>
@@ -243,6 +300,63 @@ export function Layout() {
               </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {isProfileEditorOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) setIsProfileEditorOpen(false);
+          }}
+        >
+          <form onSubmit={saveProfile} className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+            <div className="mb-4 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <UserRound size={18} className="text-blue-600" />
+                <h2 className="text-base font-bold text-slate-800">Meno profilu</h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsProfileEditorOpen(false)}
+                aria-label="Zavrieť"
+                className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
+              >
+                <X size={18} />
+              </button>
+            </div>
+            <label htmlFor="local-profile-name" className="mb-1 block text-xs font-semibold text-slate-700">
+              Zobrazované meno
+            </label>
+            <input
+              id="local-profile-name"
+              autoFocus
+              maxLength={80}
+              required
+              value={userNameDraft}
+              onChange={event => setUserNameDraft(event.target.value)}
+              className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            />
+            <p className="mt-2 text-xs text-slate-500">
+              Meno sa uloží lokálne v tomto prehliadači a použije sa v nových záznamoch.
+            </p>
+            {profileError && <p role="alert" className="mt-2 text-xs text-red-600">{profileError}</p>}
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsProfileEditorOpen(false)}
+                className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
+              >
+                Zrušiť
+              </button>
+              <button
+                type="submit"
+                className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+              >
+                Uložiť
+              </button>
+            </div>
+          </form>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { X, Lock, CheckCircle, ShieldCheck } from "lucide-react";
 import { useAnalysisVersion } from "../context/AnalysisVersionContext";
-import { LOCAL_ACTIVITY_ACTOR } from "../utils/activityLog";
+import { getCurrentUserName } from "../utils/activityLog";
 
 export function FinalizeVersionModal() {
   const { 
@@ -15,8 +15,12 @@ export function FinalizeVersionModal() {
   const [versionNumber, setVersionNumber] = useState(currentWorkingVersion || "1.0");
   const [label, setLabel] = useState(`Finálna verzia v${currentWorkingVersion || "1.0"}`);
   const [changeSummary, setChangeSummary] = useState("Ukončená a schválená bezpečnostná analýza. Všetky prioritné hrozby a požiadavky OWASP ASVS boli verifikované.");
-  const [createdBy, setCreatedBy] = useState(LOCAL_ACTIVITY_ACTOR);
+  const [createdBy, setCreatedBy] = useState(getCurrentUserName);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isFinalizeModalOpen) setCreatedBy(getCurrentUserName());
+  }, [isFinalizeModalOpen]);
 
   if (!isFinalizeModalOpen) return null;
 

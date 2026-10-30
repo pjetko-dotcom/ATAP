@@ -3,7 +3,7 @@ import { after, afterEach, beforeEach, test } from "node:test";
 import { MAX_BACKUP_SIZE, restoreBackup, validateBackup } from "./backupRestore";
 import { sanitizeCsvCell } from "./csv";
 import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
-import { parseActivityLogs } from "./activityLog";
+import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
 
 class MemoryStorage {
   private readonly data = new Map<string, string>();
@@ -124,6 +124,13 @@ test("loads only well-formed local activity log entries", () => {
   assert.equal(parseActivityLogs(valid).length, 1);
   assert.deepEqual(parseActivityLogs("{invalid"), []);
   assert.deepEqual(parseActivityLogs(JSON.stringify([{ id: 1, action: "Malformed" }])), []);
+});
+
+test("stores a trimmed local profile name and rejects blank names", () => {
+  assert.equal(getCurrentUserName(), "Local user");
+  setCurrentUserName("  Peter  ");
+  assert.equal(getCurrentUserName(), "Peter");
+  assert.throws(() => setCurrentUserName("   "), /cannot be empty/);
 });
 
 after(() => {
