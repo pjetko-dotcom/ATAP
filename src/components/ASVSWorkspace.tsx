@@ -97,6 +97,7 @@ export function ASVSWorkspace() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
   const [isChaptersOpen, setIsChaptersOpen] = useState(false);
+  const [isChapterTriageOpen, setIsChapterTriageOpen] = useState(false);
   const [expandedTriageQuestionId, setExpandedTriageQuestionId] = useState<string | null>(null);
   const [isTriageModalOpen, setIsTriageModalOpen] = useState(false);
   const [triageModalInitialTab, setTriageModalInitialTab] = useState<"chapters" | "categorization">("chapters");
@@ -162,6 +163,9 @@ export function ASVSWorkspace() {
          q.sectionId === activeSectionId ||
         (q.reqIds && q.reqIds.some(id => id.startsWith(activeSectionId + ".")))
       );
+  const answeredTriageQuestionCount = currentChapterTriageQuestions.filter(
+    question => triageAnswers[question.id] !== undefined
+  ).length;
 
   // Dynamic Progress Stats Computation
   const totalRelevant = effectiveReqs.filter(r => r.status !== "N/A").length;
@@ -653,8 +657,34 @@ export function ASVSWorkspace() {
 
         {/* Contextual Chapter Triage Banners */}
         {currentChapterTriageQuestions.length > 0 && (
-          <div className="mb-4 space-y-2.5">
-            {currentChapterTriageQuestions.map((triageQ) => {
+          <section className="mb-4 rounded-lg border border-slate-200 bg-white shadow-xs">
+            <button
+              type="button"
+              onClick={() => setIsChapterTriageOpen(open => !open)}
+              aria-expanded={isChapterTriageOpen}
+              aria-controls="chapter-triage-questions"
+              className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-slate-50 rounded-lg transition-colors"
+            >
+              <span className="flex min-w-0 items-center gap-2">
+                <Target size={15} className="shrink-0 text-blue-600" />
+                <span className="text-xs font-semibold text-slate-800">
+                  Triage pre V{activeChapterId}
+                </span>
+                <span className="text-[11px] text-slate-500">
+                  {answeredTriageQuestionCount}/{currentChapterTriageQuestions.length} zodpovedané
+                </span>
+              </span>
+              <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-blue-700">
+                {isChapterTriageOpen ? "Skryť triage" : "Zobraziť triage"}
+                {isChapterTriageOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+              </span>
+            </button>
+            <div
+              id="chapter-triage-questions"
+              hidden={!isChapterTriageOpen}
+              className="space-y-2.5 border-t border-slate-100 p-2.5"
+            >
+                {currentChapterTriageQuestions.map((triageQ) => {
               const answer = triageAnswers[triageQ.id];
               return (
                 <div
@@ -751,8 +781,9 @@ export function ASVSWorkspace() {
                   </div>
                 </div>
               );
-            })}
-          </div>
+                })}
+            </div>
+          </section>
         )}
 
         {/* ASVS Table with Controls */}
