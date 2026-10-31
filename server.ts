@@ -9,7 +9,7 @@ import { getContentSecurityPolicy } from "./contentSecurityPolicy.js";
 async function startServer() {
   const app = express();
   const PORT = Number(process.env.PORT) || 3000;
-  const HOST = "127.0.0.1";
+  const HOST = process.env.HOST || "0.0.0.0";
   const isProduction = process.env.NODE_ENV === "production";
 
   // Security Hardening: Disable Express fingerprinting
