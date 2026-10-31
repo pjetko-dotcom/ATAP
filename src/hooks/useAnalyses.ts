@@ -187,19 +187,20 @@ export function useAnalyses() {
   };
 
   const updateAnalysis = useCallback((id: string, updates: Partial<Analysis>) => {
-    setAnalyses(prev => {
-      const updated = prev.map(a => a.id === id ? { ...a, ...updates } : a);
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (e) {
-        console.error('Failed to save updated analysis', e);
-      }
-      setTimeout(() => {
-        window.dispatchEvent(new Event('storage_workspace_update'));
-      }, 0);
-      return updated;
-    });
-  }, []);
+    const updated = analyses.map(a => a.id === id ? { ...a, ...updates } : a);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    } catch (error) {
+      console.error("Failed to save updated analysis", error);
+      return false;
+    }
+
+    setAnalyses(updated);
+    setTimeout(() => {
+      window.dispatchEvent(new Event("storage_workspace_update"));
+    }, 0);
+    return true;
+  }, [analyses]);
 
   const deleteAnalysis = (id: string) => {
     const updated = analyses.filter(a => a.id !== id);

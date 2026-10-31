@@ -54,6 +54,49 @@ const statusStyles: Record<string, string> = {
   "N/A": "bg-slate-100 text-slate-600",
 };
 
+type ASVSStatusFilter = "all" | "pending" | "Implemented" | "N/A" | "triaged" | "no_evidence";
+
+interface ASVSViewPreferences {
+  activeChapterId: number;
+  activeSectionId: string | "all";
+  searchQuery: string;
+  statusFilter: ASVSStatusFilter;
+}
+
+const ASVS_VIEW_PREFERENCE_DEFAULTS: ASVSViewPreferences = {
+  activeChapterId: 1,
+  activeSectionId: "all",
+  searchQuery: "",
+  statusFilter: "all",
+};
+
+function readASVSViewPreferences(analysisId: string | undefined): ASVSViewPreferences {
+  if (typeof localStorage === "undefined") return ASVS_VIEW_PREFERENCE_DEFAULTS;
+
+  try {
+    const stored = localStorage.getItem(`atap_asvs_view_v1_${analysisId || "default"}`);
+    if (!stored) return ASVS_VIEW_PREFERENCE_DEFAULTS;
+    const parsed: Partial<ASVSViewPreferences> = JSON.parse(stored);
+    const chapterId = Number(parsed.activeChapterId);
+    const statusFilters: ASVSStatusFilter[] = ["all", "pending", "Implemented", "N/A", "triaged", "no_evidence"];
+    const activeChapterId = asvsChapters.some(chapter => chapter.id === chapterId) ? chapterId : 1;
+    const activeSectionId = parsed.activeSectionId === "all" ||
+      asvsSections.some(section => section.id === parsed.activeSectionId && section.chapterId === activeChapterId)
+      ? parsed.activeSectionId || "all"
+      : "all";
+
+    return {
+      activeChapterId,
+      activeSectionId,
+      searchQuery: typeof parsed.searchQuery === "string" ? parsed.searchQuery : "",
+      statusFilter: statusFilters.includes(parsed.statusFilter as ASVSStatusFilter) ? parsed.statusFilter as ASVSStatusFilter : "all",
+    };
+  } catch (error) {
+    console.error("Failed to load ASVS view preferences", error);
+    return ASVS_VIEW_PREFERENCE_DEFAULTS;
+  }
+}
+
 /**
  * ASVS Workspace Component.
  * Displays all 17 ASVS 5.0 chapters and 80 sections.
@@ -66,6 +109,7 @@ export function ASVSWorkspace() {
     targetLevel,
     setTargetLevel,
     saveWorkspace,
+    hasStorageError,
     triageAnswers,
     setTriageAnswer,
     resetTriageAnswer,
@@ -88,11 +132,12 @@ export function ASVSWorkspace() {
   const activeSnapshot = versionCtx?.activeSnapshot;
   const effectiveReqs = (isHistorical && activeSnapshot?.data?.asvsReqs) ? activeSnapshot.data.asvsReqs : reqs;
 
-  const [activeChapterId, setActiveChapterId] = useState<number>(1);
-  const [activeSectionId, setActiveSectionId] = useState<string | "all">("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<"all" | "pending" | "Implemented" | "N/A" | "triaged" | "no_evidence">("all");
+  const [activeChapterId, setActiveChapterId] = useState<number>(() => readASVSViewPreferences(analysisId).activeChapterId);
+  const [activeSectionId, setActiveSectionId] = useState<string | "all">(() => readASVSViewPreferences(analysisId).activeSectionId);
+  const [searchQuery, setSearchQuery] = useState(() => readASVSViewPreferences(analysisId).searchQuery);
+  const [saveResult, setSaveResult] = useState<"success" | "error" | null>(null);
+  const [viewPreferenceError, setViewPreferenceError] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<ASVSStatusFilter>(() => readASVSViewPreferences(analysisId).statusFilter);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isSummaryOpen, setIsSummaryOpen] = useState(false);
@@ -113,11 +158,55 @@ export function ASVSWorkspace() {
   const [isBulkNaModalOpen, setIsBulkNaModalOpen] = useState(false);
   const [bulkNaReason, setBulkNaReason] = useState("");
 
+  useEffect(() => {
+    const preferences = readASVSViewPreferences(analysisId);
+    setActiveChapterId(preferences.activeChapterId);
+    setActiveSectionId(preferences.activeSectionId);
+    setSearchQuery(preferences.searchQuery);
+    setStatusFilter(preferences.statusFilter);
+  }, [analysisId]);
+
+  const saveViewPreferences = (updates: Partial<ASVSViewPreferences>) => {
+    const key = `atap_asvs_view_v1_${analysisId || "default"}`;
+    const preferences = { ...readASVSViewPreferences(analysisId), ...updates };
+    try {
+      localStorage.setItem(key, JSON.stringify(preferences));
+      setViewPreferenceError(false);
+    } catch (error) {
+      console.error("Failed to save ASVS view preferences", error);
+      setViewPreferenceError(true);
+    }
+  };
+
   // When changing chapter, reset section filter
   const handleSelectChapter = (cid: number) => {
     setActiveChapterId(cid);
     setActiveSectionId("all");
+    saveViewPreferences({ activeChapterId: cid, activeSectionId: "all" });
     setIsChaptersOpen(false);
+  };
+
+  const handleSelectSection = (sectionId: string | "all") => {
+    setActiveSectionId(sectionId);
+    saveViewPreferences({ activeSectionId: sectionId });
+    setIsChaptersOpen(false);
+  };
+
+  const handleStatusFilterChange = (filter: ASVSStatusFilter) => {
+    setStatusFilter(filter);
+    saveViewPreferences({ statusFilter: filter });
+  };
+
+  const handleSearchChange = (query: string) => {
+    setSearchQuery(query);
+    saveViewPreferences({ searchQuery: query });
+  };
+
+  const clearViewFilters = () => {
+    setActiveSectionId("all");
+    setSearchQuery("");
+    setStatusFilter("all");
+    saveViewPreferences({ activeSectionId: "all", searchQuery: "", statusFilter: "all" });
   };
 
   // Dynamic Filtering based on selected chapter, section, search, level, and status
@@ -145,6 +234,18 @@ export function ASVSWorkspace() {
     
     return matchesChapter && matchesSection && matchesSearch && matchesLevel && matchesStatus;
   });
+  const requirementsBeforeStatusFilter = effectiveReqs.filter(req => {
+    const matchesChapter = req.chapterId === activeChapterId;
+    const matchesSection = activeSectionId === "all" || req.sectionId === activeSectionId;
+    const matchesSearch =
+      req.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (req.sectionName && req.sectionName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      req.description.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesLevel = targetLevel === "all" || req.level <= targetLevel;
+    return matchesChapter && matchesSection && matchesSearch && matchesLevel;
+  });
+  const hasActiveViewFilters = activeSectionId !== "all" || !!searchQuery.trim() || statusFilter !== "all";
 
   const activeChapter = asvsChapters.find(c => c.id === activeChapterId);
   const chapterSections = asvsSections.filter(s => s.chapterId === activeChapterId);
@@ -338,7 +439,7 @@ export function ASVSWorkspace() {
       )}
 
       {/* Sidebar for Chapters & Sections */}
-      <div className={`
+      <div id="asvs-chapter-sidebar" className={`
         ${isChaptersOpen 
           ? "fixed inset-x-0 top-[122px] bottom-0 z-50 w-80 max-w-[85vw] shadow-2xl flex md:top-16"
           : "hidden xl:flex"
@@ -376,6 +477,7 @@ export function ASVSWorkspace() {
               <div key={chapter.id} className="py-0.5">
                 <button
                   onClick={() => handleSelectChapter(chapter.id)}
+                  aria-current={isSelected ? "page" : undefined}
                   title={`V${chapter.id}: ${chapter.name}`}
                   className={`w-full text-left px-3.5 py-2 text-xs transition-colors flex items-center justify-between min-w-full cursor-pointer ${
                     isSelected 
@@ -405,7 +507,8 @@ export function ASVSWorkspace() {
                 {isSelected && chapterSections.length > 1 && (
                   <div className="bg-slate-50/70 py-1.5 px-3 pl-6 space-y-0.5 border-y border-slate-100/80">
                     <button
-                      onClick={() => { setActiveSectionId("all"); setIsChaptersOpen(false); }}
+                      onClick={() => handleSelectSection("all")}
+                      aria-pressed={activeSectionId === "all"}
                       className={`w-full text-left px-2 py-1 text-[11px] rounded transition-colors flex items-center justify-between min-w-full cursor-pointer ${
                         activeSectionId === "all" ? "bg-blue-100/70 text-blue-800 font-bold" : "text-slate-600 hover:bg-slate-100"
                       }`}
@@ -418,7 +521,8 @@ export function ASVSWorkspace() {
                       return (
                         <button
                           key={sec.id}
-                          onClick={() => { setActiveSectionId(sec.id); setIsChaptersOpen(false); }}
+                          onClick={() => handleSelectSection(sec.id)}
+                          aria-pressed={activeSectionId === sec.id}
                           title={`${sec.id}: ${sec.name}`}
                           className={`w-full text-left px-2 py-1 text-[11px] rounded transition-colors flex items-center justify-between min-w-full cursor-pointer ${
                             activeSectionId === sec.id ? "bg-blue-100/70 text-blue-800 font-bold" : "text-slate-600 hover:bg-slate-100"
@@ -442,6 +546,8 @@ export function ASVSWorkspace() {
         <div className="flex items-center justify-between mb-2 xl:hidden">
           <button 
             onClick={() => setIsChaptersOpen(true)}
+            aria-expanded={isChaptersOpen}
+            aria-controls="asvs-chapter-sidebar"
             className="flex items-center gap-1.5 px-2.5 py-1 text-xs border border-slate-200 rounded-md text-slate-700 bg-white"
           >
             <BookOpen size={14} className="text-blue-600" />
@@ -475,6 +581,7 @@ export function ASVSWorkspace() {
               <span className="text-[10px] font-bold text-slate-400 uppercase">ASVS Level:</span>
               <select 
                 id="workspace-asvs-level-select"
+                aria-label="Filtrovať podľa cieľovej úrovne ASVS"
                 className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-md focus:outline-none cursor-pointer"
                 value={targetLevel}
                 onChange={(e) => setTargetLevel(e.target.value === "all" ? "all" : parseInt(e.target.value, 10))}
@@ -499,22 +606,22 @@ export function ASVSWorkspace() {
               <button
                 id="workspace-save-btn"
                 onClick={() => {
-                  saveWorkspace();
-                  setSaveSuccess(true);
-                  setTimeout(() => setSaveSuccess(false), 2500);
+                  const succeeded = saveWorkspace();
+                  setSaveResult(succeeded ? "success" : "error");
+                  if (succeeded) setTimeout(() => setSaveResult(null), 3000);
                 }}
-                className={`px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold rounded-md transition-all shadow-xs cursor-pointer ${
-                  saveSuccess
+                aria-label="Uložiť aktuálny stav analýzy"
+                className={`px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold rounded-md transition-all shadow-xs cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
+                  saveResult === "success"
                     ? "bg-emerald-600 text-white"
                     : "bg-white hover:bg-slate-100 text-slate-700 border border-slate-300"
                 }`}
-                title="Uložiť zmeny v požiadavkách a zvolenú úroveň ASVS"
+                title="Uložiť aktuálny stav analýzy a zaznamenať uloženie"
               >
-                {saveSuccess ? <Check size={14} className="text-white" /> : <Save size={14} className="text-blue-600" />}
-                <span>{saveSuccess ? "Uložené" : "Uložiť"}</span>
+                {saveResult === "success" ? <Check size={14} className="text-white" /> : <Save size={14} className="text-blue-600" />}
+                <span>{saveResult === "success" ? "Uložené" : "Uložiť teraz"}</span>
               </button>
             )}
-
             {/* Diff Button */}
             {versionCtx && (
               <button
@@ -549,16 +656,17 @@ export function ASVSWorkspace() {
             </button>
           </div>
 
-          <div className="flex items-center gap-3 w-full sm:w-auto">
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
             {/* Search */}
             <div className="relative flex-1 sm:w-64">
               <Search size={14} className="absolute left-3 top-2 text-slate-400 pointer-events-none" />
               <input 
                 type="text" 
+                aria-label="Hľadať ASVS požiadavky"
                 placeholder="Hľadať požiadavku, kód, text..." 
-                className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-slate-50"
+                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-slate-50"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => handleSearchChange(e.target.value)}
               />
             </div>
             
@@ -616,6 +724,33 @@ export function ASVSWorkspace() {
                 </>
               )}
             </div>
+          </div>
+          <div className="w-full flex flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-slate-100 pt-2 text-[11px] text-slate-500" aria-live="polite">
+            {!isReadOnly && (
+              <span role={hasStorageError || saveResult === "error" ? "alert" : "status"}>
+                {hasStorageError || saveResult === "error"
+                  ? "Ukladanie zlyhalo. Skontrolujte úložisko a skúste to znova."
+                  : "Priebežné zmeny sa ukladajú automaticky v tomto zariadení."}
+              </span>
+            )}
+            {viewPreferenceError && (
+              <span role="alert" className="text-red-700">
+                Nastavenia filtrov sa nepodarilo uložiť.
+              </span>
+            )}
+            <span>
+              Zobrazených {filteredRequirements.length} z {requirementsBeforeStatusFilter.length} požiadaviek
+              {targetLevel !== "all" ? ` (úroveň L${targetLevel})` : ""}
+            </span>
+            {hasActiveViewFilters && (
+              <button
+                type="button"
+                onClick={clearViewFilters}
+                className="font-semibold text-blue-700 hover:text-blue-900 underline underline-offset-2"
+              >
+                Vymazať filtre sekcie, stavu a hľadania
+              </button>
+            )}
           </div>
         </div>
 {/* Dynamic Progress Stats */}
@@ -802,40 +937,46 @@ export function ASVSWorkspace() {
               </div>
               
               {/* Quick Status Filters */}
-              <div className="flex items-center bg-slate-200/60 p-0.5 rounded-lg text-[11px] font-medium flex-wrap gap-0.5">
+              <div role="group" aria-label="Filtrovať požiadavky podľa stavu" className="flex items-center bg-slate-200/60 p-0.5 rounded-lg text-[11px] font-medium flex-wrap gap-0.5">
                 <button
-                  onClick={() => setStatusFilter("all")}
+                  onClick={() => handleStatusFilterChange("all")}
+                  aria-pressed={statusFilter === "all"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "all" ? "bg-white text-slate-800 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                 >
                   Všetky
                 </button>
                 <button
-                  onClick={() => setStatusFilter("pending")}
+                  onClick={() => handleStatusFilterChange("pending")}
+                  aria-pressed={statusFilter === "pending"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "pending" ? "bg-white text-red-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                 >
                   Gaps ({reqs.filter(r => r.chapterId === activeChapterId && (r.status === "Missing" || r.status === "Partial")).length})
                 </button>
                 <button
-                  onClick={() => setStatusFilter("Implemented")}
+                  onClick={() => handleStatusFilterChange("Implemented")}
+                  aria-pressed={statusFilter === "Implemented"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "Implemented" ? "bg-white text-green-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                 >
                   Splnené
                 </button>
                 <button
-                  onClick={() => setStatusFilter("N/A")}
+                  onClick={() => handleStatusFilterChange("N/A")}
+                  aria-pressed={statusFilter === "N/A"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "N/A" ? "bg-white text-slate-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                 >
                   N/A
                 </button>
                 <button
-                  onClick={() => setStatusFilter("triaged")}
+                  onClick={() => handleStatusFilterChange("triaged")}
+                  aria-pressed={statusFilter === "triaged"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "triaged" ? "bg-white text-blue-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                   title="Zobraziť kontroly vylúčené pomocou triage otázok"
                 >
                   Triáž
                 </button>
                 <button
-                  onClick={() => setStatusFilter("no_evidence")}
+                  onClick={() => handleStatusFilterChange("no_evidence")}
+                  aria-pressed={statusFilter === "no_evidence"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "no_evidence" ? "bg-white text-purple-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                   title="Zobraziť kontroly bez vyplneného dôkazu alebo poznámky"
                 >
@@ -955,6 +1096,7 @@ export function ASVSWorkspace() {
                   <th className="px-3 py-2.5 border-b border-slate-100 w-10 text-center">
                     <input 
                       type="checkbox" 
+                      aria-label="Označiť všetky zobrazené požiadavky"
                       className="rounded border-slate-300 text-blue-600 cursor-pointer"
                       checked={filteredRequirements.length > 0 && selectedIds.size === filteredRequirements.length}
                       onChange={toggleAll}
@@ -1011,6 +1153,7 @@ export function ASVSWorkspace() {
                         <td className="px-3 py-2.5 text-center">
                           <input 
                             type="checkbox" 
+                            aria-label={`Označiť ${req.id}`}
                             className="rounded border-slate-300 text-blue-600 cursor-pointer"
                             checked={isSelected}
                             onChange={() => toggleSelection(req.id)}
@@ -1039,6 +1182,7 @@ export function ASVSWorkspace() {
                         </td>
                         <td className="px-3 py-2.5">
                           <select 
+                            aria-label={`Stav požiadavky ${req.id}`}
                             className={`w-full px-2 py-1.5 text-xs font-semibold rounded-md border appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors ${
                               req.status === "Implemented" ? "bg-green-50 border-green-200 text-green-700" :
                               req.status === "Partial" ? "bg-orange-50 border-orange-200 text-orange-700" :
@@ -1060,6 +1204,7 @@ export function ASVSWorkspace() {
                         <td className="px-3 py-2.5 hidden md:table-cell">
                           <input 
                             type="text" 
+                            aria-label={`Poznámka alebo dôkaz pre ${req.id}`}
                             className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 bg-white placeholder:text-slate-300 disabled:bg-slate-50 disabled:text-slate-400"
                             placeholder={req.triageReason ? "Vylúčené z analýzy" : "Pridať referenciu, link, dôkaz..."}
                             value={req.notes || ""}
@@ -1070,6 +1215,9 @@ export function ASVSWorkspace() {
                         <td className="px-3 py-2.5">
                           <button 
                             onClick={() => toggleRow(req.id)}
+                            aria-expanded={isExpanded}
+                            aria-controls={isExpanded ? `desktop-details-${req.id}` : undefined}
+                            aria-label={`${isExpanded ? "Skryť" : "Zobraziť"} detail požiadavky ${req.id}`}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer w-full justify-center ${
                               isExpanded 
                                 ? "bg-blue-100 text-blue-700" 
@@ -1089,7 +1237,7 @@ export function ASVSWorkspace() {
                       {isExpanded && (() => {
                         const guide = getVerificationGuide(req);
                         return (
-                          <tr className="bg-slate-50/70 border-b border-slate-200 animate-in fade-in duration-150">
+                          <tr id={`desktop-details-${req.id}`} className="bg-slate-50/70 border-b border-slate-200 animate-in fade-in duration-150">
                             <td colSpan={7} className="px-0 py-0">
                               <div className="p-4 md:p-5 border-l-4 border-blue-500 mx-4 md:mx-6 my-3 bg-white shadow-xs rounded-r-lg border border-slate-200/80">
                                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
@@ -1166,6 +1314,7 @@ export function ASVSWorkspace() {
                                     <div className="md:hidden">
                                       <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Poznámka audítora</h4>
                                       <textarea 
+                                        aria-label={`Poznámka audítora pre ${req.id}`}
                                         className="w-full p-2.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 min-h-[80px] resize-y"
                                         placeholder="Zadajte detaily zistenia, kroky k reprodukcii, alebo referenciu na zdrojový kód..."
                                         value={req.notes || ""}
@@ -1236,6 +1385,7 @@ export function ASVSWorkspace() {
                 <label className="flex items-center gap-2 font-semibold">
                   <input
                     type="checkbox"
+                    aria-label="Označiť všetky zobrazené požiadavky"
                     className="rounded border-slate-300 text-blue-600"
                     checked={filteredRequirements.length > 0 && selectedIds.size === filteredRequirements.length}
                     onChange={toggleAll}
@@ -1310,13 +1460,14 @@ export function ASVSWorkspace() {
                             type="button"
                             onClick={() => toggleRow(req.id)}
                             aria-expanded={isExpanded}
+                            aria-controls={isExpanded ? `mobile-details-${req.id}` : undefined}
                             className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
                           >
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                             {isExpanded ? "Skryť metodiku" : "Zobraziť metodiku"}
                           </button>
                           {guide && (
-                            <div className="mt-3 space-y-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-xs">
+                            <div id={`mobile-details-${req.id}`} className="mt-3 space-y-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-xs">
                               <p className="font-bold text-blue-800">{guide.method}</p>
                               <div>
                                 <p className="font-semibold text-slate-700">Kľúčová otázka</p>

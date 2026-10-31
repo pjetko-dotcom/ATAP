@@ -133,11 +133,11 @@ Po úspešnom dokončení príkazu nájdete v priečinku `release/` dva typy bin
 
 | Súbor | Typ | Určenie |
 | :--- | :--- | :--- |
-| `ATAP Threat Analysis Platform Setup 5.2.0.exe` | **NSIS Inštalátor** | Štandardný Windows inštalátor so sprievodcom. Vytvorí zástupcu na ploche a v Štart menu, umožňuje odinštalovanie cez Nastavenia Windows. |
-| `ATAP Threat Analysis Platform 5.2.0.exe` | **Portable Verzia** | Samostatný jedno-súborový program. **Nevyžaduje inštaláciu ani administrátorské práva**. Môže sa spustiť priamo z USB kľúča alebo sieťového disku. |
+| `ATAP Threat Analysis Platform Setup 5.2.1.exe` | **NSIS Inštalátor** | Štandardný Windows inštalátor so sprievodcom. Vytvorí zástupcu na ploche a v Štart menu, umožňuje odinštalovanie cez Nastavenia Windows. |
+| `ATAP Threat Analysis Platform 5.2.1.exe` | **Portable Verzia** | Samostatný jedno-súborový program. **Nevyžaduje inštaláciu ani administrátorské práva**. Môže sa spustiť priamo z USB kľúča alebo sieťového disku. |
 | `win-unpacked/` | **Rozbalená verzia** | Rozbalený adresár aplikácie pripravený na okamžité spustenie bez inštalácie (užitočné na rýchle testovanie). |
 
-**Verzia 5.2.0** prináša responzívnu hlavičku, ASVS kartový pohľad do 1280 px, skladacie triážne otázky a lokálne systémové fonty. Predošlé balíky 5.1.0 netreba prepisovať; ich ponechanie umožňuje návrat na predchádzajúce vydanie.
+**Verzia 5.2.1** zlepšuje navigáciu a prístupnosť: ASVS filtre sa pamätajú pre každú analýzu, zálohovanie je dostupné z bočného panela a mobilná navigácia aj modálne okná podporujú ovládanie klávesnicou. Predošlé balíky 5.2.0 a 5.1.0 možno ponechať ako rollback referencie.
 
 ---
 

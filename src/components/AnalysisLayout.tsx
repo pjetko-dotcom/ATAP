@@ -72,12 +72,37 @@ function AnalysisLayoutInner() {
   const [isHeaderActionsOpen, setIsHeaderActionsOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
   const [saveToast, setSaveToast] = useState<string | null>(null);
+  const [saveToastType, setSaveToastType] = useState<"success" | "error">("success");
   const [renameModalTarget, setRenameModalTarget] = useState<{ id: string; name: string } | null>(null);
   
   // Right panel hover/lock state
-  const [isRightPanelLocked, setIsRightPanelLocked] = useState(false);
+  const [isRightPanelLocked, setIsRightPanelLocked] = useState(() => {
+    try {
+      return localStorage.getItem(`atap_analysis_panel_locked_${currentAnalysis.id}`) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [isRightPanelHovered, setIsRightPanelHovered] = useState(false);
   const isRightExpanded = isRightPanelLocked || isRightPanelHovered;
+
+  useEffect(() => {
+    try {
+      setIsRightPanelLocked(localStorage.getItem(`atap_analysis_panel_locked_${currentAnalysis.id}`) === "true");
+    } catch (error) {
+      console.error("Failed to load analysis panel preference", error);
+    }
+  }, [currentAnalysis.id]);
+
+  const toggleRightPanelLock = () => {
+    const nextLocked = !isRightPanelLocked;
+    setIsRightPanelLocked(nextLocked);
+    try {
+      localStorage.setItem(`atap_analysis_panel_locked_${currentAnalysis.id}`, String(nextLocked));
+    } catch (error) {
+      console.error("Failed to save analysis panel preference", error);
+    }
+  };
 
   // Sync state reactively with workspace changes safely without setState during render
   useEffect(() => {
@@ -179,10 +204,8 @@ function AnalysisLayoutInner() {
   };
 
   const handleSave = () => {
-    // 1. Save workspace requirements and logs to localStorage
     try {
       localStorage.setItem(asvsKey, JSON.stringify(reqs));
-      
       const saveLog = {
         id: Date.now().toString(),
         action: `Analýza úspešne uložená (ASVS L${currentAnalysis.asvsLevel}, v${currentWorkingVersion})`,
@@ -191,35 +214,35 @@ function AnalysisLayoutInner() {
       };
       const updatedLogs = [saveLog, ...logs];
       localStorage.setItem(logsKey, JSON.stringify(updatedLogs));
-    } catch (e) {
-      console.error("Failed to save workspace in layout", e);
+      const updated = updateAnalysis(currentAnalysis.id, {
+        status: currentAnalysis.status || "Draft",
+        asvsLevel: currentAnalysis.asvsLevel || "2",
+        currentVersion: currentWorkingVersion
+      });
+      if (!updated) throw new Error("Analysis metadata could not be saved.");
+
+      setIsSaved(true);
+      setSaveToastType("success");
+      setSaveToast(`Analýza "${currentAnalysis.name}" (v${currentWorkingVersion}) bola uložená v tomto zariadení.`);
+      window.dispatchEvent(new Event("storage"));
+      setTimeout(() => setIsSaved(false), 2500);
+      setTimeout(() => setSaveToast(null), 4000);
+    } catch (error) {
+      console.error("Failed to save workspace in layout", error);
+      setIsSaved(false);
+      setSaveToastType("error");
+      setSaveToast("Uloženie zlyhalo. Skontrolujte úložisko zariadenia a skúste to znova.");
+      setTimeout(() => setSaveToast(null), 6000);
     }
-
-    // 2. Persist analysis update
-    updateAnalysis(currentAnalysis.id, {
-      status: currentAnalysis.status || "Draft",
-      asvsLevel: currentAnalysis.asvsLevel || "2",
-      currentVersion: currentWorkingVersion
-    });
-
-    // 3. UI feedback
-    setIsSaved(true);
-    setSaveToast(`Analýza "${currentAnalysis.name}" (v${currentWorkingVersion}) bola úspešne uložená.`);
-    setTimeout(() => setIsSaved(false), 2500);
-    setTimeout(() => setSaveToast(null), 4000);
-
-    // 4. Trigger global sync
-    window.dispatchEvent(new Event("storage_workspace_update"));
-    window.dispatchEvent(new Event("storage"));
   };
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {/* Toast Notification */}
       {saveToast && (
-        <div className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-slate-900/95 text-white text-xs font-semibold rounded-lg shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-bottom-3 backdrop-blur-sm">
-          <div className="p-1 bg-emerald-500/20 text-emerald-400 rounded">
-            <Check size={16} />
+        <div role={saveToastType === "error" ? "alert" : "status"} aria-live="polite" className="fixed bottom-5 right-5 z-50 flex items-center gap-2 px-4 py-3 bg-slate-900/95 text-white text-xs font-semibold rounded-lg shadow-2xl border border-slate-700 animate-in fade-in slide-in-from-bottom-3 backdrop-blur-sm">
+          <div className={`p-1 rounded ${saveToastType === "success" ? "bg-emerald-500/20 text-emerald-400" : "bg-red-500/20 text-red-300"}`}>
+            {saveToastType === "success" ? <Check size={16} /> : <X size={16} />}
           </div>
           <span>{saveToast}</span>
         </div>
@@ -317,10 +340,11 @@ function AnalysisLayoutInner() {
                   ? "bg-emerald-600 text-white shadow-emerald-200" 
                   : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
               }`}
+              aria-label="Uložiť aktuálnu analýzu"
               title="Uložiť analýzu a aktuálny stav ASVS požiadaviek"
             >
               {isSaved ? <Check size={16} /> : <Save size={16} />}
-              <span>{isSaved ? "Uložené!" : "Save"}</span>
+              <span>{isSaved ? "Uložené" : "Uložiť teraz"}</span>
             </button>
           )}
 
@@ -385,6 +409,7 @@ function AnalysisLayoutInner() {
             {!isReadOnly && (
               <button
                 onClick={handleSave}
+                aria-label="Uložiť aktuálnu analýzu"
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${
                   isSaved ? "bg-emerald-600 text-white" : "bg-blue-600 text-white"
                 }`}
@@ -396,6 +421,8 @@ function AnalysisLayoutInner() {
             <button
               onClick={() => setIsInfoPanelOpen(!isInfoPanelOpen)}
               aria-label="Otvoriť kontextový panel"
+              aria-expanded={isInfoPanelOpen}
+              aria-controls="analysis-context-panel"
               className="p-2 text-slate-600 hover:bg-slate-100 rounded-md"
             >
               <PanelRight size={20} />
@@ -451,6 +478,7 @@ function AnalysisLayoutInner() {
 
         {/* Right Info Panel */}
         <section 
+          id="analysis-context-panel"
           onMouseEnter={() => setIsRightPanelHovered(true)}
           onMouseLeave={() => setIsRightPanelHovered(false)}
           className={`
@@ -473,7 +501,9 @@ function AnalysisLayoutInner() {
               <div className="flex items-center gap-1">
                 {/* Desktop Lock Toggle */}
                 <button
-                  onClick={() => setIsRightPanelLocked(!isRightPanelLocked)}
+                  onClick={toggleRightPanelLock}
+                  aria-label={isRightPanelLocked ? "Odomknúť kontextový panel" : "Pripnúť kontextový panel"}
+                  aria-pressed={isRightPanelLocked}
                   className={`hidden lg:flex p-1.5 rounded hover:bg-slate-200 transition-colors ${
                     isRightPanelLocked ? 'text-blue-600 bg-blue-50' : 'text-slate-400'
                   }`}
@@ -603,6 +633,7 @@ function AnalysisLayoutInner() {
           currentName={renameModalTarget.name}
           onClose={() => setRenameModalTarget(null)}
           onRenamed={(newName) => {
+            setSaveToastType("success");
             setSaveToast(`Projekt bol úspešne premenovaný na "${newName}".`);
             setTimeout(() => setSaveToast(null), 3500);
           }}

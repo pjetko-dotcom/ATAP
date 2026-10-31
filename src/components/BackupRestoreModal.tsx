@@ -5,7 +5,7 @@
  * 
  * @module BackupRestoreModal
  */
-import React, { useState, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { 
   Download, 
   Upload, 
@@ -50,6 +50,53 @@ export function BackupRestoreModal({
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const backupTabRef = useRef<HTMLButtonElement>(null);
+  const restoreTabRef = useRef<HTMLButtonElement>(null);
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+
+  const handleTabKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const nextTab = activeTab === "backup" ? "restore" : "backup";
+    setActiveTab(nextTab);
+    (nextTab === "backup" ? backupTabRef : restoreTabRef).current?.focus();
+  };
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    closeButtonRef.current?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        onCloseRef.current();
+        return;
+      }
+      if (event.key !== "Tab" || !modalRef.current) return;
+      const focusableElements = Array.from(
+        modalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        )
+      );
+      if (focusableElements.length === 0) return;
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -171,8 +218,18 @@ export function BackupRestoreModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+      onMouseDown={event => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
       <div 
+        ref={modalRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="backup-modal-title"
+        tabIndex={-1}
         className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-xl overflow-hidden flex flex-col max-h-[90vh]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -183,12 +240,14 @@ export function BackupRestoreModal({
               <Database size={18} />
             </div>
             <div>
-              <h3 className="font-bold text-slate-800 text-base">Záloha a obnova projektov (JSON)</h3>
-              <p className="text-xs text-slate-500">Bezpečný export celého stavu a import dát bez závislosti na serveri</p>
+              <h3 id="backup-modal-title" className="font-bold text-slate-800 text-base">Záloha a obnova projektov (JSON)</h3>
+              <p className="text-xs text-slate-500">Zmeny sa ukladajú lokálne; záloha umožňuje preniesť alebo obnoviť dáta.</p>
             </div>
           </div>
           <button
+            ref={closeButtonRef}
             onClick={onClose}
+            aria-label="Zavrieť zálohu a obnovu"
             className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X size={18} />
@@ -196,8 +255,16 @@ export function BackupRestoreModal({
         </div>
 
         {/* Tab Switcher */}
-        <div className="flex border-b border-slate-200 bg-slate-50/50 px-6 pt-2">
+        <div role="tablist" aria-label="Režim zálohy" className="flex border-b border-slate-200 bg-slate-50/50 px-6 pt-2">
           <button
+            type="button"
+            role="tab"
+            ref={backupTabRef}
+            id="backup-tab"
+            aria-selected={activeTab === "backup"}
+            tabIndex={activeTab === "backup" ? 0 : -1}
+            aria-controls="backup-modal-tabpanel"
+            onKeyDown={handleTabKeyDown}
             onClick={() => { setActiveTab("backup"); setStatusMessage(null); }}
             className={`flex items-center gap-2 pb-2.5 px-3 font-semibold text-xs border-b-2 transition-colors cursor-pointer ${
               activeTab === "backup" 
@@ -209,6 +276,14 @@ export function BackupRestoreModal({
             <span>Zálohovať (Export JSON)</span>
           </button>
           <button
+            type="button"
+            role="tab"
+            ref={restoreTabRef}
+            id="restore-tab"
+            aria-selected={activeTab === "restore"}
+            tabIndex={activeTab === "restore" ? 0 : -1}
+            aria-controls="backup-modal-tabpanel"
+            onKeyDown={handleTabKeyDown}
             onClick={() => { setActiveTab("restore"); setStatusMessage(null); }}
             className={`flex items-center gap-2 pb-2.5 px-3 font-semibold text-xs border-b-2 transition-colors cursor-pointer ${
               activeTab === "restore" 
@@ -222,9 +297,15 @@ export function BackupRestoreModal({
         </div>
 
         {/* Modal Content */}
-        <div className="p-6 overflow-y-auto space-y-4 flex-1">
+        <div
+          id="backup-modal-tabpanel"
+          role="tabpanel"
+          aria-labelledby={activeTab === "backup" ? "backup-tab" : "restore-tab"}
+          tabIndex={0}
+          className="p-6 overflow-y-auto space-y-4 flex-1"
+        >
           {statusMessage && (
-            <div className={`p-3.5 rounded-lg border text-xs flex items-start gap-2.5 ${
+            <div role={statusMessage.type === "error" ? "alert" : "status"} aria-live="polite" className={`p-3.5 rounded-lg border text-xs flex items-start gap-2.5 ${
               statusMessage.type === "success" 
                 ? "bg-emerald-50 border-emerald-200 text-emerald-800" 
                 : "bg-red-50 border-red-200 text-red-800"

@@ -308,7 +308,7 @@ Všetky základné závislosti v projekte sú čistý JavaScript/TypeScript. Ak 
 
 ### Otázka 3: "Ako zmeniť verziu alebo názov aplikácie v inštalátore?"
 V súbore `package.json` upravte polia:
-* `"version": "5.2.0"` (zmeňte na vami požadované číslo verzie)
+* `"version": "5.2.1"` (zmeňte na vami požadované číslo verzie)
 * `"build": { "productName": "Váš Názov Aplikácie" }`
 
 ---

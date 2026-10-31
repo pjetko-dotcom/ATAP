@@ -4,10 +4,21 @@
  * 
  * @module Layout
  */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Outlet, Link, useLocation } from "react-router-dom";
-import { Shield, LayoutDashboard, FileText, Component, Lock, AlertTriangle, CheckCircle, FileDown, History, HelpCircle, X, Menu, Pin, PinOff, ChevronRight, Pencil, UserRound } from "lucide-react";
+import { Shield, LayoutDashboard, FileText, Component, Lock, AlertTriangle, CheckCircle, FileDown, History, HelpCircle, X, Menu, Pin, PinOff, ChevronRight, Pencil, UserRound, Database } from "lucide-react";
 import { getCurrentUserName, setCurrentUserName } from "../utils/activityLog";
+import { BackupRestoreModal } from "./BackupRestoreModal";
+
+const SIDEBAR_LOCK_KEY = "atap_sidebar_locked";
+
+function readSidebarLockState(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_LOCK_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Main Layout component.
@@ -20,13 +31,20 @@ export function Layout() {
   const location = useLocation();
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [userName, setUserName] = useState(getCurrentUserName);
   const [isProfileEditorOpen, setIsProfileEditorOpen] = useState(false);
   const [userNameDraft, setUserNameDraft] = useState(userName);
   const [profileError, setProfileError] = useState<string | null>(null);
+  const [isMobileViewport, setIsMobileViewport] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
+  );
+  const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const helpModalRef = useRef<HTMLDivElement>(null);
+  const profileModalRef = useRef<HTMLFormElement>(null);
   
   // Sidebar state
-  const [isSidebarLocked, setIsSidebarLocked] = useState(false);
+  const [isSidebarLocked, setIsSidebarLocked] = useState(readSidebarLockState);
   const [isSidebarHovered, setIsSidebarHovered] = useState(false);
   const isExpanded = isSidebarLocked || isSidebarHovered || isMobileMenuOpen;
   
@@ -34,6 +52,47 @@ export function Layout() {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
+    updateViewport();
+    mediaQuery.addEventListener("change", updateViewport);
+    return () => mediaQuery.removeEventListener("change", updateViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isMobileMenuOpen || !isMobileViewport) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const nav = document.getElementById("app-navigation");
+    const overlayButton = document.querySelector<HTMLElement>('button[aria-label="Zavrieť menu kliknutím mimo"]');
+    const focusableElements = [
+      ...(mobileMenuButtonRef.current ? [mobileMenuButtonRef.current] : []),
+      ...(overlayButton ? [overlayButton] : []),
+      ...Array.from(nav?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') || []),
+    ];
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsMobileMenuOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || focusableElements.length < 2) return;
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isMobileMenuOpen, isMobileViewport]);
 
   useEffect(() => {
     const syncUserName = () => setUserName(getCurrentUserName());
@@ -47,17 +106,82 @@ export function Layout() {
 
   useEffect(() => {
     if (!isProfileEditorOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusableElements = Array.from(
+      profileModalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ) || []
+    );
+    focusableElements[0]?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsProfileEditorOpen(false);
+      if (event.key === "Escape") {
+        setIsProfileEditorOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || focusableElements.length === 0) return;
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
   }, [isProfileEditorOpen]);
+
+  useEffect(() => {
+    if (!isHelpOpen) return;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const focusableElements = Array.from(
+      helpModalRef.current?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ) || []
+    );
+    focusableElements[0]?.focus();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsHelpOpen(false);
+        return;
+      }
+      if (event.key !== "Tab" || focusableElements.length === 0) return;
+      const first = focusableElements[0];
+      const last = focusableElements[focusableElements.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isHelpOpen]);
 
   const openProfileEditor = () => {
     setUserNameDraft(userName);
     setProfileError(null);
     setIsProfileEditorOpen(true);
+  };
+
+  const toggleSidebarLock = () => {
+    const nextLocked = !isSidebarLocked;
+    setIsSidebarLocked(nextLocked);
+    try {
+      localStorage.setItem(SIDEBAR_LOCK_KEY, String(nextLocked));
+    } catch (error) {
+      console.error("Failed to save sidebar preference", error);
+    }
   };
 
   const saveProfile = (event: React.FormEvent<HTMLFormElement>) => {
@@ -104,6 +228,12 @@ export function Layout() {
 
   return (
     <div className="flex flex-col md:flex-row h-screen w-full bg-slate-50 font-sans text-slate-900 overflow-hidden">
+      <a
+        href="#main-content"
+        className="absolute left-2 top-2 z-[100] -translate-y-20 rounded bg-white px-3 py-2 text-sm font-semibold text-blue-700 shadow focus:translate-y-0"
+      >
+        Preskočiť na obsah
+      </a>
       
       {/* Mobile Top Bar */}
       <div className="md:hidden bg-slate-900 text-white px-4 py-3 flex items-center justify-between shrink-0 z-20 relative shadow-md">
@@ -111,10 +241,14 @@ export function Layout() {
           <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-white">
             <Shield size={14} />
           </div>
-          <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V5.2</span></span>
+          <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V5.2.1</span></span>
         </div>
-        <button 
+        <button
+          ref={mobileMenuButtonRef}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
+          aria-label={isMobileMenuOpen ? "Zavrieť navigáciu" : "Otvoriť navigáciu"}
+          aria-expanded={isMobileMenuOpen}
+          aria-controls="app-navigation"
           className="p-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer rounded-md bg-slate-800 border border-slate-700"
         >
           {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
@@ -123,7 +257,9 @@ export function Layout() {
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
-        <div 
+        <button
+          type="button"
+          aria-label="Zavrieť menu kliknutím mimo"
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -135,6 +271,10 @@ export function Layout() {
 
       {/* Sidebar Navigation */}
       <aside 
+        id="app-navigation"
+        aria-label="Hlavná navigácia"
+        aria-hidden={isMobileViewport && !isMobileMenuOpen}
+        inert={isMobileViewport && !isMobileMenuOpen}
         onMouseEnter={() => setIsSidebarHovered(true)}
         onMouseLeave={() => setIsSidebarHovered(false)}
         className={`
@@ -151,11 +291,13 @@ export function Layout() {
               <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white shrink-0">
                 <Shield size={20} />
               </div>
-              <h1 className={`text-white font-bold text-lg tracking-tight uppercase whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 md:w-auto overflow-hidden'}`}>ATAP V5.2</h1>
+              <h1 className={`text-white font-bold text-lg tracking-tight uppercase whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 md:w-auto overflow-hidden'}`}>ATAP V5.2.1</h1>
             </div>
             {isExpanded && (
               <button 
-                onClick={() => setIsSidebarLocked(!isSidebarLocked)}
+                onClick={toggleSidebarLock}
+                aria-label={isSidebarLocked ? "Odomknúť navigačný panel" : "Pripnúť navigačný panel"}
+                aria-pressed={isSidebarLocked}
                 className="hidden md:flex text-slate-400 hover:text-white p-1 rounded transition-colors"
                 title={isSidebarLocked ? "Unlock Sidebar" : "Lock Sidebar"}
               >
@@ -163,11 +305,12 @@ export function Layout() {
               </button>
             )}
           </div>
-          <nav className="space-y-1">
+          <nav aria-label="Sekcie aplikácie" className="space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
                 to={link.path}
+                aria-current={location.pathname === link.path ? "page" : undefined}
                 className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md ${
                   location.pathname === link.path
                     ? "bg-slate-800 text-white"
@@ -186,6 +329,7 @@ export function Layout() {
                   <Link
                     key={link.name}
                     to={link.path}
+                    aria-current={location.pathname.includes(link.path) ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md ${
                       location.pathname.includes(link.path)
                         ? "bg-slate-800 text-white text-blue-400"
@@ -202,6 +346,7 @@ export function Layout() {
                   <Link
                     key={link.name}
                     to={link.path}
+                    aria-current={location.pathname.includes(link.path) ? "page" : undefined}
                     className={`flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md ${
                       location.pathname.includes(link.path)
                         ? "bg-slate-800 text-white"
@@ -217,6 +362,16 @@ export function Layout() {
           </nav>
         </div>
         <div className="mt-auto border-t border-slate-800">
+          <button
+            type="button"
+            onClick={() => setIsBackupModalOpen(true)}
+            aria-label="Zálohovať alebo obnoviť projekty"
+            title="Záloha a obnova projektov"
+            className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
+          >
+            <div className="shrink-0"><Database size={16} /></div>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Záloha a obnova</span>
+          </button>
           <button 
             onClick={() => setIsHelpOpen(true)}
             className="w-full flex items-center gap-3 px-6 py-4 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
@@ -225,7 +380,15 @@ export function Layout() {
             <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Help & Documentation</span>
           </button>
           <div className="p-4 pt-2 flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-slate-700"></div>
+            <button
+              type="button"
+              onClick={openProfileEditor}
+              aria-label={`Upraviť profil: ${userName}`}
+              title="Upraviť profil"
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-700 text-slate-200 hover:bg-slate-600"
+            >
+              <UserRound size={15} />
+            </button>
             <div className={`min-w-0 flex-1 text-xs transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"}`}>
               <p className="truncate text-white font-medium">{userName}</p>
               <p className="opacity-50 uppercase tracking-widest">Lokálny profil</p>
@@ -244,21 +407,22 @@ export function Layout() {
       </aside>
 
       {/* Main Content Area */}
-      <main className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-0">
+      <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-0">
         <Outlet />
       </main>
 
       {/* Help Modal */}
       {isHelpOpen && (
         <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+          <div ref={helpModalRef} role="dialog" aria-modal="true" aria-labelledby="help-modal-title" className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2 text-blue-600">
                 <HelpCircle size={20} />
-                <h2 className="text-lg font-bold text-slate-800">ATAP V5.2 Help & Documentation</h2>
+                <h2 id="help-modal-title" className="text-lg font-bold text-slate-800">ATAP V5.2.1 Help & Documentation</h2>
               </div>
               <button 
                 onClick={() => setIsHelpOpen(false)}
+                aria-label="Zavrieť pomoc"
                 className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <X size={20} />
@@ -267,7 +431,7 @@ export function Layout() {
             <div className="p-4 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600">
               <section>
                 <h3 className="font-bold text-slate-800 text-base mb-2">Welcome to Application Threat Analysis Platform (ATAP)</h3>
-                <p>ATAP V5.2 is designed to streamline the threat modeling and security verification process using the OWASP ASVS 5.0 framework.</p>
+                <p>ATAP V5.2.1 is designed to streamline the threat modeling and security verification process using the OWASP ASVS 5.0 framework.</p>
               </section>
               
               <section>
@@ -290,6 +454,14 @@ export function Layout() {
                   <li>Clicking <strong>Generate Gap Analysis</strong> under Findings & Gaps will instantly poll your ASVS workspace for any controls marked as "Missing" or "Partial", translating them into formal gaps with severities.</li>
                 </ul>
               </section>
+              <section>
+                <h3 className="font-bold text-slate-800 text-base mb-2">Local data & navigation</h3>
+                <ul className="list-disc pl-5 space-y-2">
+                  <li>ASVS chapter, section, search, and status filters are remembered per analysis when you navigate away and return.</li>
+                  <li>Workspace data is stored in this device's browser storage. Use <strong>Backup & Restore</strong> in the sidebar to export or restore project data.</li>
+                  <li>Changing the sidebar pin keeps your navigation preference after restarting the app.</li>
+                </ul>
+              </section>
             </div>
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end rounded-b-xl">
               <button 
@@ -310,11 +482,11 @@ export function Layout() {
             if (event.target === event.currentTarget) setIsProfileEditorOpen(false);
           }}
         >
-          <form onSubmit={saveProfile} className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
+          <form ref={profileModalRef} role="dialog" aria-modal="true" aria-labelledby="local-profile-title" onSubmit={saveProfile} className="w-full max-w-sm rounded-xl border border-slate-200 bg-white p-5 shadow-2xl">
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <UserRound size={18} className="text-blue-600" />
-                <h2 className="text-base font-bold text-slate-800">Meno profilu</h2>
+                <h2 id="local-profile-title" className="text-base font-bold text-slate-800">Meno profilu</h2>
               </div>
               <button
                 type="button"
@@ -330,7 +502,6 @@ export function Layout() {
             </label>
             <input
               id="local-profile-name"
-              autoFocus
               maxLength={80}
               required
               value={userNameDraft}
@@ -359,6 +530,10 @@ export function Layout() {
           </form>
         </div>
       )}
+      <BackupRestoreModal
+        isOpen={isBackupModalOpen}
+        onClose={() => setIsBackupModalOpen(false)}
+      />
     </div>
   );
 }

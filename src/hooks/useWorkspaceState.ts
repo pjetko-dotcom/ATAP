@@ -104,6 +104,18 @@ export function useWorkspaceState(analysisId: string | undefined) {
     }
   });
   const [targetLevel, setTargetLevelState] = useState<number | "all">(loadInitialLevel);
+  const [hasStorageError, setHasStorageError] = useState(false);
+
+  const persistItem = (key: string, value: string) => {
+    try {
+      localStorage.setItem(key, value);
+      return true;
+    } catch (error) {
+      console.error(`Failed to save local workspace data (${key})`, error);
+      setHasStorageError(true);
+      return false;
+    }
+  };
 
   // Sync if analysisId changes
   useEffect(() => {
@@ -132,7 +144,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
   const setTargetLevel = (newLevel: number | "all") => {
     setTargetLevelState(newLevel);
     try {
-      localStorage.setItem(targetLevelKey, newLevel.toString());
+      persistItem(targetLevelKey, newLevel.toString());
       if (newLevel !== "all" && analysisId) {
         const storedAnalyses = localStorage.getItem("atap_analyses");
         if (storedAnalyses) {
@@ -140,7 +152,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
           const updated = analyses.map((a: any) => 
             a.id === analysisId ? { ...a, asvsLevel: newLevel.toString() } : a
           );
-          localStorage.setItem("atap_analyses", JSON.stringify(updated));
+          persistItem("atap_analyses", JSON.stringify(updated));
         }
       }
     } catch (e) {
@@ -154,7 +166,6 @@ export function useWorkspaceState(analysisId: string | undefined) {
     try {
       localStorage.setItem(asvsKey, JSON.stringify(reqs));
       localStorage.setItem(triageKey, JSON.stringify(triageAnswers));
-      localStorage.setItem(logsKey, JSON.stringify(logs));
       localStorage.setItem(targetLevelKey, targetLevel.toString());
       if (targetLevel !== "all" && analysisId) {
         const storedAnalyses = localStorage.getItem("atap_analyses");
@@ -166,11 +177,21 @@ export function useWorkspaceState(analysisId: string | undefined) {
           localStorage.setItem("atap_analyses", JSON.stringify(updated));
         }
       }
-      addLog("Analýza a stav ASVS požiadaviek úspešne uložené");
+      const saveLog: AuditLog = {
+        id: Date.now().toString(),
+        action: "Analýza a stav ASVS požiadaviek úspešne uložené",
+        user: getCurrentUserName(),
+        time: "Just now"
+      };
+      const updatedLogs = [saveLog, ...logs];
+      localStorage.setItem(logsKey, JSON.stringify(updatedLogs));
+      setLogs(updatedLogs);
       notifyWorkspaceUpdate();
+      setHasStorageError(false);
       return true;
     } catch (e) {
       console.error("Failed to save workspace", e);
+      setHasStorageError(true);
       return false;
     }
   };
@@ -178,7 +199,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
   // Update localStorage when reqs change
   const saveReqs = (updatedReqs: ASVSRequirement[]) => {
     setReqs(updatedReqs);
-    localStorage.setItem(asvsKey, JSON.stringify(updatedReqs));
+    persistItem(asvsKey, JSON.stringify(updatedReqs));
     notifyWorkspaceUpdate();
   };
 
@@ -191,7 +212,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
     };
     const updatedLogs = [newLog, ...logs];
     setLogs(updatedLogs);
-    localStorage.setItem(logsKey, JSON.stringify(updatedLogs));
+    persistItem(logsKey, JSON.stringify(updatedLogs));
     notifyWorkspaceUpdate();
   };
 
@@ -216,7 +237,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
       return r;
     });
     setReqs(updated);
-    localStorage.setItem(asvsKey, JSON.stringify(updated));
+    persistItem(asvsKey, JSON.stringify(updated));
 
     const newLog: AuditLog = {
       id: Date.now().toString(),
@@ -226,7 +247,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
     };
     const updatedLogs = [newLog, ...logs];
     setLogs(updatedLogs);
-    localStorage.setItem(logsKey, JSON.stringify(updatedLogs));
+    persistItem(logsKey, JSON.stringify(updatedLogs));
     notifyWorkspaceUpdate();
   };
 
@@ -241,7 +262,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
       return r;
     });
     setReqs(updated);
-    localStorage.setItem(asvsKey, JSON.stringify(updated));
+    persistItem(asvsKey, JSON.stringify(updated));
 
     const newLog: AuditLog = {
       id: Date.now().toString(),
@@ -251,7 +272,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
     };
     const updatedLogs = [newLog, ...logs];
     setLogs(updatedLogs);
-    localStorage.setItem(logsKey, JSON.stringify(updatedLogs));
+    persistItem(logsKey, JSON.stringify(updatedLogs));
     notifyWorkspaceUpdate();
   };
 
@@ -285,9 +306,14 @@ export function useWorkspaceState(analysisId: string | undefined) {
   const selectActiveRequirement = (reqId: string | null) => {
     setActiveReqId(reqId);
     if (reqId) {
-      localStorage.setItem(activeKey, reqId);
+      persistItem(activeKey, reqId);
     } else {
-      localStorage.removeItem(activeKey);
+      try {
+        localStorage.removeItem(activeKey);
+      } catch (error) {
+        console.error("Failed to clear active requirement", error);
+        setHasStorageError(true);
+      }
     }
     notifyWorkspaceUpdate();
   };
@@ -302,7 +328,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
 
     const newAnswers = { ...triageAnswers, [questionId]: isRelevant };
     setTriageAnswers(newAnswers);
-    localStorage.setItem(triageKey, JSON.stringify(newAnswers));
+    persistItem(triageKey, JSON.stringify(newAnswers));
 
     const affectedIds = new Set(getRequirementsForTriage(question, reqs));
 
@@ -346,7 +372,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
     const newAnswers = { ...triageAnswers };
     delete newAnswers[questionId];
     setTriageAnswers(newAnswers);
-    localStorage.setItem(triageKey, JSON.stringify(newAnswers));
+    persistItem(triageKey, JSON.stringify(newAnswers));
 
     if (question) {
       const affectedIds = new Set(getRequirementsForTriage(question, reqs));
@@ -371,6 +397,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
     activeReqId,
     triageAnswers,
     targetLevel,
+    hasStorageError,
     setTargetLevel,
     saveWorkspace,
     setTriageAnswer,
