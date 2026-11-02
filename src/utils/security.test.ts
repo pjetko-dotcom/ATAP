@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { after, afterEach, beforeEach, test } from "node:test";
 import { MAX_BACKUP_SIZE, restoreBackup, validateBackup } from "./backupRestore";
 import { sanitizeCsvCell } from "./csv";
+import { computeVersionDiff } from "./versionDiff";
 import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
 import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
+import { asvsRequirements } from "../data/asvsData";
+import { AnalysisVersionSnapshot } from "../types/versioning";
 
 class MemoryStorage {
   private readonly data = new Map<string, string>();
@@ -131,6 +134,66 @@ test("stores a trimmed local profile name and rejects blank names", () => {
   setCurrentUserName("  Peter  ");
   assert.equal(getCurrentUserName(), "Peter");
   assert.throws(() => setCurrentUserName("   "), /cannot be empty/);
+});
+
+test("compares removed ASVS requirements, threat details and version settings", () => {
+  const requirement = asvsRequirements[0];
+  const anotherRequirement = asvsRequirements[1];
+  const threat = {
+    id: "TR-1",
+    title: "Test threat",
+    description: "Original description",
+    stride: "Spoofing",
+    likelihood: "Unlikely",
+    impact: "Moderate",
+    risk: "Low",
+    status: "Open",
+    mitigation: "MFA",
+    componentIds: ["api"],
+    asvsRefs: [requirement.id],
+  };
+  const removedThreat = { ...threat, id: "TR-REMOVED" };
+  const addedThreat = { ...threat, id: "TR-ADDED" };
+  const baseSnapshot: AnalysisVersionSnapshot = {
+    version: "1.0",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    createdBy: "Test",
+    status: "Final",
+    asvsLevel: "2",
+    metrics: { asvsCoverage: 0, totalOpenThreats: 1, criticalRisks: 0, openFindings: 0, totalImplemented: 0, totalReqs: 2 },
+    data: {
+      asvsReqs: [{ ...requirement, status: "Missing", notes: "old" }, anotherRequirement],
+      threats: [threat, removedThreat],
+      targetLevel: 2,
+      systemType: "web",
+      architecture: { components: [{ id: "api", name: "API" }], flows: [] },
+    },
+  };
+  const nextSnapshot: AnalysisVersionSnapshot = {
+    ...baseSnapshot,
+    version: "2.0",
+    data: {
+      ...baseSnapshot.data,
+      asvsReqs: [{ ...requirement, status: "Implemented", notes: "verified" }],
+      threats: [{ ...threat, description: "Updated description", likelihood: "Probably", componentIds: ["gateway"] }, addedThreat],
+      targetLevel: 3,
+      systemType: "api",
+      architecture: { components: [{ id: "gateway", name: "Gateway" }], flows: [] },
+    },
+  };
+
+  const diff = computeVersionDiff(baseSnapshot, nextSnapshot);
+  assert.ok(diff.asvsDiffs.some(item => item.id === anotherRequirement.id && item.changeType === "removed"));
+  assert.ok(diff.asvsDiffs.some(item => item.id === requirement.id && item.changes?.some(change => change.field === "notes")));
+  const threatDiff = diff.threatDiffs.find(item => item.id === threat.id);
+  assert.ok(threatDiff?.changes?.some(change => change.field === "description"));
+  assert.ok(threatDiff?.changes?.some(change => change.field === "likelihood"));
+  assert.ok(threatDiff?.changes?.some(change => change.field === "componentIds"));
+  assert.ok(diff.threatDiffs.some(item => item.id === "TR-REMOVED" && item.changeType === "removed" && item.changes?.some(change => change.field === "description")));
+  assert.ok(diff.threatDiffs.some(item => item.id === "TR-ADDED" && item.changeType === "added"));
+  assert.ok(diff.settingsDiffs.some(item => item.field === "targetLevel"));
+  assert.ok(diff.settingsDiffs.some(item => item.field === "systemType"));
+  assert.ok(diff.settingsDiffs.some(item => item.field === "architectureComponents"));
 });
 
 after(() => {

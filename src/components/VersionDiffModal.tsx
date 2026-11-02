@@ -37,6 +37,7 @@ export function VersionDiffModal() {
     const threatsKey = `atap_threats_${analysis.id}`;
     const contextKey = `atap_context_${analysis.id}`;
     const triageKey = `atap_triage_v5_${analysis.id}`;
+    const architectureKey = `atap_architecture_${analysis.id}`;
 
     let reqsList = [...asvsRequirements];
     try {
@@ -61,6 +62,17 @@ export function VersionDiffModal() {
       const stored = localStorage.getItem(triageKey);
       if (stored) triageAnswers = JSON.parse(stored);
     } catch (e) {}
+
+    let architecture: AnalysisVersionSnapshot["data"]["architecture"] = {};
+    try {
+      const stored = localStorage.getItem(architectureKey);
+      if (stored) architecture = JSON.parse(stored);
+    } catch (error) {
+      console.error("Failed to load architecture for version comparison", error);
+    }
+
+    const storedTargetLevel = localStorage.getItem(`atap_asvs_target_level_${analysis.id}`);
+    const targetLevel = storedTargetLevel === "all" ? "all" : Number(storedTargetLevel) || undefined;
 
     const totalRelevant = reqsList.filter((r: any) => r.status !== "N/A").length;
     const implementedCount = reqsList.filter((r: any) => r.status === "Implemented").length;
@@ -88,7 +100,10 @@ export function VersionDiffModal() {
         context: contextData,
         asvsReqs: reqsList,
         triageAnswers,
-        threats: threatsList
+        threats: threatsList,
+        targetLevel,
+        systemType: analysis.systemType,
+        architecture,
       }
     };
   }, [analysis, currentWorkingVersion]);
@@ -155,6 +170,7 @@ export function VersionDiffModal() {
       `Kritické riziká: ${snapA.metrics.criticalRisks} -> ${snapB.metrics.criticalRisks} (${diffResult.metricsDelta.criticalRisksDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.criticalRisksDelta})`,
       `Počet zmenených ASVS požiadaviek: ${diffResult.asvsDiffs.length}`,
       `Počet zmien v registri hrozieb: ${diffResult.threatDiffs.length}`,
+      `Počet zmien kontextu, architektúry a nastavení: ${diffResult.contextDiffs.length + diffResult.settingsDiffs.length}`,
     ];
     navigator.clipboard.writeText(lines.join("\n"));
     setCopied(true);
@@ -390,9 +406,9 @@ export function VersionDiffModal() {
               }`}
             >
               <FileText size={16} />
-              <span>Kontext a štandardy</span>
+              <span>Kontext, architektúra a nastavenia</span>
               <span className="ml-1 px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded-full text-[10px] font-bold">
-                {diffResult.contextDiffs.length}
+                {diffResult.contextDiffs.length + diffResult.settingsDiffs.length}
               </span>
             </button>
           </div>
@@ -449,6 +465,15 @@ export function VersionDiffModal() {
                             Zmena komponentov
                           </span>
                         )}
+                        {diff.changeType === "added" && (
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md uppercase tracking-wider">Pridaná</span>
+                        )}
+                        {diff.changeType === "removed" && (
+                          <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded-md uppercase tracking-wider">Odstránená</span>
+                        )}
+                        {diff.changeType === "details_changed" && (
+                          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Zmena detailov</span>
+                        )}
                       </div>
                       <h4 className="text-sm font-bold text-slate-800 mt-1">
                         {diff.title}
@@ -457,15 +482,23 @@ export function VersionDiffModal() {
 
                     {/* Status Comparison Badge */}
                     <div className="flex items-center gap-2 shrink-0">
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-md border ${getStatusColor(diff.oldStatus)}`}>
-                        {diff.oldStatus || "Missing"}
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-md border ${diff.changeType === "added" ? "bg-slate-50 text-slate-400 border-slate-200" : getStatusColor(diff.oldStatus)}`}>
+                        {diff.changeType === "added" ? "—" : diff.oldStatus || "Pending"}
                       </span>
                       <ArrowRight size={14} className="text-slate-400" />
-                      <span className={`px-2.5 py-1 text-xs font-bold rounded-md border shadow-2xs ${getStatusColor(diff.newStatus)}`}>
-                        {diff.newStatus || "Missing"}
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-md border shadow-2xs ${diff.changeType === "removed" ? "bg-slate-50 text-slate-400 border-slate-200" : getStatusColor(diff.newStatus)}`}>
+                        {diff.changeType === "removed" ? "—" : diff.newStatus || "Pending"}
                       </span>
                     </div>
                   </div>
+
+                  {diff.changes?.filter(change => ["title", "description", "level"].includes(change.field)).map(change => (
+                    <div key={change.field} className="grid grid-cols-1 sm:grid-cols-[120px_1fr_1fr] gap-2 border-t border-slate-100 pt-2 text-xs">
+                      <span className="font-semibold text-slate-500">{change.label}</span>
+                      <span className="rounded bg-red-50 px-2 py-1 text-slate-700">{change.oldValue || "—"}</span>
+                      <span className="rounded bg-emerald-50 px-2 py-1 text-slate-800">{change.newValue || "—"}</span>
+                    </div>
+                  ))}
 
                   {/* Notes Comparison if changed */}
                   {(diff.oldNotes || diff.newNotes) && diff.oldNotes !== diff.newNotes && (
@@ -482,7 +515,7 @@ export function VersionDiffModal() {
                   )}
 
                   {/* Traceability components comparison if changed */}
-                  {diff.oldTraceability && diff.newTraceability && (
+                  {diff.oldTraceability && diff.newTraceability && JSON.stringify(diff.oldTraceability) !== JSON.stringify(diff.newTraceability) && (
                     <div className="pt-2 border-t border-slate-100 text-xs flex items-center gap-2">
                       <span className="text-slate-400 font-semibold">Komponenty:</span>
                       <span className="text-slate-600">[{diff.oldTraceability.join(", ") || "None"}]</span>
@@ -547,19 +580,19 @@ export function VersionDiffModal() {
 
                     {/* Status & Risk transition */}
                     <div className="flex items-center gap-2 shrink-0 text-xs">
-                      {td.oldStatus && td.newStatus && td.oldStatus !== td.newStatus && (
+                      {(td.oldStatus || td.newStatus) && (
                         <div className="flex items-center gap-1">
-                          <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-bold">{td.oldStatus}</span>
+                          <span className="px-2 py-0.5 bg-slate-100 rounded text-slate-700 font-bold">{td.oldStatus || "—"}</span>
                           <ArrowRight size={12} className="text-slate-400" />
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold">{td.newStatus}</span>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold">{td.newStatus || "—"}</span>
                         </div>
                       )}
 
-                      {td.oldRisk && td.newRisk && td.oldRisk !== td.newRisk && (
+                      {(td.oldRisk || td.newRisk) && (
                         <div className="flex items-center gap-1 ml-2 pl-2 border-l border-slate-200">
-                          <span className={`px-2 py-0.5 rounded font-bold ${getRiskColor(td.oldRisk)}`}>{td.oldRisk}</span>
+                          <span className={`px-2 py-0.5 rounded font-bold ${getRiskColor(td.oldRisk)}`}>{td.oldRisk || "—"}</span>
                           <ArrowRight size={12} className="text-slate-400" />
-                          <span className={`px-2 py-0.5 rounded font-bold ${getRiskColor(td.newRisk)}`}>{td.newRisk}</span>
+                          <span className={`px-2 py-0.5 rounded font-bold ${getRiskColor(td.newRisk)}`}>{td.newRisk || "—"}</span>
                         </div>
                       )}
                     </div>
@@ -578,6 +611,13 @@ export function VersionDiffModal() {
                       </div>
                     </div>
                   )}
+                  {td.changes?.filter(change => !["status", "risk", "mitigation"].includes(change.field)).map(change => (
+                    <div key={change.field} className="grid grid-cols-1 sm:grid-cols-[120px_1fr_1fr] gap-2 border-t border-slate-100 pt-2 text-xs">
+                      <span className="font-semibold text-slate-500">{change.label}</span>
+                      <span className="rounded bg-red-50 px-2 py-1 text-slate-700">{change.oldValue}</span>
+                      <span className="rounded bg-emerald-50 px-2 py-1 text-slate-800">{change.newValue}</span>
+                    </div>
+                  ))}
                 </div>
               ))}
 
@@ -619,7 +659,23 @@ export function VersionDiffModal() {
                 </div>
               ))}
 
-              {diffResult.contextDiffs.length === 0 && (
+              {diffResult.settingsDiffs.map(setting => (
+                <div key={setting.field} className="p-4 bg-white rounded-xl border border-blue-200 shadow-2xs space-y-2">
+                  <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">{setting.label}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div className="p-3 bg-red-50/50 border border-red-100 rounded-lg">
+                      <span className="text-[10px] font-bold text-red-500 uppercase block mb-1">Pôvodné nastavenie (v{snapA.version}):</span>
+                      <p className="font-semibold text-slate-800">{String(setting.oldValue)}</p>
+                    </div>
+                    <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-lg">
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-1">Nové nastavenie (v{snapB.version}):</span>
+                      <p className="font-bold text-emerald-950">{String(setting.newValue)}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+
+              {diffResult.contextDiffs.length + diffResult.settingsDiffs.length === 0 && (
                 <div className="p-12 text-center bg-white rounded-xl border border-slate-200 text-slate-500">
                   <CheckCircle2 size={36} className="mx-auto text-emerald-500 mb-2" />
                   <p className="font-bold text-slate-800">Kontext a rozsah sú zhodné</p>

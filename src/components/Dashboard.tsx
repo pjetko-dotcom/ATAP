@@ -6,7 +6,7 @@
  */
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, Trash2, Pencil, ShieldAlert, CheckCircle, FileText, LayoutTemplate, Activity, Database } from "lucide-react";
+import { Plus, Trash2, Pencil, ShieldAlert, CheckCircle, FileText, LayoutTemplate, Activity, Database, ArrowRight, Circle, CheckCircle2 } from "lucide-react";
 import { useAnalyses } from "../hooks/useAnalyses";
 import { RenameProjectModal } from "./RenameProjectModal";
 import { BackupRestoreModal } from "./BackupRestoreModal";
@@ -18,44 +18,80 @@ interface AnalysisMetrics {
   asvsCoverage: number;
 }
 
+interface ProgressStep {
+  label: string;
+  path: string;
+  complete: boolean;
+}
+
+interface DashboardThreat {
+  id?: string;
+  status?: string;
+  risk?: string;
+}
+
+interface DashboardRequirement {
+  status?: string;
+}
+
+function readStoredValue<T>(key: string, fallback: T): T {
+  try {
+    const stored = localStorage.getItem(key);
+    return stored ? JSON.parse(stored) as T : fallback;
+  } catch (error) {
+    console.error(`Failed to read dashboard progress (${key})`, error);
+    return fallback;
+  }
+}
+
+function getAnalysisProgress(analysisId: string): ProgressStep[] {
+  const context = readStoredValue<Record<string, unknown> | null>(`atap_context_${analysisId}`, null);
+  const architecture = readStoredValue<{ components?: unknown[] } | null>(`atap_architecture_${analysisId}`, null);
+  const threats = readStoredValue<Array<{ id?: string }> | null>(`atap_threats_${analysisId}`, null);
+  const requirements = readStoredValue<DashboardRequirement[] | null>(`atap_asvs_v5_${analysisId}`, null)
+    || readStoredValue<DashboardRequirement[] | null>(`atap_asvs_${analysisId}`, null);
+  const relevantRequirements = requirements?.filter(requirement => requirement.status !== "N/A") ?? [];
+  const gaps = relevantRequirements.some(requirement => requirement.status === "Missing" || requirement.status === "Partial");
+
+  return [
+    { label: "Kontext", path: "context", complete: !!context?.businessPurpose && !!context?.dataClassification },
+    { label: "Architektúra", path: "architecture", complete: (architecture?.components?.length ?? 0) > 0 },
+    { label: "STRIDE", path: "threats", complete: (threats?.length ?? 0) > 0 },
+    {
+      label: "ASVS",
+      path: "asvs",
+      complete: !!requirements?.length && requirements.every(requirement =>
+        ["Implemented", "Partial", "Missing", "N/A"].includes(requirement.status || "")
+      ),
+    },
+    { label: "Nálezy", path: "findings", complete: !!requirements && !gaps },
+  ];
+}
+
 function getAnalysisMetrics(analysisId: string): AnalysisMetrics {
   // 1. Load threats
   const threatsKey = `atap_threats_${analysisId}`;
-  let threatsList = [];
-  const savedThreats = localStorage.getItem(threatsKey);
-  if (savedThreats) {
-    try {
-      threatsList = JSON.parse(savedThreats);
-    } catch (e) {}
-  } else {
-    // If no custom threats, use initial mock threats count
-    threatsList = [
+  const storedThreats = readStoredValue<DashboardThreat[] | null>(threatsKey, null);
+  const threatsList = storedThreats || [
       { id: "TR-001", status: "Open", risk: "High" },
       { id: "TR-002", status: "Mitigated", risk: "High" },
       { id: "TR-003", status: "Open", risk: "Critical" },
       { id: "TR-004", status: "Accepted", risk: "Very Low" }
     ];
-  }
-  const totalOpenThreats = threatsList.filter((t: any) => t.status === "Open").length;
-  const criticalRisks = threatsList.filter((t: any) => t.status === "Open" && (t.risk === "Critical" || t.risk === "High")).length;
+  const totalOpenThreats = threatsList.filter(t => t.status === "Open").length;
+  const criticalRisks = threatsList.filter(t => t.status === "Open" && (t.risk === "Critical" || t.risk === "High")).length;
 
   // 2. Load ASVS Gaps & Coverage
-  const asvsKey = `atap_asvs_${analysisId}`;
-  const savedAsvs = localStorage.getItem(asvsKey);
-  let asvsList = [];
-  if (savedAsvs) {
-    try {
-      asvsList = JSON.parse(savedAsvs);
-    } catch (e) {}
-  }
+  const asvsList = readStoredValue<DashboardRequirement[] | null>(`atap_asvs_v5_${analysisId}`, null)
+    || readStoredValue<DashboardRequirement[]>(`atap_asvs_${analysisId}`, []);
   
   // Calculate coverage
-  const totalRelevant = asvsList.filter((r: any) => r.status !== "N/A").length;
-  const implementedCount = asvsList.filter((r: any) => r.status === "Implemented").length;
+  const totalRelevant = asvsList.filter(r => r.status !== "N/A").length;
+  const implementedCount = asvsList.filter(r => r.status === "Implemented").length;
   const asvsCoverage = totalRelevant > 0 ? Math.round((implementedCount / totalRelevant) * 100) : 0;
 
   // Calculate gaps (Missing or Partial)
-  const openFindings = asvsList.filter((r: any) => r.status === "Missing" || r.status === "Partial").length;
+  const openFindings = asvsList.filter(r => r.status === "Missing" || r.status === "Partial").length;
 
   return {
     totalOpenThreats,
@@ -82,11 +118,13 @@ export function Dashboard() {
 
   const enrichedAnalyses = analyses.map(analysis => {
     const metrics = getAnalysisMetrics(analysis.id);
+    const progress = getAnalysisProgress(analysis.id);
     totalOpenFindings += metrics.openFindings;
     totalCriticalRisks += metrics.criticalRisks;
     return {
       ...analysis,
-      metrics
+      metrics,
+      progress
     };
   });
 
@@ -124,6 +162,18 @@ export function Dashboard() {
           <h1 className="text-2xl font-extrabold text-slate-800 tracking-tight">Security Assessment Dashboard</h1>
           <p className="text-slate-500 text-sm mt-1">Cross-reference software architecture designs with ASVS 5.0 compliance checklists and STRIDE threat registers.</p>
         </div>
+
+        {analyses.length === 0 && (
+          <div className="mb-8 rounded-xl border border-blue-200 bg-blue-50 p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="font-bold text-blue-950">Začnite bezpečnostné hodnotenie</h2>
+              <p className="mt-1 text-sm text-blue-800">Vytvorte prvú analýzu alebo použite sprievodcu so štartovacou šablónou.</p>
+            </div>
+            <Link to="/analysis/new" className="inline-flex items-center gap-2 self-start rounded-lg bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800">
+              <Plus size={16} /> Vytvoriť analýzu <ArrowRight size={15} />
+            </Link>
+          </div>
+        )}
 
         {/* Aggregated Stat Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
@@ -172,6 +222,7 @@ export function Dashboard() {
                   <th className="px-6 py-4 w-28 text-center">ASVS Level</th>
                   <th className="px-6 py-4 w-32">Status</th>
                   <th className="px-6 py-4 w-48">ASVS Progress</th>
+                  <th className="px-6 py-4 w-56">Analysis Progress</th>
                   <th className="px-6 py-4 w-40 text-center">Open Risks</th>
                   <th className="px-6 py-4 w-20 text-right">Actions</th>
                 </tr>
@@ -209,6 +260,31 @@ export function Dashboard() {
                         <span className="text-xs font-bold text-slate-600">{analysis.metrics.asvsCoverage}%</span>
                       </div>
                     </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1" aria-label={`${analysis.progress.filter(step => step.complete).length} z 5 častí analýzy dokončených`}>
+                        {analysis.progress.map(step => (
+                          <Link
+                            key={step.path}
+                            to={`/analysis/${analysis.id}/${step.path}`}
+                            title={`${step.label}: ${step.complete ? "dokončené" : "otvoriť"}`}
+                            aria-label={`${step.label}: ${step.complete ? "dokončené" : "nedokončené"}, otvoriť`}
+                            className={`inline-flex h-7 w-7 items-center justify-center rounded-full ${step.complete ? "text-emerald-600 hover:bg-emerald-50" : "text-slate-300 hover:bg-blue-50 hover:text-blue-600"}`}
+                          >
+                            {step.complete ? <CheckCircle2 size={17} /> : <Circle size={16} />}
+                          </Link>
+                        ))}
+                        <span className="ml-1 text-xs font-semibold text-slate-600">{analysis.progress.filter(step => step.complete).length}/5</span>
+                      </div>
+                      <Link
+                        to={`/analysis/${analysis.id}/${analysis.progress.find(step => !step.complete)?.path || "export"}`}
+                        className="mt-1 inline-flex items-center gap-1 text-[11px] font-medium text-blue-700 hover:underline"
+                      >
+                        {analysis.progress.find(step => !step.complete)?.label
+                          ? `Pokračovať: ${analysis.progress.find(step => !step.complete)?.label}`
+                          : "Zobraziť report"}
+                        <ArrowRight size={11} />
+                      </Link>
+                    </td>
                     <td className="px-6 py-4 text-center">
                       {analysis.metrics.totalOpenThreats > 0 ? (
                         <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-orange-50 text-orange-700 rounded-full border border-orange-200">
@@ -244,7 +320,7 @@ export function Dashboard() {
                 ))}
                 {enrichedAnalyses.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
                       <CheckCircle size={40} className="mx-auto text-slate-300 mb-2" />
                       <p className="font-semibold text-slate-700">No active analyses found</p>
                       <p className="text-xs mt-1">Create a new security analysis workspace to get started.</p>

@@ -5,7 +5,7 @@
  * @module ASVSWorkspace
  */
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { 
   Info, ChevronDown, 
   ChevronUp, 
@@ -104,6 +104,8 @@ function readASVSViewPreferences(analysisId: string | undefined): ASVSViewPrefer
  */
 export function ASVSWorkspace() {
   const { id: analysisId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const requestedRequirement = searchParams.get("search");
   const {
     reqs,
     targetLevel,
@@ -201,6 +203,10 @@ export function ASVSWorkspace() {
     setSearchQuery(query);
     saveViewPreferences({ searchQuery: query });
   };
+
+  useEffect(() => {
+    if (requestedRequirement) handleSearchChange(requestedRequirement);
+  }, [requestedRequirement, analysisId]);
 
   const clearViewFilters = () => {
     setActiveSectionId("all");

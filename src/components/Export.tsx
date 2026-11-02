@@ -32,8 +32,11 @@ export function Export() {
 
   const [targetLevel, setTargetLevel] = useState<number | "all">("all");
   const [onlyGaps, setOnlyGaps] = useState(false);
+  const [excelSections, setExcelSections] = useState({ summary: true, requirements: true, threats: true });
+  const [excelDensity, setExcelDensity] = useState<"comfortable" | "compact">("comfortable");
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [downloadSuccess, setDownloadSuccess] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const [isExecutiveReportOpen, setIsExecutiveReportOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
@@ -58,17 +61,23 @@ export function Export() {
   const handleDownloadExcel = async () => {
     setIsExportingExcel(true);
     setDownloadSuccess(null);
+    setExportError(null);
     try {
       await exportASVSToExcel(activeReqs, {
         analysisId,
         analysisName,
         targetLevel,
-        onlyGaps
+        onlyGaps,
+        includeSummary: excelSections.summary,
+        includeRequirements: excelSections.requirements,
+        includeThreats: excelSections.threats,
+        density: excelDensity,
       });
       setDownloadSuccess("Súbor .xlsx bol úspešne vygenerovaný a stiahnutý.");
       setTimeout(() => setDownloadSuccess(null), 5000);
     } catch (err) {
       console.error("Export to Excel failed:", err);
+      setExportError("Excel súbor sa nepodarilo vytvoriť. Skontrolujte rozsah a skúste to znova.");
     } finally {
       setIsExportingExcel(false);
     }
@@ -76,6 +85,7 @@ export function Export() {
 
   const handleDownloadCSV = () => {
     setDownloadSuccess(null);
+    setExportError(null);
     try {
       exportASVSToCSV(activeReqs, {
         analysisId,
@@ -87,6 +97,7 @@ export function Export() {
       setTimeout(() => setDownloadSuccess(null), 5000);
     } catch (err) {
       console.error("Export to CSV failed:", err);
+      setExportError("CSV súbor sa nepodarilo vytvoriť. Skúste to znova.");
     }
   };
 
@@ -125,6 +136,7 @@ export function Export() {
             <span className="font-medium">{downloadSuccess}</span>
           </div>
         )}
+        {exportError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-800">{exportError}</div>}
 
         {/* Executive Banner Highlight */}
         <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-6 rounded-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -188,6 +200,37 @@ export function Export() {
             </div>
           </div>
 
+          <fieldset className="border-t border-slate-100 pt-4">
+            <legend className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sekcie zošita Excel</legend>
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {[
+                { key: "summary", label: "Súhrn auditu", description: "KPI a prehľad kapitol" },
+                { key: "requirements", label: "ASVS požiadavky", description: "Detailný zoznam kontrol" },
+                { key: "threats", label: "STRIDE hrozby", description: "Register hrozieb, ak je k dispozícii" },
+              ].map(section => (
+                <label key={section.key} className="flex items-start gap-2 rounded-lg border border-slate-200 p-3 text-xs">
+                  <input
+                    type="checkbox"
+                    checked={excelSections[section.key as keyof typeof excelSections]}
+                    onChange={event => setExcelSections(current => ({ ...current, [section.key]: event.target.checked }))}
+                    className="mt-0.5"
+                  />
+                  <span><strong className="block text-slate-700">{section.label}</strong><span className="text-slate-500">{section.description}</span></span>
+                </label>
+              ))}
+            </div>
+            {!excelSections.summary && !excelSections.requirements && !excelSections.threats && (
+              <p role="alert" className="mt-2 text-xs font-medium text-red-700">Vyberte aspoň jednu sekciu zošita.</p>
+            )}
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label htmlFor="excel-density" className="text-xs font-semibold text-slate-600">Hustota riadkov</label>
+              <select id="excel-density" value={excelDensity} onChange={event => setExcelDensity(event.target.value as "comfortable" | "compact")} className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700">
+                <option value="comfortable">Čitateľná (vyššie riadky)</option>
+                <option value="compact">Kompaktná (viac údajov na stránke)</option>
+              </select>
+            </div>
+          </fieldset>
+
           {/* Quick Metrics of the export */}
           <div className="pt-2 border-t border-slate-100">
             <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
@@ -213,6 +256,30 @@ export function Export() {
               <div className="bg-blue-50/70 p-2.5 rounded-lg border border-blue-100">
                 <div className="text-base font-bold text-blue-700">{pendingCount}</div>
                 <div className="text-[10px] text-blue-600">Čakajúce (Pending)</div>
+              </div>
+
+              <div className="overflow-hidden rounded-lg border border-slate-200">
+                <div className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-600">
+                  Ukážka riadkov podľa zvoleného rozsahu{previewList.length > 4 ? " · prvé 4 položky" : ""}
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[540px] text-left text-xs">
+                    <thead className="text-[10px] uppercase text-slate-500">
+                      <tr><th className="px-3 py-2">ID</th><th className="px-3 py-2">Požiadavka</th><th className="px-3 py-2">Level</th><th className="px-3 py-2">Stav</th></tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {previewList.slice(0, 4).map(requirement => (
+                        <tr key={requirement.id}>
+                          <td className="px-3 py-2 font-mono text-slate-600">{requirement.id}</td>
+                          <td className="max-w-sm truncate px-3 py-2 text-slate-700">{requirement.title}</td>
+                          <td className="px-3 py-2 text-slate-600">L{requirement.level}</td>
+                          <td className="px-3 py-2 text-slate-600">{requirement.status || "Pending"}</td>
+                        </tr>
+                      ))}
+                      {previewList.length === 0 && <tr><td colSpan={4} className="px-3 py-5 text-center text-slate-500">Pre tento filter nie sú žiadne riadky.</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
           </div>
@@ -254,7 +321,7 @@ export function Export() {
 
             <button
               onClick={handleDownloadExcel}
-              disabled={isExportingExcel}
+              disabled={isExportingExcel || !Object.values(excelSections).some(Boolean)}
               className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-emerald-600 text-white text-xs font-semibold rounded-lg shadow-xs hover:bg-emerald-700 transition-colors cursor-pointer disabled:opacity-50"
             >
               {isExportingExcel ? (

@@ -4,13 +4,107 @@
  * 
  * @module Layout
  */
-import { useState, useEffect, useRef } from "react";
-import { Outlet, Link, useLocation } from "react-router-dom";
-import { Shield, LayoutDashboard, FileText, Component, Lock, AlertTriangle, CheckCircle, FileDown, History, HelpCircle, X, Menu, Pin, PinOff, ChevronRight, Pencil, UserRound, Database } from "lucide-react";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Outlet, Link, useLocation, useNavigate } from "react-router-dom";
+import { Shield, LayoutDashboard, FileText, Component, Lock, AlertTriangle, CheckCircle, FileDown, History, HelpCircle, X, Menu, Pin, PinOff, ChevronRight, Pencil, UserRound, Database, Search } from "lucide-react";
 import { getCurrentUserName, setCurrentUserName } from "../utils/activityLog";
 import { BackupRestoreModal } from "./BackupRestoreModal";
+import { useAnalyses } from "../hooks/useAnalyses";
 
 const SIDEBAR_LOCK_KEY = "atap_sidebar_locked";
+
+interface WorkspaceSearchResult {
+  id: string;
+  title: string;
+  detail: string;
+  category: string;
+  path: string;
+}
+
+interface SearchableRequirement {
+  id: string;
+  title: string;
+  description?: string;
+  status?: string;
+}
+
+interface SearchableThreat {
+  id: string;
+  title: string;
+  description?: string;
+  stride?: string;
+}
+
+function readWorkspaceArray<T>(key: string): T[] {
+  try {
+    const stored = localStorage.getItem(key);
+    const parsed: unknown = stored ? JSON.parse(stored) : [];
+    return Array.isArray(parsed) ? parsed as T[] : [];
+  } catch (error) {
+    console.error(`Failed to index workspace search data (${key})`, error);
+    return [];
+  }
+}
+
+function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>): WorkspaceSearchResult[] {
+  return analyses.flatMap(analysis => {
+    const basePath = `/analysis/${analysis.id}`;
+    const results: WorkspaceSearchResult[] = [{
+      id: `${analysis.id}-project`,
+      title: analysis.name,
+      detail: "Projekt",
+      category: "Projekt",
+      path: `${basePath}/asvs`,
+    }];
+    const currentRequirements = readWorkspaceArray<SearchableRequirement>(`atap_asvs_v5_${analysis.id}`);
+    const requirements = currentRequirements.length > 0
+      ? currentRequirements
+      : readWorkspaceArray<SearchableRequirement>(`atap_asvs_${analysis.id}`);
+    const uniqueRequirements = Array.from(new Map(requirements.map(item => [item.id, item])).values());
+    results.push(...uniqueRequirements.map(item => ({
+      id: `${analysis.id}-asvs-${item.id}`,
+      title: `${item.id} ${item.title}`,
+      detail: `${analysis.name} · ${item.status || "Pending"} · ${item.description || ""}`,
+      category: "ASVS",
+      path: `${basePath}/asvs?search=${encodeURIComponent(item.id)}`,
+    })));
+    results.push(...readWorkspaceArray<SearchableThreat>(
+      `atap_threats_${analysis.id}`
+    ).map(item => ({
+      id: `${analysis.id}-threat-${item.id}`,
+      title: `${item.id} ${item.title}`,
+      detail: `${analysis.name} · ${item.stride || "Hrozba"} · ${item.description || ""}`,
+      category: "Hrozba",
+      path: `${basePath}/threats?search=${encodeURIComponent(item.id)}`,
+    })));
+    const architecture = (() => {
+      try {
+        const raw = localStorage.getItem(`atap_architecture_${analysis.id}`);
+        return raw ? JSON.parse(raw) as { components?: Array<{ id: string; name: string; tech?: string; type?: string }> } : null;
+      } catch (error) {
+        console.error(`Failed to index architecture search data (${analysis.id})`, error);
+        return null;
+      }
+    })();
+    results.push(...(architecture?.components || []).map(component => ({
+      id: `${analysis.id}-component-${component.id}`,
+      title: component.name,
+      detail: `${analysis.name} · ${component.type || "Komponent"} · ${component.tech || ""}`,
+      category: "Komponent",
+      path: `${basePath}/architecture?component=${encodeURIComponent(component.id)}`,
+    })));
+    results.push(...uniqueRequirements
+      .filter(item => item.status === "Missing" || item.status === "Partial")
+      .map(item => ({
+        id: `${analysis.id}-finding-${item.id}`,
+        title: `${item.id} ${item.title}`,
+        detail: `${analysis.name} · ${item.status} · ${item.description || ""}`,
+        category: "Nález / medzera",
+        path: `${basePath}/asvs?search=${encodeURIComponent(item.id)}`,
+      })));
+    return results;
+  });
+}
 
 function readSidebarLockState(): boolean {
   try {
@@ -29,6 +123,32 @@ function readSidebarLockState(): boolean {
  */
 export function Layout() {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { analyses } = useAnalyses();
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeSearchResult, setActiveSearchResult] = useState(0);
+  const [searchIndexRevision, setSearchIndexRevision] = useState(0);
+  const searchButtonRef = useRef<HTMLButtonElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const searchModalRef = useRef<HTMLElement>(null);
+  const searchIndex = useMemo(() => buildWorkspaceSearchIndex(analyses), [analyses, searchIndexRevision]);
+  const searchResults = useMemo(() => {
+    const query = searchQuery.trim().toLocaleLowerCase();
+    if (!query) return searchIndex.slice(0, 12);
+    return searchIndex.filter(result =>
+      `${result.title} ${result.detail} ${result.category}`.toLocaleLowerCase().includes(query)
+    ).slice(0, 30);
+  }, [searchIndex, searchQuery]);
+  const searchResultsRef = useRef(searchResults);
+  const activeSearchResultRef = useRef(activeSearchResult);
+  searchResultsRef.current = searchResults;
+  activeSearchResultRef.current = activeSearchResult;
+  const openWorkspaceSearch = () => {
+    setSearchQuery("");
+    setSearchIndexRevision(revision => revision + 1);
+    setIsSearchOpen(true);
+  };
   const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
@@ -54,6 +174,62 @@ export function Layout() {
   }, [location.pathname]);
 
   useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        openWorkspaceSearch();
+      }
+    };
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
+
+  useEffect(() => {
+    if (!isSearchOpen) return;
+    searchInputRef.current?.focus();
+    setActiveSearchResult(0);
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setIsSearchOpen(false);
+      } else if (event.key === "ArrowDown" && searchResultsRef.current.length > 0) {
+        event.preventDefault();
+        setActiveSearchResult(index => (index + 1) % searchResultsRef.current.length);
+      } else if (event.key === "ArrowUp" && searchResultsRef.current.length > 0) {
+        event.preventDefault();
+        setActiveSearchResult(index => (index - 1 + searchResultsRef.current.length) % searchResultsRef.current.length);
+      } else if (event.key === "Enter" && searchResultsRef.current[activeSearchResultRef.current]) {
+        event.preventDefault();
+        navigate(searchResultsRef.current[activeSearchResultRef.current].path);
+        setIsSearchOpen(false);
+        setSearchQuery("");
+      } else if (event.key === "Tab" && searchModalRef.current) {
+        const focusable = Array.from(searchModalRef.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])'
+        ));
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        if (event.shiftKey && document.activeElement === first) {
+          event.preventDefault();
+          last?.focus();
+        } else if (!event.shiftKey && document.activeElement === last) {
+          event.preventDefault();
+          first?.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, [isSearchOpen, navigate]);
+
+  useEffect(() => {
+    setActiveSearchResult(0);
+  }, [searchQuery]);
+
+  useEffect(() => {
     const mediaQuery = window.matchMedia("(max-width: 767px)");
     const updateViewport = () => setIsMobileViewport(mediaQuery.matches);
     updateViewport();
@@ -65,8 +241,10 @@ export function Layout() {
     if (!isMobileMenuOpen || !isMobileViewport) return;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const nav = document.getElementById("app-navigation");
+    const mobileSearchButton = document.querySelector<HTMLElement>('button[aria-label="Otvoriť vyhľadávanie"]');
     const overlayButton = document.querySelector<HTMLElement>('button[aria-label="Zavrieť menu kliknutím mimo"]');
     const focusableElements = [
+      ...(mobileSearchButton ? [mobileSearchButton] : []),
       ...(mobileMenuButtonRef.current ? [mobileMenuButtonRef.current] : []),
       ...(overlayButton ? [overlayButton] : []),
       ...Array.from(nav?.querySelectorAll<HTMLElement>('a[href], button:not([disabled])') || []),
@@ -243,16 +421,21 @@ export function Layout() {
           </div>
           <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V5.2.1</span></span>
         </div>
-        <button
-          ref={mobileMenuButtonRef}
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} 
-          aria-label={isMobileMenuOpen ? "Zavrieť navigáciu" : "Otvoriť navigáciu"}
-          aria-expanded={isMobileMenuOpen}
-          aria-controls="app-navigation"
-          className="p-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer rounded-md bg-slate-800 border border-slate-700"
-        >
-          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button type="button" onClick={openWorkspaceSearch} aria-label="Otvoriť vyhľadávanie" className="rounded-md border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:text-white">
+            <Search size={19} />
+          </button>
+          <button
+            ref={mobileMenuButtonRef}
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            aria-label={isMobileMenuOpen ? "Zavrieť navigáciu" : "Otvoriť navigáciu"}
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="app-navigation"
+            className="p-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer rounded-md bg-slate-800 border border-slate-700"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+          </button>
+        </div>
       </div>
 
       {/* Mobile Menu Overlay */}
@@ -363,6 +546,17 @@ export function Layout() {
         </div>
         <div className="mt-auto border-t border-slate-800">
           <button
+            ref={searchButtonRef}
+            type="button"
+            onClick={openWorkspaceSearch}
+            aria-label="Hľadať v projekte"
+            title="Hľadať (Ctrl+K)"
+            className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
+          >
+            <div className="shrink-0"><Search size={16} /></div>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Hľadať <kbd className="ml-1 rounded border border-slate-700 px-1 text-[10px]">Ctrl K</kbd></span>
+          </button>
+          <button
             type="button"
             onClick={() => setIsBackupModalOpen(true)}
             aria-label="Zálohovať alebo obnoviť projekty"
@@ -410,6 +604,61 @@ export function Layout() {
       <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-0">
         <Outlet />
       </main>
+
+      {isSearchOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-start justify-center bg-slate-950/50 p-4 pt-[12vh]"
+          onMouseDown={event => {
+            if (event.target === event.currentTarget) setIsSearchOpen(false);
+          }}
+        >
+          <section ref={searchModalRef} role="dialog" aria-modal="true" aria-labelledby="workspace-search-title" className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
+            <div className="flex items-center gap-3 border-b border-slate-200 px-4">
+              <Search size={19} className="shrink-0 text-slate-400" />
+              <h2 id="workspace-search-title" className="sr-only">Hľadať v pracovných priestoroch</h2>
+              <input
+                ref={searchInputRef}
+                value={searchQuery}
+                onChange={event => setSearchQuery(event.target.value)}
+                placeholder="Hľadať hrozby, ASVS, komponenty a nálezy…"
+                aria-label="Hľadať v projektoch"
+                aria-controls="workspace-search-results"
+                className="h-14 min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+              />
+              <button type="button" onClick={() => setIsSearchOpen(false)} aria-label="Zavrieť vyhľadávanie" className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">Esc</button>
+            </div>
+            <div id="workspace-search-results" role="listbox" aria-label="Výsledky vyhľadávania" className="max-h-[55vh] overflow-y-auto p-2">
+              {searchResults.map((result, index) => (
+                <button
+                  key={result.id}
+                  type="button"
+                  role="option"
+                  aria-selected={activeSearchResult === index}
+                  onMouseEnter={() => setActiveSearchResult(index)}
+                  onClick={() => {
+                    navigate(result.path);
+                    setIsSearchOpen(false);
+                    setSearchQuery("");
+                  }}
+                  className={`flex w-full items-start justify-between gap-4 rounded-lg px-3 py-2.5 text-left ${activeSearchResult === index ? "bg-blue-50" : "hover:bg-slate-50"}`}
+                >
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-semibold text-slate-800">{result.title}</span>
+                    <span className="mt-0.5 block truncate text-xs text-slate-500">{result.detail}</span>
+                  </span>
+                  <span className="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{result.category}</span>
+                </button>
+              ))}
+              {searchResults.length === 0 && (
+                <p className="px-4 py-10 text-center text-sm text-slate-500">Nenašli sa žiadne výsledky. Skúste iný výraz.</p>
+              )}
+              {searchQuery.trim().length === 0 && searchResults.length > 0 && (
+                <p className="px-4 py-2 text-[11px] text-slate-400">Začnite písať. Výsledky môžete vybrať šípkami a otvoriť Enterom.</p>
+              )}
+            </div>
+          </section>
+        </div>
+      )}
 
       {/* Help Modal */}
       {isHelpOpen && (

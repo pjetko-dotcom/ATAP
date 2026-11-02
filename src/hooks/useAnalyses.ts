@@ -277,6 +277,7 @@ export function useAnalyses() {
     const triageKey = `atap_triage_v5_${analysisId}`;
     const logsKey = `atap_logs_v5_${analysisId}`;
     const targetLvlKey = `atap_asvs_target_level_${analysisId}`;
+    const architectureKey = `atap_architecture_${analysisId}`;
 
     let reqsList: any[] = [];
     try {
@@ -308,6 +309,15 @@ export function useAnalyses() {
       if (stored) logsList = JSON.parse(stored);
     } catch (e) {}
 
+    let architectureData: NonNullable<AnalysisVersionSnapshot["data"]["architecture"]> = {};
+    try {
+      const stored = localStorage.getItem(architectureKey);
+      if (stored) architectureData = JSON.parse(stored);
+    } catch (e) {}
+
+    const storedTargetLevel = localStorage.getItem(targetLvlKey);
+    const targetLevel = storedTargetLevel === "all" ? "all" : Number(storedTargetLevel) || undefined;
+
     const totalRelevant = reqsList.filter((r: any) => r.status !== "N/A").length;
     const implementedCount = reqsList.filter((r: any) => r.status === "Implemented").length;
     const asvsCoverage = totalRelevant > 0 ? Math.round((implementedCount / totalRelevant) * 100) : 0;
@@ -337,7 +347,10 @@ export function useAnalyses() {
         asvsReqs: reqsList,
         triageAnswers,
         threats: threatsList,
-        logs: logsList
+        logs: logsList,
+        targetLevel,
+        systemType: targetAnalysis.systemType,
+        architecture: architectureData,
       }
     };
 

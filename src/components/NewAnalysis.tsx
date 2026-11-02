@@ -10,6 +10,13 @@ import { ArrowLeft, ArrowRight, Shield, SlidersHorizontal, Sparkles } from "luci
 import { useAnalyses } from "../hooks/useAnalyses";
 import { ProjectCategorizationModal } from "./ProjectCategorizationModal";
 
+const STARTER_TEMPLATES = [
+  { id: "web", title: "Webová aplikácia", description: "Internetová aplikácia so zákazníckymi účtami.", systemType: "web", asvsLevel: "2", suggestedName: "Nová webová aplikácia" },
+  { id: "api", title: "API / služba", description: "Backend alebo mikroslužba s citlivými dátami.", systemType: "api", asvsLevel: "2", suggestedName: "Nová API služba" },
+  { id: "critical", title: "Kritický systém", description: "Vysoká úroveň záruky pre kritickú infraštruktúru.", systemType: "api", asvsLevel: "3", suggestedName: "Kritický systém" },
+  { id: "blank", title: "Začať od začiatku", description: "Zvoľte typ systému a úroveň manuálne.", systemType: "web", asvsLevel: "2", suggestedName: "" },
+];
+
 /**
  * New Analysis Component.
  * A multi-step form wizard to collect initial data for a new application assessment.
@@ -24,6 +31,7 @@ export function NewAnalysis() {
   // Tracks the current step in the wizard (1 or 2)
   const [step, setStep] = useState(1);
   const [isCategorizationOpen, setIsCategorizationOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState("blank");
   
   // Holds the form input data
   const [formData, setFormData] = useState({
@@ -73,6 +81,34 @@ export function NewAnalysis() {
           <form onSubmit={handleSubmit} className="p-8">
             {step === 1 && (
               <div className="space-y-6">
+                <fieldset>
+                  <legend className="mb-2 text-sm font-semibold text-slate-700">Ako chcete začať?</legend>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    {STARTER_TEMPLATES.map(template => (
+                      <button
+                        key={template.id}
+                        type="button"
+                        aria-pressed={selectedTemplate === template.id}
+                        onClick={() => {
+                          setSelectedTemplate(template.id);
+                          if (template.id !== "blank") {
+                            setFormData(previous => ({
+                              ...previous,
+                              name: template.suggestedName,
+                              systemType: template.systemType,
+                              asvsLevel: template.asvsLevel,
+                            }));
+                          }
+                        }}
+                        className={`rounded-lg border p-3 text-left transition-colors ${selectedTemplate === template.id ? "border-blue-500 bg-blue-50" : "border-slate-200 hover:border-slate-300"}`}
+                      >
+                        <span className="block text-sm font-bold text-slate-800">{template.title}</span>
+                        <span className="mt-1 block text-xs text-slate-500">{template.description}</span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-500">Šablóny predvyplnia typ a cieľovú úroveň; názov môžete upraviť. Vaše hodnotenie zostane prázdne.</p>
+                </fieldset>
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-1">Application Name</label>
                   <input 

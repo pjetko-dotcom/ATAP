@@ -32,9 +32,16 @@ export interface VersionSnapshotData {
     risk: string;
     status: string;
     mitigation: string;
+    componentIds?: string[];
+    asvsRefs?: string[];
   }>;
   categorization?: any;
   targetLevel?: number | "all";
+  systemType?: string;
+  architecture?: {
+    components?: Array<{ id?: string; name?: string }>;
+    flows?: Array<{ id?: string; from?: string; to?: string; protocol?: string }>;
+  };
   logs?: Array<{
     id: string;
     action: string;
@@ -60,26 +67,28 @@ export interface ASVSDiffItem {
   title: string;
   chapter: number;
   section: string;
-  changeType: "status_changed" | "notes_changed" | "traceability_changed" | "added" | "unchanged";
+  changeType: "status_changed" | "notes_changed" | "traceability_changed" | "details_changed" | "added" | "removed" | "unchanged";
   oldStatus?: string;
   newStatus?: string;
   oldNotes?: string;
   newNotes?: string;
   oldTraceability?: string[];
   newTraceability?: string[];
+  changes?: Array<{ field: string; label: string; oldValue: string; newValue: string }>;
 }
 
 export interface ThreatDiffItem {
   id: string;
   title: string;
   stride: string;
-  changeType: "added" | "removed" | "status_changed" | "risk_changed" | "mitigation_changed" | "unchanged";
+  changeType: "added" | "removed" | "status_changed" | "risk_changed" | "mitigation_changed" | "details_changed" | "unchanged";
   oldStatus?: string;
   newStatus?: string;
   oldRisk?: string;
   newRisk?: string;
   oldMitigation?: string;
   newMitigation?: string;
+  changes?: Array<{ field: string; label: string; oldValue: string; newValue: string }>;
 }
 
 export interface ContextDiffItem {
@@ -109,5 +118,6 @@ export interface VersionDiffResult {
   asvsDiffs: ASVSDiffItem[];
   threatDiffs: ThreatDiffItem[];
   contextDiffs: ContextDiffItem[];
+  settingsDiffs: ContextDiffItem[];
   totalChangesCount: number;
 }

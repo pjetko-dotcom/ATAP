@@ -11,6 +11,10 @@ export interface ExportOptions {
   analysisName?: string;
   targetLevel?: number | "all";
   onlyGaps?: boolean;
+  includeSummary?: boolean;
+  includeRequirements?: boolean;
+  includeThreats?: boolean;
+  density?: "comfortable" | "compact";
 }
 
 function getStoredAnalysisName(analysisId?: string): string {
@@ -37,8 +41,15 @@ export async function exportASVSToExcel(
   const {
     analysisId = "default",
     targetLevel = "all",
-    onlyGaps = false
+    onlyGaps = false,
+    includeSummary = true,
+    includeRequirements = true,
+    includeThreats = true,
+    density = "comfortable"
   } = options;
+  if (!includeSummary && !includeRequirements && !includeThreats) {
+    throw new Error("Vyberte aspoň jednu sekciu pre Excel export.");
+  }
 
   const analysisName = options.analysisName || getStoredAnalysisName(analysisId);
 
@@ -263,7 +274,7 @@ export async function exportASVSToExcel(
       nist: reqAny.nist || ""
     });
 
-    row.height = 36;
+    row.height = density === "compact" ? 22 : 36;
 
     // Alignments
     row.getCell("id").alignment = { vertical: "top", horizontal: "center" };
@@ -317,7 +328,7 @@ export async function exportASVSToExcel(
   // -------------------------------------------------------------
   try {
     const threatKey = `atap_threats_${analysisId || "default"}`;
-    const savedThreats = localStorage.getItem(threatKey);
+    const savedThreats = includeThreats ? localStorage.getItem(threatKey) : null;
     if (savedThreats) {
       const threats = JSON.parse(savedThreats);
       if (Array.isArray(threats) && threats.length > 0) {
@@ -373,6 +384,15 @@ export async function exportASVSToExcel(
     }
   } catch (err) {
     console.warn("Could not include threats in excel export:", err);
+  }
+
+  if (!includeSummary) {
+    const sheet = workbook.getWorksheet("Prehľad auditu");
+    if (sheet) workbook.removeWorksheet(sheet.id);
+  }
+  if (!includeRequirements) {
+    const sheet = workbook.getWorksheet("ASVS 5.0 Požiadavky");
+    if (sheet) workbook.removeWorksheet(sheet.id);
   }
 
   // -------------------------------------------------------------

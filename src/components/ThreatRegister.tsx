@@ -6,9 +6,10 @@
  * @module ThreatRegister
  */
 import React, { useState, useEffect } from "react";
-import { useParams } from "react-router-dom";
-import { Search, Plus, Filter, ShieldAlert, Edit2, Trash2, X, AlertTriangle, CheckCircle, ChevronDown, ChevronUp } from "lucide-react";
+import { useParams, Link, useSearchParams } from "react-router-dom";
+import { Search, Plus, Filter, ShieldAlert, Edit2, Trash2, X, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Link2 } from "lucide-react";
 import { HelpTooltip } from "./HelpTooltip";
+import { asvsRequirements } from "../data/asvsData";
 
 type LikelihoodLevel = "Exceptionally" | "Unlikely" | "Probably" | "Frequently";
 type ImpactLevel = "Minor" | "Moderate" | "Major" | "Critical";
@@ -25,6 +26,8 @@ interface Threat {
   risk: RiskLevel;
   status: ThreatStatus;
   mitigation: string;
+  componentIds?: string[];
+  asvsRefs?: string[];
 }
 
 const initialThreats: Threat[] = [
@@ -73,6 +76,11 @@ const initialThreats: Threat[] = [
     mitigation: "Risk accepted for internal dev environments. To be fixed in Prod."
   }
 ];
+
+function getThreatAsvsReferences(threat: Threat): string[] {
+  const references = threat.asvsRefs || (threat.mitigation.match(/V\d+(?:\.\d+)*/g) || []);
+  return Array.from(new Set(references)).filter(id => asvsRequirements.some(requirement => requirement.id === id));
+}
 
 const riskStyles: Record<RiskLevel, string> = {
   "Very Low": "bg-green-50 text-green-700 border border-green-200",
@@ -372,7 +380,25 @@ function EvaluationCriteriaGuide() {
 
 export function ThreatRegister() {
   const { id: analysisId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const requestedThreat = searchParams.get("search");
   const storageKey = `atap_threats_${analysisId || "default"}`;
+  const [availableComponents] = useState<Array<{ id: string; name: string }>>(() => {
+    try {
+      const saved = localStorage.getItem(`atap_architecture_${analysisId || "default"}`);
+      const parsed = saved ? JSON.parse(saved) : null;
+      return Array.isArray(parsed?.components)
+        ? parsed.components.filter((component: unknown): component is { id: string; name: string } =>
+            !!component && typeof component === "object" &&
+            typeof (component as { id?: unknown }).id === "string" &&
+            typeof (component as { name?: unknown }).name === "string"
+          )
+        : [];
+    } catch (error) {
+      console.error("Failed to load architecture components for threat links", error);
+      return [];
+    }
+  });
 
   const [threats, setThreats] = useState<Threat[]>(() => {
     const saved = localStorage.getItem(storageKey);
@@ -390,14 +416,22 @@ export function ThreatRegister() {
     localStorage.setItem(storageKey, JSON.stringify(threats));
   }, [threats, storageKey]);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(requestedThreat || "");
   const [statusFilter, setStatusFilter] = useState<ThreatStatus | "All">("All");
   const [strideFilter, setStrideFilter] = useState<string | "All">("All");
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "All">("All");
+
+  useEffect(() => {
+    if (requestedThreat) setSearchQuery(requestedThreat);
+  }, [requestedThreat]);
   
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingThreat, setEditingThreat] = useState<Threat | null>(null);
+  const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>([]);
+  const [asvsReferenceText, setAsvsReferenceText] = useState("");
+  const enteredAsvsRefs = Array.from(new Set(asvsReferenceText.match(/V\d+(?:\.\d+)*/g) || []));
+  const invalidAsvsRefs = enteredAsvsRefs.filter(id => !asvsRequirements.some(requirement => requirement.id === id));
 
   // Collapsible State for Stats & Risk Matrix
   const [isSummaryExpanded, setIsSummaryExpanded] = useState<boolean>(() => {
@@ -428,11 +462,15 @@ export function ThreatRegister() {
 
   const openAddModal = () => {
     setEditingThreat(null);
+    setSelectedComponentIds([]);
+    setAsvsReferenceText("");
     setIsModalOpen(true);
   };
 
   const openEditModal = (threat: Threat) => {
     setEditingThreat(threat);
+    setSelectedComponentIds(threat.componentIds || []);
+    setAsvsReferenceText((threat.asvsRefs || (threat.mitigation.match(/V\d+(?:\.\d+)*/g) || [])).join(", "));
     setIsModalOpen(true);
   };
 
@@ -453,6 +491,9 @@ export function ThreatRegister() {
       risk: calculateRisk(likelihood, impact),
       status: formData.get("status") as ThreatStatus,
       mitigation: formData.get("mitigation") as string,
+      componentIds: selectedComponentIds.filter(id => availableComponents.some(component => component.id === id)),
+      asvsRefs: Array.from(new Set(asvsReferenceText.match(/V\d+(?:\.\d+)*/g) || []))
+        .filter(id => asvsRequirements.some(requirement => requirement.id === id)),
     };
 
     if (editingThreat) {
@@ -655,6 +696,20 @@ export function ThreatRegister() {
                     <p className="text-xs text-slate-600 font-mono truncate max-w-[180px]" title={threat.mitigation}>
                       {threat.mitigation || "None assigned"}
                     </p>
+                    {(threat.componentIds?.length || threat.asvsRefs?.length) ? (
+                      <div className="mt-1 flex flex-wrap gap-1">
+                        {(threat.componentIds || []).map(componentId => (
+                          <Link key={componentId} to={`/analysis/${analysisId}/architecture`} className="inline-flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100">
+                            <Link2 size={10} />{availableComponents.find(component => component.id === componentId)?.name || componentId}
+                          </Link>
+                        ))}
+                        {getThreatAsvsReferences(threat).map(reference => (
+                          <Link key={reference} to={`/analysis/${analysisId}/asvs`} title={`Otvoriť ASVS požiadavku ${reference}`} className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 hover:bg-indigo-100">
+                            {reference}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded border ${statusStyles[threat.status]}`}>
@@ -804,6 +859,45 @@ export function ThreatRegister() {
                     placeholder="e.g. V2.1.1, V5.3.2" 
                     className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-mono"
                   />
+                </div>
+                <fieldset className="space-y-2">
+                  <legend className="text-sm font-semibold text-slate-700">Prepojené architektonické komponenty</legend>
+                  {availableComponents.length ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-lg border border-slate-200 p-3">
+                      {availableComponents.map(component => (
+                        <label key={component.id} className="flex items-center gap-2 text-xs text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={selectedComponentIds.includes(component.id)}
+                            onChange={event => setSelectedComponentIds(current =>
+                              event.target.checked
+                                ? [...current, component.id]
+                                : current.filter(id => id !== component.id)
+                            )}
+                          />
+                          <span>{component.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-slate-500">Najprv pridajte komponenty v časti Architektúra.</p>
+                  )}
+                </fieldset>
+                <div>
+                  <label htmlFor="threat-asvs-references" className="block text-sm font-semibold text-slate-700 mb-1">Prepojené ASVS požiadavky</label>
+                  <input
+                    id="threat-asvs-references"
+                    list="threat-asvs-reference-list"
+                    value={asvsReferenceText}
+                    onChange={event => setAsvsReferenceText(event.target.value)}
+                    placeholder="V2.3.1, V5.1.1"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-mono"
+                  />
+                  <datalist id="threat-asvs-reference-list">
+                    {asvsRequirements.map(requirement => <option key={requirement.id} value={requirement.id}>{requirement.title}</option>)}
+                  </datalist>
+                  <p className="mt-1 text-xs text-slate-500">Zadajte ID oddelené čiarkou.</p>
+                  {invalidAsvsRefs.length > 0 && <p role="status" className="mt-1 text-xs text-amber-700">Neznáme ID sa neuložia: {invalidAsvsRefs.join(", ")}</p>}
                 </div>
               </form>
             </div>

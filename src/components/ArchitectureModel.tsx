@@ -6,7 +6,7 @@
  * @module ArchitectureModel
  */
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useSearchParams } from "react-router-dom";
 import { 
   Server, 
   Database, 
@@ -210,6 +210,8 @@ const DEFAULT_FLOWS: DataFlow[] = [
 
 export function ArchitectureModel() {
   const { id: analysisId } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
+  const requestedComponent = searchParams.get("component");
   const storageKey = `atap_architecture_${analysisId || "default"}`;
 
   const [components, setComponents] = useState<ArchComponent[]>(() => {
@@ -259,6 +261,12 @@ export function ArchitectureModel() {
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (requestedComponent && components.some(component => component.id === requestedComponent)) {
+      setSelectedCompId(requestedComponent);
+    }
+  }, [requestedComponent, components]);
+
   // Save to localStorage whenever components or flows change
   useEffect(() => {
     const data = {
@@ -277,6 +285,7 @@ export function ArchitectureModel() {
       if (rawThreats) {
         const parsed = JSON.parse(rawThreats);
         threatsForSelected = parsed.filter((t: any) => 
+          (Array.isArray(t.componentIds) && t.componentIds.includes(selectedCompId)) ||
           (t.title && t.title.toLowerCase().includes(selectedCompId.toLowerCase())) ||
           (t.description && t.description.toLowerCase().includes(selectedCompId.toLowerCase())) ||
           (t.mitigation && t.mitigation.toLowerCase().includes(selectedCompId.toLowerCase()))
