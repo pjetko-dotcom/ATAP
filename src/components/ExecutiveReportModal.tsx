@@ -6,7 +6,8 @@
  * 
  * @module ExecutiveReportModal
  */
-import React from "react";
+import React, { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { 
   Printer, 
   X, 
@@ -19,7 +20,7 @@ import {
   Calendar,
   UserCheck
 } from "lucide-react";
-import { asvsChapters, asvsRequirements, ASVSRequirement } from "../data/asvsData";
+import { ASVS_VERSION, asvsChapters, asvsRequirements, ASVSRequirement } from "../data/asvsData";
 
 interface ExecutiveReportModalProps {
   isOpen: boolean;
@@ -42,6 +43,17 @@ export function ExecutiveReportModal({
   status = "Draft",
   businessOwners = "Interný bezpečnostný tím"
 }: ExecutiveReportModalProps) {
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") onClose();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   // Load requirements
@@ -122,36 +134,46 @@ export function ExecutiveReportModal({
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+  return createPortal(
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto"
+      onClick={onClose}
+    >
       {/* Modal Container */}
       <div 
         className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden my-auto"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="executive-report-title"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal Top Control Bar (Hidden when printed) */}
-        <div className="px-6 py-3.5 bg-slate-900 text-white flex items-center justify-between shrink-0 print:hidden">
-          <div className="flex items-center gap-2">
+        <div className="px-4 sm:px-6 py-3.5 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 shrink-0 print:hidden">
+          <div className="flex min-w-0 items-center gap-2">
             <FileText size={18} className="text-blue-400" />
-            <span className="font-bold text-sm tracking-tight">Exekutívny Security & Compliance Report</span>
-            <span className="text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
+            <span id="executive-report-title" className="truncate font-bold text-sm tracking-tight">Exekutívny Security & Compliance Report</span>
+            <span className="hidden sm:inline text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
               Náhľad pred tlačou / PDF
             </span>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="ml-auto flex shrink-0 items-center gap-2">
             <button
               onClick={handlePrint}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
+              className="px-2.5 sm:px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
               <Printer size={14} />
-              <span>Tlačiť / Uložiť ako PDF</span>
+              <span className="hidden sm:inline">Tlačiť / Uložiť ako PDF</span>
+              <span className="sm:hidden">Tlačiť</span>
             </button>
             <button
               onClick={onClose}
-              className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+              aria-label="Zavrieť náhľad reportu"
+              title="Zavrieť náhľad"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-2.5 py-1.5 text-white hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X size={18} />
+              <span className="text-xs font-semibold">Zavrieť</span>
             </button>
           </div>
         </div>
@@ -167,7 +189,7 @@ export function ExecutiveReportModal({
                   Dôverné / Bezpečnostný audit
                 </span>
                 <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded">
-                  OWASP ASVS 4.0 (Level {asvsLevel})
+                  OWASP ASVS {ASVS_VERSION} (Level {asvsLevel})
                 </span>
                 <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded ${
                   status === "Final" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
@@ -234,7 +256,7 @@ export function ExecutiveReportModal({
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
               <p>
-                Predložená správa sumarizuje bezpečnostný stav systému <strong>{analysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard 4.0</strong> na cieľovej úrovni <strong>L{asvsLevel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako zistenie (medzera) vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
+                Predložená správa sumarizuje bezpečnostný stav systému <strong>{analysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> na cieľovej úrovni <strong>L{asvsLevel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako zistenie (medzera) vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
               </p>
             </div>
           </div>
@@ -350,6 +372,7 @@ export function ExecutiveReportModal({
 
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

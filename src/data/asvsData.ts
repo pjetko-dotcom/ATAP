@@ -36,6 +36,8 @@ export interface ASVSRequirement {
   triageReason?: string;
 }
 
+export const ASVS_VERSION = "5.0.0";
+
 export interface ASVSTriageQuestion {
   id: string;
   category: string;
