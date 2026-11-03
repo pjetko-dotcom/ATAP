@@ -10,20 +10,22 @@
  * 
  * @module App
  */
+import { Suspense, lazy } from "react";
 import { HashRouter, BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout.tsx";
-import { Dashboard } from "./components/Dashboard.tsx";
-import { AnalysisLayout } from "./components/AnalysisLayout.tsx";
-import { ASVSWorkspace } from "./components/ASVSWorkspace.tsx";
-import { NewAnalysis } from "./components/NewAnalysis.tsx";
-import { ThreatRegister } from "./components/ThreatRegister.tsx";
-import { ApplicationContext } from "./components/ApplicationContext.tsx";
-import { ArchitectureModel } from "./components/ArchitectureModel.tsx";
-import { StrideModel } from "./components/StrideModel.tsx";
-import { FindingsAndGaps } from "./components/FindingsAndGaps.tsx";
-import { Export } from "./components/Export.tsx";
-import { AuditTrail } from "./components/AuditTrail.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
+
+const Dashboard = lazy(() => import("./components/Dashboard.tsx").then(module => ({ default: module.Dashboard })));
+const AnalysisLayout = lazy(() => import("./components/AnalysisLayout.tsx").then(module => ({ default: module.AnalysisLayout })));
+const ASVSWorkspace = lazy(() => import("./components/ASVSWorkspace.tsx").then(module => ({ default: module.ASVSWorkspace })));
+const NewAnalysis = lazy(() => import("./components/NewAnalysis.tsx").then(module => ({ default: module.NewAnalysis })));
+const ThreatRegister = lazy(() => import("./components/ThreatRegister.tsx").then(module => ({ default: module.ThreatRegister })));
+const ApplicationContext = lazy(() => import("./components/ApplicationContext.tsx").then(module => ({ default: module.ApplicationContext })));
+const ArchitectureModel = lazy(() => import("./components/ArchitectureModel.tsx").then(module => ({ default: module.ArchitectureModel })));
+const StrideModel = lazy(() => import("./components/StrideModel.tsx").then(module => ({ default: module.StrideModel })));
+const FindingsAndGaps = lazy(() => import("./components/FindingsAndGaps.tsx").then(module => ({ default: module.FindingsAndGaps })));
+const Export = lazy(() => import("./components/Export.tsx").then(module => ({ default: module.Export })));
+const AuditTrail = lazy(() => import("./components/AuditTrail.tsx").then(module => ({ default: module.AuditTrail })));
 
 /**
  * Main App Component.
@@ -36,25 +38,27 @@ export default function App() {
   return (
     <ErrorBoundary>
       <RouterComponent>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Dashboard />} />
-            <Route path="analysis/new" element={<NewAnalysis />} />
-            <Route path="analysis/:id" element={<AnalysisLayout />}>
-              <Route index element={<Navigate to="asvs" replace />} />
-              <Route path="context" element={<ApplicationContext />} />
-              <Route path="architecture" element={<ArchitectureModel />} />
-              <Route path="stride" element={<StrideModel />} />
-              <Route path="asvs" element={<ASVSWorkspace />} />
-              <Route path="threats" element={<ThreatRegister />} />
-              <Route path="findings" element={<FindingsAndGaps />} />
-              <Route path="export" element={<Export />} />
-              <Route path="audit" element={<AuditTrail />} />
-              <Route path="*" element={<Navigate to="asvs" replace />} />
+        <Suspense fallback={<div role="status" className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">Načítavam stránku...</div>}>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="analysis/new" element={<NewAnalysis />} />
+              <Route path="analysis/:id" element={<AnalysisLayout />}>
+                <Route index element={<Navigate to="asvs" replace />} />
+                <Route path="context" element={<ApplicationContext />} />
+                <Route path="architecture" element={<ArchitectureModel />} />
+                <Route path="stride" element={<StrideModel />} />
+                <Route path="asvs" element={<ASVSWorkspace />} />
+                <Route path="threats" element={<ThreatRegister />} />
+                <Route path="findings" element={<FindingsAndGaps />} />
+                <Route path="export" element={<Export />} />
+                <Route path="audit" element={<AuditTrail />} />
+                <Route path="*" element={<Navigate to="asvs" replace />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
             </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
-        </Routes>
+          </Routes>
+        </Suspense>
       </RouterComponent>
     </ErrorBoundary>
   );

@@ -1,4 +1,3 @@
-import ExcelJS from "exceljs";
 import FileSaver from "file-saver";
 import { ASVSRequirement, asvsChapters } from "../data/asvsData";
 import { getVerificationGuide } from "./verificationGuide";
@@ -52,6 +51,7 @@ export async function exportASVSToExcel(
   }
 
   const analysisName = options.analysisName || getStoredAnalysisName(analysisId);
+  const { default: ExcelJS } = await import("exceljs");
 
   let filteredReqs = [...requirements];
   if (targetLevel !== "all") {
