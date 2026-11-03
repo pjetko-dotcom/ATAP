@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, beforeEach, test } from "node:test";
 import { MAX_BACKUP_SIZE, restoreBackup, validateBackup } from "./backupRestore";
 import { sanitizeCsvCell } from "./csv";
+import { generateFindingsFromAsvs } from "./findings";
 import { computeVersionDiff } from "./versionDiff";
 import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
 import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
@@ -108,6 +109,49 @@ test("escapes CSV formulas and quotes every cell", () => {
   assert.equal(sanitizeCsvCell("\t@SUM(A1:A2)"), "\"'\t@SUM(A1:A2)\"");
   assert.equal(sanitizeCsvCell('text "with quotes"'), '"text ""with quotes"""');
   assert.equal(sanitizeCsvCell(3), '"3"');
+});
+
+test("generates findings only from current ASVS gaps and preserves matching statuses", () => {
+  const requirements = [
+    { ...asvsRequirements[0], id: "V1.1.1", title: "Missing control", level: 3, status: "Missing" as const },
+    { ...asvsRequirements[1], id: "V1.1.2", title: "Partial control", level: 2, status: "Partial" as const },
+    { ...asvsRequirements[2], id: "V1.1.3", title: "Implemented control", status: "Implemented" as const },
+  ];
+  const existing = [{
+    id: "F-OLD",
+    title: "Outdated title",
+    description: "Outdated description",
+    severity: "Low" as const,
+    status: "In Progress" as const,
+    asvsRef: "V1.1.2",
+  }, {
+    id: "F-STALE",
+    title: "No longer a gap",
+    description: "Old finding",
+    severity: "High" as const,
+    status: "Open" as const,
+    asvsRef: "V9.9.9",
+  }];
+
+  assert.deepEqual(generateFindingsFromAsvs(requirements, existing), [
+    {
+      id: "F-V1.1.1",
+      title: "Missing control",
+      description: requirements[0].description,
+      severity: "High",
+      status: "Open",
+      asvsRef: "V1.1.1",
+    },
+    {
+      id: "F-OLD",
+      title: "Partial control",
+      description: requirements[1].description,
+      severity: "Medium",
+      status: "In Progress",
+      asvsRef: "V1.1.2",
+    },
+  ]);
+  assert.deepEqual(generateFindingsFromAsvs([], existing), []);
 });
 
 test("uses a stricter production CSP and development-only Vite allowances", () => {

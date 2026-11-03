@@ -26,7 +26,8 @@ import {
   Sliders,
   X,
   FileCode2,
-  Network
+  Network,
+  Pencil
 } from "lucide-react";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
 
@@ -243,7 +244,8 @@ export function ArchitectureModel() {
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
   const [draggingCompId, setDraggingCompId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isComponentModalOpen, setIsComponentModalOpen] = useState(false);
+  const [editingCompId, setEditingCompId] = useState<string | null>(null);
   const [isAddFlowOpen, setIsAddFlowOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -260,6 +262,24 @@ export function ArchitectureModel() {
   const [newFlowClassification, setNewFlowClassification] = useState<DataFlow["dataClassification"]>("Confidential");
 
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  const openAddComponentModal = () => {
+    setEditingCompId(null);
+    setNewCompName("");
+    setNewCompType("service");
+    setNewCompZone("zone_internal");
+    setNewCompTech("");
+    setIsComponentModalOpen(true);
+  };
+
+  const openEditComponentModal = (component: ArchComponent) => {
+    setEditingCompId(component.id);
+    setNewCompName(component.name);
+    setNewCompType(component.type);
+    setNewCompZone(component.zoneId);
+    setNewCompTech(component.tech);
+    setIsComponentModalOpen(true);
+  };
 
   useEffect(() => {
     if (requestedComponent && components.some(component => component.id === requestedComponent)) {
@@ -352,33 +372,51 @@ export function ArchitectureModel() {
     }
   };
 
-  const handleAddComponent = (e: React.FormEvent) => {
+  const handleSaveComponent = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newCompName.trim()) return;
+    const name = newCompName.trim();
+    if (!name) return;
 
-    const newId = newCompName.trim();
-    if (components.some(c => c.id === newId)) {
+    const duplicate = components.some(c =>
+      c.id !== editingCompId &&
+      (c.id.toLowerCase() === name.toLowerCase() || c.name.toLowerCase() === name.toLowerCase())
+    );
+    if (duplicate) {
       alert("Komponent s týmto názvom už existuje.");
       return;
     }
 
+    const tech = newCompTech.trim() || "Všeobecná služba";
+    if (editingCompId) {
+      setComponents(prev => prev.map(component =>
+        component.id === editingCompId
+          ? { ...component, name, type: newCompType, zoneId: newCompZone, tech }
+          : component
+      ));
+      setSelectedCompId(editingCompId);
+      setIsComponentModalOpen(false);
+      setEditingCompId(null);
+      setToastMessage(`Komponent "${name}" bol upravený.`);
+      setTimeout(() => setToastMessage(null), 3000);
+      return;
+    }
+
+    const newId = name;
     const zone = DEFAULT_ZONES.find(z => z.id === newCompZone) || DEFAULT_ZONES[1];
 
     const newComp: ArchComponent = {
       id: newId,
-      name: newCompName.trim(),
+      name,
       type: newCompType,
       zoneId: newCompZone,
-      tech: newCompTech.trim() || "Všeobecná služba",
+      tech,
       x: zone.x + 30,
       y: zone.y + 100 + (components.length * 20) % 200
     };
 
     setComponents(prev => [...prev, newComp]);
     setSelectedCompId(newComp.id);
-    setIsAddModalOpen(false);
-    setNewCompName("");
-    setNewCompTech("");
+    setIsComponentModalOpen(false);
     setToastMessage(`Komponent "${newComp.name}" bol pridaný do modelu.`);
     setTimeout(() => setToastMessage(null), 3000);
   };
@@ -450,7 +488,7 @@ export function ArchitectureModel() {
 
         <div className="flex items-center gap-2">
           <button
-            onClick={() => setIsAddModalOpen(true)}
+            onClick={openAddComponentModal}
             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Plus size={14} />
@@ -684,14 +722,24 @@ export function ArchitectureModel() {
                 <div>
                   <div className="flex items-center justify-between">
                     <span className="text-[10px] font-bold uppercase text-slate-400">Komponent</span>
-                    <button
-                      onClick={() => handleDeleteComponent(selectedComp.id)}
-                      className="text-red-500 hover:text-red-700 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                      title="Zmazať komponent"
-                    >
-                      <Trash2 size={12} />
-                      <span>Zmazať</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => openEditComponentModal(selectedComp)}
+                        className="text-blue-600 hover:text-blue-800 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                        title="Upraviť komponent"
+                      >
+                        <Pencil size={12} />
+                        <span>Upraviť</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteComponent(selectedComp.id)}
+                        className="text-red-500 hover:text-red-700 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                        title="Zmazať komponent"
+                      >
+                        <Trash2 size={12} />
+                        <span>Zmazať</span>
+                      </button>
+                    </div>
                   </div>
                   <h4 className="font-extrabold text-slate-800 text-sm mt-0.5">{selectedComp.name}</h4>
                   <div className="mt-2 space-y-1 text-slate-600 text-[11px]">
@@ -810,18 +858,20 @@ export function ArchitectureModel() {
         </div>
       </div>
 
-      {/* Modal: Add New Component */}
-      {isAddModalOpen && (
+      {/* Modal: Add or edit component */}
+      {isComponentModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
+          <div role="dialog" aria-modal="true" aria-labelledby="component-modal-title" className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-800 text-sm">Pridať nový architektonický komponent</h3>
-              <button onClick={() => setIsAddModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <h3 id="component-modal-title" className="font-bold text-slate-800 text-sm">
+                {editingCompId ? "Upraviť architektonický komponent" : "Pridať nový architektonický komponent"}
+              </h3>
+              <button type="button" aria-label="Zavrieť formulár komponentu" onClick={() => setIsComponentModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
 
-            <form onSubmit={handleAddComponent} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveComponent} className="space-y-3.5 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Názov komponentu *</label>
                 <input
@@ -876,7 +926,7 @@ export function ArchitectureModel() {
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button
                   type="button"
-                  onClick={() => setIsAddModalOpen(false)}
+                  onClick={() => setIsComponentModalOpen(false)}
                   className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium"
                 >
                   Zrušiť
@@ -885,7 +935,7 @@ export function ArchitectureModel() {
                   type="submit"
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-xs"
                 >
-                  Pridať komponent
+                  {editingCompId ? "Uložiť zmeny" : "Pridať komponent"}
                 </button>
               </div>
             </form>

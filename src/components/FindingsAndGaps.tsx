@@ -1,25 +1,13 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { FileText, ShieldAlert, CheckCircle, RefreshCw, AlertTriangle, ArrowRight } from "lucide-react";
+import { FileText, ShieldAlert, CheckCircle, AlertTriangle, ArrowRight } from "lucide-react";
 import { asvsRequirements, asvsChapters, ASVSRequirement } from "../data/asvsData";
 import { HelpTooltip } from "./HelpTooltip";
+import FileSaver from "file-saver";
+import { sanitizeCsvCell } from "../utils/csv";
+import { Finding, generateFindingsFromAsvs } from "../utils/findings";
 
-/**
- * Represents a security finding or compliance gap identified within the application.
- */
-interface Finding {
-  id: string;
-  title: string;
-  description: string;
-  severity: "Critical" | "High" | "Medium" | "Low";
-  status: "Open" | "In Progress" | "Closed";
-  asvsRef: string;
-}
-
-const initialFindings: Finding[] = [
-  { id: "F-001", title: "Missing MFA for Admin Users", description: "Multi-factor authentication is not enforced for administrative accounts.", severity: "High", status: "Open", asvsRef: "V2.3.1" },
-  { id: "F-002", title: "Insecure Direct Object Reference (IDOR)", description: "User profile endpoint lacks authorization checks.", severity: "High", status: "In Progress", asvsRef: "V4.1.1" },
-];
+const { saveAs } = FileSaver;
 
 const severityColors = {
   Critical: "bg-purple-100 text-purple-700",
@@ -34,105 +22,153 @@ const statusColors = {
   "Closed": "bg-green-50 text-green-700 border border-green-200",
 };
 
+function isFinding(value: unknown): value is Finding {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const finding = value as Record<string, unknown>;
+  return typeof finding.id === "string" &&
+    typeof finding.title === "string" &&
+    typeof finding.description === "string" &&
+    ["Critical", "High", "Medium", "Low"].includes(finding.severity as string) &&
+    ["Open", "In Progress", "Closed"].includes(finding.status as string) &&
+    typeof finding.asvsRef === "string";
+}
+
+function loadSavedFindings(key: string): Finding[] {
+  try {
+    const stored = localStorage.getItem(key);
+    if (!stored) return [];
+    const parsed: unknown = JSON.parse(stored);
+    if (!Array.isArray(parsed) || !parsed.every(isFinding)) {
+      throw new Error("Stored findings have an invalid format.");
+    }
+    return parsed;
+  } catch (error) {
+    console.error(`Failed to load findings (${key}):`, error);
+    return [];
+  }
+}
+
 /**
  * FindingsAndGaps Component
  * 
  * Manages the security findings and gaps identified during the threat modeling and ASVS review process.
- * Includes a Gap Analysis generation engine that cross-references architecture state against 
- * the 350+ ASVS 5.0 requirements.
+ * Generates findings only from ASVS requirements marked Missing or Partial.
  * 
  * @returns {JSX.Element} The rendered Findings and Gaps dashboard.
  */
 export function FindingsAndGaps() {
   const { id: analysisId } = useParams<{ id: string }>();
-  const [findings, setFindings] = useState<Finding[]>(initialFindings);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const findingsStorageKey = `atap_findings_${analysisId || "default"}`;
+  const [findingState, setFindingState] = useState(() => ({
+    key: findingsStorageKey,
+    items: loadSavedFindings(findingsStorageKey),
+  }));
+  const findings = findingState.key === findingsStorageKey ? findingState.items : [];
   const [lastGenerated, setLastGenerated] = useState<Date | null>(null);
+  const [exportMessage, setExportMessage] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
+  const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  /**
-   * Generates a simulated Gap Analysis.
-   * In a production environment, this function cross-references the selected ASVS requirements 
-   * (specifically those marked as "Missing" or "Partial") and translates them into actionable findings.
-   */
+  useEffect(() => {
+    if (findingState.key !== findingsStorageKey) {
+      setFindingState({
+        key: findingsStorageKey,
+        items: loadSavedFindings(findingsStorageKey),
+      });
+    }
+  }, [findingsStorageKey, findingState.key]);
+
+  useEffect(() => {
+    if (findingState.key !== findingsStorageKey) return;
+    try {
+      localStorage.setItem(findingsStorageKey, JSON.stringify(findingState.items));
+    } catch (error) {
+      console.error("Failed to save findings:", error);
+      setAnalysisError("Findings could not be saved in this browser.");
+    }
+  }, [findingState, findingsStorageKey]);
+
   const generateGapAnalysis = () => {
-    setIsGenerating(true);
-    
-    // Simulate API call and analysis delay for UX
-    setTimeout(() => {
-      // 1. Base findings array logic
-      const newFindings: Finding[] = [...findings];
-      let findingCounter = findings.length + 1;
-      
-      // 2. Identify missing or partial ASVS requirements from the workspace data
-      const asvsKey = `atap_asvs_v5_${analysisId || "default"}`;
-      let activeReqs: ASVSRequirement[] = asvsRequirements;
+    setAnalysisError(null);
+    const asvsKey = `atap_asvs_v5_${analysisId || "default"}`;
+    let activeReqs: ASVSRequirement[] = asvsRequirements;
+
+    try {
       const stored = localStorage.getItem(asvsKey) || localStorage.getItem(`atap_asvs_${analysisId || "default"}`);
       if (stored) {
-        try {
-          activeReqs = JSON.parse(stored);
-        } catch (e) {
-          activeReqs = asvsRequirements;
+        const parsed: unknown = JSON.parse(stored);
+        if (
+          !Array.isArray(parsed) ||
+          !parsed.every((item: unknown) =>
+            typeof item === "object" &&
+            item !== null &&
+            typeof (item as Record<string, unknown>).id === "string" &&
+            typeof (item as Record<string, unknown>).title === "string" &&
+            typeof (item as Record<string, unknown>).description === "string" &&
+            typeof (item as Record<string, unknown>).level === "number" &&
+            ["Implemented", "Partial", "Missing", "N/A"].includes((item as Record<string, unknown>).status as string)
+          )
+        ) {
+          throw new Error("Stored ASVS requirements have an invalid format.");
         }
+        activeReqs = parsed as ASVSRequirement[];
       }
+    } catch (error) {
+      console.error("Failed to read ASVS requirements for gap analysis:", error);
+      setAnalysisError("ASVS requirements could not be read, so no findings were generated.");
+      return;
+    }
 
-      const gaps = activeReqs.filter(r => r.status === "Missing" || r.status === "Partial");
-      
-      // 3. Fallback/Demonstration Logic:
-      // If the user hasn't explicitly marked any gaps in the ASVS Workspace yet,
-      // we generate a predefined set of simulated gaps to demonstrate the functionality.
-      if (gaps.length === 0) {
-        const simulatedGaps = [
-          { req: activeReqs.find(r => r.id === "V3.1") || activeReqs[20], severity: "High" as const },
-          { req: activeReqs.find(r => r.id === "V5.1") || activeReqs[50], severity: "Medium" as const },
-          { req: activeReqs.find(r => r.id === "V7.1") || activeReqs[70], severity: "Low" as const },
-          { req: activeReqs.find(r => r.id === "V9.1") || activeReqs[90], severity: "Medium" as const },
-          { req: activeReqs.find(r => r.id === "V14.1") || activeReqs[140], severity: "High" as const }
-        ];
-        
-        simulatedGaps.forEach(gap => {
-          // Prevent duplicates by checking if the ASVS reference already exists in findings
-          if (gap.req && !newFindings.find(f => f.asvsRef === gap.req.id)) {
-            newFindings.push({
-              id: `F-${String(findingCounter).padStart(3, '0')}`,
-              title: `Gap: ${gap.req.title}`,
-              description: `Automated gap analysis identified missing security controls for ${gap.req.id}. ${gap.req.description}`,
-              severity: gap.severity,
-              status: "Open",
-              asvsRef: gap.req.id
-            });
-            findingCounter++;
-          }
-        });
-      } else {
-        // 4. Actual Usage Logic:
-        // Translate actual workspace gaps into findings, inheriting severity from the ASVS level (L3 = High).
-        gaps.forEach(req => {
-          if (!newFindings.find(f => f.asvsRef === req.id)) {
-            newFindings.push({
-              id: `F-${String(findingCounter).padStart(3, '0')}`,
-              title: req.title,
-              description: req.description,
-              severity: req.level === 3 ? "High" : (req.level === 2 ? "Medium" : "Low"),
-              status: "Open",
-              asvsRef: req.id
-            });
-            findingCounter++;
-          }
-        });
-      }
+    setFindingState({
+      key: findingsStorageKey,
+      items: generateFindingsFromAsvs(activeReqs, findings),
+    });
+    setLastGenerated(new Date());
+  };
 
-      setFindings(newFindings);
-      setLastGenerated(new Date());
-      setIsGenerating(false);
-    }, 2000);
+  const exportFindingsReport = () => {
+    setExportMessage(null);
+    setExportError(null);
+
+    try {
+      const headers = ["ID", "Finding", "Description", "Severity", "Status", "ASVS Reference"];
+      const rows = findings.map(finding => [
+        finding.id,
+        finding.title,
+        finding.description,
+        finding.severity,
+        finding.status,
+        finding.asvsRef,
+      ].map(sanitizeCsvCell).join(","));
+      const csv = `\uFEFF${headers.map(sanitizeCsvCell).join(",")}\n${rows.join("\n")}`;
+      const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+      const safeAnalysisId = (analysisId || "analysis").replace(/[^A-Za-z0-9_-]/g, "_");
+      saveAs(blob, `atap_findings_${safeAnalysisId}_${new Date().toISOString().slice(0, 10)}.csv`);
+      setExportMessage("Findings report downloaded as CSV.");
+    } catch (error) {
+      console.error("Findings report export failed:", error);
+      setExportError("Could not export the findings report. Please try again.");
+    }
   };
 
   return (
     <div className="flex flex-col h-full bg-slate-50 p-6 overflow-auto">
+      {(exportMessage || exportError) && (
+        <div
+          role={exportError ? "alert" : "status"}
+          className={`mb-4 rounded-lg border px-3 py-2 text-sm ${
+            exportError
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-700"
+          }`}
+        >
+          {exportError || exportMessage}
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Findings & Gaps</h2>
-          <p className="text-sm text-slate-500 mt-1">Track identified vulnerabilities and security gaps in your architecture.</p>
+          <p className="text-sm text-slate-500 mt-1">Track findings derived from ASVS controls marked Missing or Partial.</p>
         </div>
         <div className="flex items-center gap-3">
           {lastGenerated && (
@@ -143,32 +179,22 @@ export function FindingsAndGaps() {
           <div className="flex items-center gap-2">
             <button 
               onClick={generateGapAnalysis}
-              disabled={isGenerating}
-              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-all ${
-                isGenerating 
-                  ? 'bg-blue-100 text-blue-600 cursor-not-allowed' 
-                  : 'bg-blue-600 text-white hover:bg-blue-700'
-              }`}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-all bg-blue-600 text-white hover:bg-blue-700"
             >
-              {isGenerating ? (
-                <>
-                  <RefreshCw size={16} className="animate-spin" />
-                  Analyzing Architecture...
-                </>
-              ) : (
-                <>
-                  <ShieldAlert size={16} />
-                  Generate Gap Analysis
-                </>
-              )}
+              <ShieldAlert size={16} />
+              Generate Gap Analysis
             </button>
-            <HelpTooltip text="Automatically cross-references your ASVS Workspace selections to generate a consolidated list of missing or partial security controls." position="bottom" />
+            <HelpTooltip text="Creates findings from ASVS requirements marked Missing or Partial. It does not scan the architecture model." position="bottom" />
           </div>
           <button 
+            type="button"
+            onClick={exportFindingsReport}
+            aria-label="Export findings report as CSV"
+            title="Download findings report as CSV"
             className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-md shadow-sm hover:bg-slate-700 transition-colors"
           >
             <FileText size={16} />
-            Export Report
+            Export Report (.csv)
           </button>
         </div>
       </div>
@@ -203,14 +229,14 @@ export function FindingsAndGaps() {
         </div>
       </div>
 
-      {isGenerating && (
-        <div className="mb-6 p-6 bg-blue-50 border border-blue-100 rounded-xl flex flex-col items-center justify-center animate-pulse">
-          <RefreshCw size={32} className="text-blue-500 animate-spin mb-4" />
-          <h3 className="text-blue-800 font-bold mb-1">Cross-referencing ASVS 5.0 Requirements...</h3>
-          <p className="text-blue-600 text-sm">Comparing architecture components against level 1-3 controls</p>
-          <div className="w-full max-w-md bg-blue-200 h-1.5 mt-4 rounded-full overflow-hidden">
-            <div className="bg-blue-600 h-full w-1/2 rounded-full animate-[ping_1.5s_ease-in-out_infinite]" style={{ animationDuration: '2s' }}></div>
-          </div>
+      {(analysisError || (lastGenerated && findings.length === 0)) && (
+        <div
+          role={analysisError ? "alert" : "status"}
+          className={`mb-6 rounded-lg border p-3 text-sm ${
+            analysisError ? "border-red-200 bg-red-50 text-red-700" : "border-blue-200 bg-blue-50 text-blue-800"
+          }`}
+        >
+          {analysisError || "No ASVS requirements are currently marked Missing or Partial."}
         </div>
       )}
 
@@ -272,8 +298,8 @@ export function FindingsAndGaps() {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                     <CheckCircle size={32} className="mx-auto mb-3 text-green-400" />
-                    <p className="font-medium text-slate-700">No security gaps identified</p>
-                    <p className="text-sm mt-1">Run a gap analysis to check against ASVS controls.</p>
+                    <p className="font-medium text-slate-700">No findings saved for this analysis</p>
+                    <p className="text-sm mt-1">Run the ASVS gap analysis to create findings from Missing or Partial controls.</p>
                   </td>
                 </tr>
               )}
