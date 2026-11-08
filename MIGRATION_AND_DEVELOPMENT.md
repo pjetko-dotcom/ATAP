@@ -15,8 +15,6 @@ npm test
 npm run dev
 ```
 
-Python is not required for setup, development, tests, or packaging. The one-off root-level Python patch scripts from older revisions have been removed; they were not application code or maintained tests.
-
 ## What belongs in Git
 
 Commit source code, configuration, lockfiles, and documentation. Do not copy or commit generated dependencies/builds (`node_modules/`, `dist/`, `release/`) or local secrets (`.env`). Check `.gitignore` for the current exclusions. Use `npm ci` to recreate dependencies from the lockfile rather than copying `node_modules` between machines.

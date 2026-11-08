@@ -24,7 +24,6 @@ V repozitári sú pripravené podrobné sprievodcovské dokumenty:
 * **[👩‍💻 Vývojársky sprievodca (DEVELOPMENT_GUIDE.md)](./DEVELOPMENT_GUIDE.md)**:
   * Overený postup od čerstvého klonu po spustenie, testy a build.
   * Štruktúra zdrojového kódu, lokálne úložisko, databázové hranice a vydávanie verzií.
-  * Upozornenie na zastaraný generátor ASVS, ktorý nesmie prepísať oficiálne dáta.
 
 * **[🔐 Bezpečnostné následné kroky (SECURITY_FOLLOW_UPS.md)](./SECURITY_FOLLOW_UPS.md)**:
   * Záznam realizovaných bezpečnostných opatrení a otvorených odporúčaní na ďalšie iterácie.

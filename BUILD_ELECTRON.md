@@ -27,8 +27,6 @@ Pred spustením build procesu nainštalujte nástroje uvedené nižšie.
 
 Verzie závislostí spravujú `package.json` a `package-lock.json`; dokumentácia úmyselne neopakuje ich pohyblivý zoznam.
 
-Python nie je potrebný na vývoj, testy ani Electron build. Staré root-level Python patch skripty neboli súčasťou aplikácie a boli odstránené.
-
 ### B. Git pre Windows
 * **Stiahnutie:** [git-scm.com](https://git-scm.com/download/win) alebo:
   ```powershell

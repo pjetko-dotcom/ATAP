@@ -6,8 +6,6 @@ This guide is the practical reference for setting up, running, testing, and rele
 
 Use the Node.js and npm versions declared in [`package.json`](./package.json): Node.js `>=22.12.0` and npm `>=10.0.0`. Electron is a development/build dependency and is packaged with the desktop app.
 
-Python is **not** required to install dependencies, run the app, test it, or build it. The root-level Python files in older revisions were one-off source-editing scripts, not application code or maintained tests; they have been removed. Implement future changes directly in the relevant source files and add repeatable tests instead of checking in ad-hoc patch scripts.
-
 ## Start from a fresh clone
 
 ```sh
@@ -54,10 +52,6 @@ Before submitting changes, run `npm run lint`, `npm test`, and `npm run build`. 
 - `electron/`: Electron main process and preload bridge.
 - `contentSecurityPolicy.ts`: shared Content Security Policy construction.
 - `dist/` and `release/`: generated build output; never edit or commit these as source.
-
-### ASVS data warning
-
-`src/data/generateAsvs.cjs` is an obsolete placeholder generator. It generates randomized sample requirements and overwrites `src/data/asvsData.ts`; it is not part of any npm command and **must not be used to update the official ASVS catalog**. When updating ASVS, use the canonical OWASP source, preserve the project’s metadata/status fields, review the complete diff, and update the catalog version in the relevant code and documentation.
 
 ## Data and persistence
 
