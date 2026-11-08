@@ -21,6 +21,11 @@ V repozitári sú pripravené podrobné sprievodcovské dokumenty:
   * Architektúra perzistencie (LocalStorage, JSON import/export, lokálny activity log, Drizzle ORM).
   * Duálne smerovanie (`HashRouter` pre offline desktop vs. `BrowserRouter` pre web).
 
+* **[👩‍💻 Vývojársky sprievodca (DEVELOPMENT_GUIDE.md)](./DEVELOPMENT_GUIDE.md)**:
+  * Overený postup od čerstvého klonu po spustenie, testy a build.
+  * Štruktúra zdrojového kódu, lokálne úložisko, databázové hranice a vydávanie verzií.
+  * Upozornenie na zastaraný generátor ASVS, ktorý nesmie prepísať oficiálne dáta.
+
 * **[🔐 Bezpečnostné následné kroky (SECURITY_FOLLOW_UPS.md)](./SECURITY_FOLLOW_UPS.md)**:
   * Záznam realizovaných bezpečnostných opatrení a otvorených odporúčaní na ďalšie iterácie.
 
@@ -28,8 +33,8 @@ V repozitári sú pripravené podrobné sprievodcovské dokumenty:
 
 ## 🚀 Rýchly Štart (Quick Start)
 
-> **Požiadavka na prostredie:**
-> * **Host / Build / Dev:** Projekt vyžaduje Node.js `>= 22.12.0`; odporúčaná je najnovšia LTS verzia, aktuálne **Node.js 26.13.0**, a npm 10 alebo novší.
+> **Požiadavka na prostredie** (zdroj pravdy: `engines` v `package.json`):
+> * **Host / Build / Dev:** Node.js `>= 22.12.0` a npm `>= 10.0.0`.
 > * **Desktop Runtime:** Electron 45 obsahuje vlastný Node.js runtime. Koncový používateľ vo Windows 11 nepotrebuje Node.js.
 
 ### 1. Inštalácia závislostí
@@ -56,16 +61,10 @@ npm ci
 npm run electron:build
 ```
 Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `release/`:
-* `release/ATAP Threat Analysis Platform Setup 5.2.1.exe` (NSIS Installer)
-* `release/ATAP Threat Analysis Platform 5.2.1.exe` (Standalone Portable)
+* `ATAP Threat Analysis Platform Setup <verzia>.exe` (NSIS inštalátor)
+* `ATAP Threat Analysis Platform <verzia>.exe` (portable verzia)
 
-### GUI / malé obrazovky (verzia 5.2.1)
-* Hlavička analýzy sa na užších viewportoch rozdelí na riadky; sekundárne akcie sú v ponuke **Viac**, aby neodišli mimo obrazovku.
-* ASVS používa kompaktné karty pod 1280 px vrátane úpravy stavu, dôkazu, metodiky a mapovania komponentov. Na širokých obrazovkách zostáva tabuľkový pohľad.
-* Triážne otázky sú rozbaľovacie a naraz možno otvoriť detail jednej otázky.
-* Fonty sú systémové a lokálne, takže vizuál nepotrebuje načítať Google Fonts ani sieťové pripojenie.
-* Verzia **5.2.1** zlepšuje navigáciu a prístupnosť: ASVS filtre sa pamätajú pre každú analýzu, zálohovanie je dostupné z bočného panela a mobilná navigácia aj modálne okná podporujú ovládanie klávesnicou.
-* Predošlé balíky **5.2.0** a **5.1.0** možno ponechať ako rollback referencie.
+Číslo verzie sa berie z `package.json`; názvy súborov sa menia podľa neho. Podrobnosti o vývoji a aktuálnych príkazoch nájdete v [DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md).
 
 ---
 
@@ -98,7 +97,7 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 
 ## 🔒 Bezpečnostný Profil
 
-* Express API štandardne počúva iba na `127.0.0.1`; pre zmenu portu použite `PORT`. API nie je autentifikované a nie je určené na priame vystavenie do siete.
+* Express server štandardne počúva na `0.0.0.0:3000` (`HOST` a `PORT` možno nastaviť). API nie je autentifikované; pre lokálne použitie nastavte `HOST=127.0.0.1` a API nevystavujte do nedôveryhodnej siete.
 * Produkčná CSP sa uplatňuje cez serverovú hlavičku a HTML meta tag. Vývoj povoľuje dodatočné Vite/HMR zdroje, ktoré sa do produkčnej CSP nepridávajú.
 * Import záloh kontroluje štruktúru a veľkosť (25 MiB, najviac 100 projektov); obnova sa pokúsi vrátiť pôvodné hodnoty pri zlyhaní zápisu.
 * CSV export ošetruje všetky bunky proti formula injection a správne escapuje úvodzovky.
@@ -111,4 +110,4 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 
 ---
 
-Podrobné informácie nájdete v **[BUILD_ELECTRON.md](./BUILD_ELECTRON.md)** a **[MIGRATION_AND_DEVELOPMENT.md](./MIGRATION_AND_DEVELOPMENT.md)**.
+Podrobné informácie nájdete v **[DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md)**, **[BUILD_ELECTRON.md](./BUILD_ELECTRON.md)** a **[MIGRATION_AND_DEVELOPMENT.md](./MIGRATION_AND_DEVELOPMENT.md)**.

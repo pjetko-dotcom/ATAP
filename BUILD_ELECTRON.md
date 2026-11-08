@@ -1,20 +1,17 @@
 # 🖥️ Návod na Build a Spustenie Electron Desktop Aplikácie (Windows 11)
 
-Tento dokument obsahuje podrobný návod krok za krokom (**Step-by-Step**) na prípravu vývojového prostredia, spustenie vo vývojovom režime a vytvorenie finálnych inštalačných balíčkov (`.exe`) aplikácie **ATAP (Application Threat Analysis Platform)** pre operačný systém **Windows 11**.
+Tento dokument obsahuje návod na prípravu vývojového prostredia, spustenie a vytvorenie inštalačných balíčkov (`.exe`) aplikácie **ATAP (Application Threat Analysis Platform)** pre Windows.
 
 ---
 
 ## 📋 1. Predpoklady a Príprava Systému (Prerequisites)
 
-Pred spustením buidovacieho procesu sa uistite, že máte na počítači s Windows 11 nainštalované nasledujúce nástroje:
+Pred spustením build procesu nainštalujte nástroje uvedené nižšie.
 
 ### A. Node.js a NPM (Hostiteľské / Build Prostredie)
-* **Aktuálna LTS verzia:** Node.js **26.13.0 LTS**. Projekt vyžaduje `node: >= 22.12.0`; použiť možno podporovanú LTS verziu Node.js.
-* **⚠️ Kľúčový architektonický rozdiel (Host Node vs. Electron Runtime):**
-  > **DÔLEŽITÉ UPOZORNENIE:** Výsledná Electron aplikácia **NEPOUŽÍVA externý Node.js** nainštalovaný vo Windows 11. 
-  > Desktopový framework **Electron 45** (aktuálna verzia `45.1.0`) v sebe integruje **vlastný vstavaný Node.js 24.22.x** a vlastné Chromium jadro.
-  > 
-  > Hostiteľský **Node.js 26 LTS** na vašom počítači slúži **výhradne pre vývojárske nástroje (Vite bundler, TypeScript kompilátor, esbuild, electron-builder) a CI/CD build proces**, prípadne pre beh standalone Express 5 backend servera. Koncový používateľ Windows 11 aplikácie **nemusí mať Node.js nainštalovaný vôbec**.
+* **Požiadavka projektu:** Node.js `>= 22.12.0` a npm `>= 10.0.0` (zdroj pravdy: `engines` v `package.json`).
+* **Rozdiel medzi build a desktop runtime:**
+  > Node.js na vývojárskom počítači sa používa na nástroje, build a Express server. Electron je pribalený do desktopovej aplikácie, takže koncový používateľ nepotrebuje samostatnú inštaláciu Node.js.
 
 * **Stiahnutie Node.js pre Windows 11:** Oficiálna stránka [nodejs.org](https://nodejs.org/) alebo cez Windows Package Manager (`winget`):
   ```powershell
@@ -23,25 +20,16 @@ Pred spustením buidovacieho procesu sa uistite, že máte na počítači s Wind
 * **Overenie inštalácie** v termináli (PowerShell alebo CMD):
   ```powershell
   node -v
-  # Vypíše napr. v26.13.0 (alebo podporovanú LTS verziu >=22.12.0)
+  # Vypíše podporovanú verziu >=22.12.0
   npm -v
   # Vypíše verziu npm (10.9.x alebo novšiu)
   ```
 
-### B. Prehľad Verzií Komponentov a Stav Ekosystému
-Pre zachovanie prehľadu uvádzame porovnanie základných verzií projektu s najnovšími stabilnými verziami v ekosystéme:
+Verzie závislostí spravujú `package.json` a `package-lock.json`; dokumentácia úmyselne neopakuje ich pohyblivý zoznam.
 
-| Komponent | Verzia v projekte | Aktuálna stabilná verzia | Architektonický kontext a zhodnotenie |
-| :--- | :--- | :--- | :--- |
-| **Node.js LTS** | `>= 22.12.0` | **26.13.0 LTS** | Relevantný pre build, tooling, CI a Express server. |
-| **Electron** | `^45.1.0` | **45.1.0** | Electron integruje Chromium a vlastný Node.js runtime, nezávislý od hostiteľa. |
-| **React** | `^19.3.1` | **19.3.x (19.3.1)** | Aktuálna stabilná vetva React 19 so zlepšenou podporou pre akcie a hooky. |
-| **TypeScript** | `^7.0.2` | **7.0.2** | Aktuálna stabilná verzia TypeScriptu. |
-| **Vite** | `^8.3.5` | **8.3.5** | Vite 8 je aktuálna major generácia bundleru. |
-| **Tailwind CSS** | `^4.3.3` | **4.3.3** | CSS v4 s priamou integráciou cez `@tailwindcss/vite`. |
-| **Express** | `^5.3.0` | **5.3.0** | Express 5 s natívnou podporou Promise v routoch. |
+Python nie je potrebný na vývoj, testy ani Electron build. Staré root-level Python patch skripty neboli súčasťou aplikácie a boli odstránené.
 
-### C. Git pre Windows
+### B. Git pre Windows
 * **Stiahnutie:** [git-scm.com](https://git-scm.com/download/win) alebo:
   ```powershell
   winget install Git.Git
@@ -51,8 +39,10 @@ Pre zachovanie prehľadu uvádzame porovnanie základných verzií projektu s na
   git --version
   ```
 
-### D. PowerShell Execution Policy (dôležité pre Windows 11)
-Ak vám PowerShell odmieta spúšťať npm skripty s chybou `running scripts is disabled on this system`, otvorte PowerShell ako Správca (Administrator) a povoľte lokálne skripty:
+### C. PowerShell Execution Policy
+Ak PowerShell odmieta spustiť `npm.ps1` pre execution policy, použite `npm.cmd` alebo upravte používateľskú execution policy podľa pravidiel vášho systému. Na zmenu systémových bezpečnostných nastavení nemusia byť potrebné ani vhodné administrátorské práva.
+
+Príklad pre aktuálneho používateľa (iba ak to povoľujú pravidlá zariadenia):
 ```powershell
 Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
@@ -133,11 +123,9 @@ Po úspešnom dokončení príkazu nájdete v priečinku `release/` dva typy bin
 
 | Súbor | Typ | Určenie |
 | :--- | :--- | :--- |
-| `ATAP Threat Analysis Platform Setup 5.2.1.exe` | **NSIS Inštalátor** | Štandardný Windows inštalátor so sprievodcom. Vytvorí zástupcu na ploche a v Štart menu, umožňuje odinštalovanie cez Nastavenia Windows. |
-| `ATAP Threat Analysis Platform 5.2.1.exe` | **Portable Verzia** | Samostatný jedno-súborový program. **Nevyžaduje inštaláciu ani administrátorské práva**. Môže sa spustiť priamo z USB kľúča alebo sieťového disku. |
+| `ATAP Threat Analysis Platform Setup <verzia>.exe` | **NSIS Inštalátor** | Štandardný Windows inštalátor. Verzia v názve sa berie z `package.json`. |
+| `ATAP Threat Analysis Platform <verzia>.exe` | **Portable Verzia** | Samostatný jedno-súborový program. Názov obsahuje verziu z `package.json`. |
 | `win-unpacked/` | **Rozbalená verzia** | Rozbalený adresár aplikácie pripravený na okamžité spustenie bez inštalácie (užitočné na rýchle testovanie). |
-
-**Verzia 5.2.1** zlepšuje navigáciu a prístupnosť: ASVS filtre sa pamätajú pre každú analýzu, zálohovanie je dostupné z bočného panela a mobilná navigácia aj modálne okná podporujú ovládanie klávesnicou. Predošlé balíky 5.2.0 a 5.1.0 možno ponechať ako rollback referencie.
 
 ---
 
