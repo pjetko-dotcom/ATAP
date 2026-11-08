@@ -3,6 +3,17 @@
 @theme {
   --font-sans: "Segoe UI", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Cascadia Code", Consolas, ui-monospace, monospace;
+  --color-blue-50: #eaf8fd;
+  --color-blue-100: #d6f1fb;
+  --color-blue-200: #ade3f7;
+  --color-blue-300: #7fd0f1;
+  --color-blue-400: #3fbeed;
+  --color-blue-500: #00acec;
+  --color-blue-600: #007dae;
+  --color-blue-700: #005784;
+  --color-blue-800: #003a66;
+  --color-blue-900: #002d50;
+  --color-blue-950: #001b32;
 }
 
 /* Custom Scrollbar Utility for both horizontal (bottom) and vertical (side) scrollbars */
