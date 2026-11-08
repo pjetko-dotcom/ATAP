@@ -66,6 +66,8 @@ Important keys include:
 - `atap_triage_v5_<id>`, `atap_asvs_target_level_<id>`, and `atap_logs_v5_<id>`: triage, target level, and activity history.
 - `atap_findings_<id>`: findings derived from ASVS requirements marked Missing or Partial.
 
+In the Threat Register, ASVS links are suggested from a threat's STRIDE category, title, and description. Suggestions are heuristic and require review; users can edit the references directly or append suggestions without replacing existing links. The free-text mitigation plan is stored separately from ASVS references.
+
 Use the JSON backup/restore feature when moving local workspace data between browsers or machines. A production deployment of the Express API is not, by itself, a synchronized multi-user workspace: the React workspace uses local storage, and the API/database integration is limited. The API has no authentication or authorization and must not be exposed to an untrusted network without adding them.
 
 ## Environment and database

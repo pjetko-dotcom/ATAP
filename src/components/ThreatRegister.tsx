@@ -5,11 +5,12 @@
  * 
  * @module ThreatRegister
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useParams, Link, useSearchParams } from "react-router-dom";
 import { Search, Plus, Filter, ShieldAlert, Edit2, Trash2, X, AlertTriangle, CheckCircle, ChevronDown, ChevronUp, Link2 } from "lucide-react";
 import { HelpTooltip } from "./HelpTooltip";
 import { asvsRequirements } from "../data/asvsData";
+import { suggestThreatAsvsRequirements } from "../utils/threatAsvs";
 
 type LikelihoodLevel = "Exceptionally" | "Unlikely" | "Probably" | "Frequently";
 type ImpactLevel = "Minor" | "Moderate" | "Major" | "Critical";
@@ -430,8 +431,22 @@ export function ThreatRegister() {
   const [editingThreat, setEditingThreat] = useState<Threat | null>(null);
   const [selectedComponentIds, setSelectedComponentIds] = useState<string[]>([]);
   const [asvsReferenceText, setAsvsReferenceText] = useState("");
+  const [hasManualAsvsRefs, setHasManualAsvsRefs] = useState(false);
+  const [threatTitle, setThreatTitle] = useState("");
+  const [threatDescription, setThreatDescription] = useState("");
+  const [threatStride, setThreatStride] = useState("Spoofing");
+  const suggestedAsvsRequirements = useMemo(
+    () => suggestThreatAsvsRequirements(threatStride, threatTitle, threatDescription),
+    [threatStride, threatTitle, threatDescription]
+  );
   const enteredAsvsRefs = Array.from(new Set(asvsReferenceText.match(/V\d+(?:\.\d+)*/g) || []));
   const invalidAsvsRefs = enteredAsvsRefs.filter(id => !asvsRequirements.some(requirement => requirement.id === id));
+
+  useEffect(() => {
+    if (isModalOpen && !hasManualAsvsRefs) {
+      setAsvsReferenceText(suggestedAsvsRequirements.map(requirement => requirement.id).join(", "));
+    }
+  }, [hasManualAsvsRefs, isModalOpen, suggestedAsvsRequirements]);
 
   // Collapsible State for Stats & Risk Matrix
   const [isSummaryExpanded, setIsSummaryExpanded] = useState<boolean>(() => {
@@ -463,15 +478,34 @@ export function ThreatRegister() {
   const openAddModal = () => {
     setEditingThreat(null);
     setSelectedComponentIds([]);
+    setThreatTitle("");
+    setThreatDescription("");
+    setThreatStride("Spoofing");
     setAsvsReferenceText("");
+    setHasManualAsvsRefs(false);
     setIsModalOpen(true);
   };
 
   const openEditModal = (threat: Threat) => {
     setEditingThreat(threat);
     setSelectedComponentIds(threat.componentIds || []);
+    setThreatTitle(threat.title);
+    setThreatDescription(threat.description);
+    setThreatStride(threat.stride);
     setAsvsReferenceText((threat.asvsRefs || (threat.mitigation.match(/V\d+(?:\.\d+)*/g) || [])).join(", "));
+    setHasManualAsvsRefs(true);
     setIsModalOpen(true);
+  };
+
+  const addSuggestedAsvsReferences = () => {
+    setAsvsReferenceText(current => {
+      const currentRefs = current.match(/V\d+(?:\.\d+)*/g) || [];
+      return Array.from(new Set([
+        ...currentRefs,
+        ...suggestedAsvsRequirements.map(requirement => requirement.id),
+      ])).join(", ");
+    });
+    setHasManualAsvsRefs(true);
   };
 
   const handleSaveThreat = (e: React.FormEvent<HTMLFormElement>) => {
@@ -766,7 +800,8 @@ export function ThreatRegister() {
                     name="title"
                     type="text" 
                     required
-                    defaultValue={editingThreat?.title}
+                    value={threatTitle}
+                    onChange={event => setThreatTitle(event.target.value)}
                     placeholder="e.g. SQL Injection in Login form" 
                     className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm"
                   />
@@ -777,7 +812,8 @@ export function ThreatRegister() {
                   <textarea 
                     name="description"
                     required
-                    defaultValue={editingThreat?.description}
+                    value={threatDescription}
+                    onChange={event => setThreatDescription(event.target.value)}
                     placeholder="Describe how the threat is executed and its impact..." 
                     className="w-full h-24 px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
                   />
@@ -789,7 +825,8 @@ export function ThreatRegister() {
                     <select 
                       name="stride"
                       required
-                      defaultValue={editingThreat?.stride || "Spoofing"}
+                      value={threatStride}
+                      onChange={event => setThreatStride(event.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
                       <option value="Spoofing">Spoofing</option>
@@ -851,14 +888,18 @@ export function ThreatRegister() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Linked Mitigation (ASVS Controls)</label>
+                  <label className="mb-1 flex items-center text-sm font-semibold text-slate-700">
+                    Mitigation Plan / Notes
+                    <HelpTooltip text="Enter the planned remediation or notes in plain text. ASVS requirement links are managed separately below." position="right" />
+                  </label>
                   <input 
                     name="mitigation"
                     type="text" 
                     defaultValue={editingThreat?.mitigation}
-                    placeholder="e.g. V2.1.1, V5.3.2" 
-                    className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-mono"
+                    placeholder="e.g. Enforce MFA and rate-limit login attempts"
+                    className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm"
                   />
+                  <p className="mt-1 text-xs text-slate-500">ASVS controls are suggested and linked separately below.</p>
                 </div>
                 <fieldset className="space-y-2">
                   <legend className="text-sm font-semibold text-slate-700">Prepojené architektonické komponenty</legend>
@@ -884,20 +925,57 @@ export function ThreatRegister() {
                   )}
                 </fieldset>
                 <div>
-                  <label htmlFor="threat-asvs-references" className="block text-sm font-semibold text-slate-700 mb-1">Prepojené ASVS požiadavky</label>
+                  <label htmlFor="threat-asvs-references" className="mb-1 flex items-center text-sm font-semibold text-slate-700">
+                    Prepojené ASVS požiadavky
+                    <HelpTooltip text="For a new threat, up to five ASVS controls are suggested from its STRIDE category, title and description. These are heuristic suggestions, not verified findings. Review and edit the IDs manually; editing existing links stops automatic replacement. Use “Pridať návrhy” to append suggestions without removing your links." position="top" />
+                  </label>
                   <input
                     id="threat-asvs-references"
                     list="threat-asvs-reference-list"
                     value={asvsReferenceText}
-                    onChange={event => setAsvsReferenceText(event.target.value)}
+                    onChange={event => {
+                      setAsvsReferenceText(event.target.value);
+                      setHasManualAsvsRefs(true);
+                    }}
                     placeholder="V2.3.1, V5.1.1"
                     className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm font-mono"
                   />
                   <datalist id="threat-asvs-reference-list">
                     {asvsRequirements.map(requirement => <option key={requirement.id} value={requirement.id}>{requirement.title}</option>)}
                   </datalist>
-                  <p className="mt-1 text-xs text-slate-500">Zadajte ID oddelené čiarkou.</p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {hasManualAsvsRefs
+                      ? "Prepojenia upravte ručne alebo pridajte automatické návrhy."
+                      : "Návrhy sa priebežne vyberajú podľa STRIDE kategórie, názvu a opisu hrozby. Môžete ich upraviť."}
+                  </p>
                   {invalidAsvsRefs.length > 0 && <p role="status" className="mt-1 text-xs text-amber-700">Neznáme ID sa neuložia: {invalidAsvsRefs.join(", ")}</p>}
+                  {suggestedAsvsRequirements.length > 0 && (
+                    <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50/50 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="text-[11px] font-semibold text-slate-700">
+                          Automatické návrhy z ASVS{hasManualAsvsRefs ? " (možno pridať)" : " (automaticky vybrané)"}
+                        </p>
+                        {hasManualAsvsRefs && (
+                          <button
+                            type="button"
+                            onClick={addSuggestedAsvsReferences}
+                            className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 underline cursor-pointer"
+                          >
+                            Pridať návrhy
+                          </button>
+                        )}
+                      </div>
+                      <ul className="mt-1.5 space-y-1">
+                        {suggestedAsvsRequirements.map(requirement => (
+                          <li key={requirement.id} className="text-[11px] text-slate-600">
+                            <span className="font-mono font-semibold text-blue-800">{requirement.id}</span>
+                            <span className="ml-1 text-slate-400">{requirement.sectionName}:</span>
+                            <span className="ml-1 text-slate-600 line-clamp-2" title={requirement.description}>{requirement.description}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
                 </div>
               </form>
             </div>

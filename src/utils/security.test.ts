@@ -4,6 +4,7 @@ import { MAX_BACKUP_SIZE, restoreBackup, validateBackup } from "./backupRestore"
 import { sanitizeCsvCell } from "./csv";
 import { generateFindingsFromAsvs } from "./findings";
 import { computeVersionDiff } from "./versionDiff";
+import { suggestThreatAsvsRequirements } from "./threatAsvs";
 import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
 import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
 import { asvsRequirements } from "../data/asvsData";
@@ -238,6 +239,24 @@ test("compares removed ASVS requirements, threat details and version settings", 
   assert.ok(diff.settingsDiffs.some(item => item.field === "targetLevel"));
   assert.ok(diff.settingsDiffs.some(item => item.field === "systemType"));
   assert.ok(diff.settingsDiffs.some(item => item.field === "architectureComponents"));
+});
+
+test("suggests ASVS controls from STRIDE threat details", () => {
+  const injectionSuggestions = suggestThreatAsvsRequirements(
+    "Tampering",
+    "SQL injection in search",
+    "An attacker injects SQL into a database query through the search input."
+  );
+  assert.ok(injectionSuggestions.some(suggestion => suggestion.id === "V1.2.4"));
+
+  const bruteForceSuggestions = suggestThreatAsvsRequirements(
+    "Spoofing",
+    "Brute force against admin login",
+    "Credential stuffing may compromise administrator accounts."
+  );
+  assert.ok(bruteForceSuggestions.some(suggestion => suggestion.sectionName.toLowerCase().includes("authentication")));
+  assert.ok(bruteForceSuggestions.length <= 5);
+  assert.deepEqual(suggestThreatAsvsRequirements("Spoofing", "", ""), []);
 });
 
 after(() => {
