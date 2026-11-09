@@ -215,6 +215,9 @@ export function ASVSWorkspace() {
     saveViewPreferences({ activeSectionId: "all", searchQuery: "", statusFilter: "all" });
   };
 
+  const matchesTargetLevel = (req: ASVSRequirement) =>
+    targetLevel === "all" || req.level <= targetLevel;
+
   // Dynamic Filtering based on selected chapter, section, search, level, and status
   const filteredRequirements = effectiveReqs.filter(req => {
     const matchesChapter = req.chapterId === activeChapterId;
@@ -225,7 +228,7 @@ export function ASVSWorkspace() {
       (req.sectionName && req.sectionName.toLowerCase().includes(searchQuery.toLowerCase())) ||
       req.description.toLowerCase().includes(searchQuery.toLowerCase());
       
-    const matchesLevel = targetLevel === "all" || req.level <= targetLevel;
+    const matchesLevel = matchesTargetLevel(req);
 
     let matchesStatus = true;
     if (statusFilter === "pending") {
@@ -248,13 +251,16 @@ export function ASVSWorkspace() {
       req.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (req.sectionName && req.sectionName.toLowerCase().includes(searchQuery.toLowerCase())) ||
       req.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesLevel = targetLevel === "all" || req.level <= targetLevel;
+    const matchesLevel = matchesTargetLevel(req);
     return matchesChapter && matchesSection && matchesSearch && matchesLevel;
   });
   const hasActiveViewFilters = activeSectionId !== "all" || !!searchQuery.trim() || statusFilter !== "all";
 
   const activeChapter = asvsChapters.find(c => c.id === activeChapterId);
   const chapterSections = asvsSections.filter(s => s.chapterId === activeChapterId);
+  const activeChapterRequirements = reqs.filter(
+    req => req.chapterId === activeChapterId && matchesTargetLevel(req)
+  );
 
   // Triage questions that affect the currently active chapter or its sections
   const chapterTriageQuestions = asvsTriageQuestions.filter(
@@ -473,7 +479,9 @@ export function ASVSWorkspace() {
         <div className="flex-1 min-h-0 overflow-y-auto overflow-x-auto py-2 custom-scrollbar divide-y divide-slate-50">
           {asvsChapters.map(chapter => {
             const isSelected = activeChapterId === chapter.id;
-            const chapterReqs = reqs.filter(r => r.chapterId === chapter.id);
+            const chapterReqs = reqs.filter(
+              req => req.chapterId === chapter.id && matchesTargetLevel(req)
+            );
             const totalChapter = chapterReqs.length;
             const naChapter = chapterReqs.filter(r => r.status === "N/A").length;
             const implementedChapter = chapterReqs.filter(r => r.status === "Implemented").length;
@@ -956,7 +964,7 @@ export function ASVSWorkspace() {
                   aria-pressed={statusFilter === "pending"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "pending" ? "bg-white text-red-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                 >
-                  Gaps ({reqs.filter(r => r.chapterId === activeChapterId && (r.status === "Missing" || r.status === "Partial")).length})
+                  Gaps ({activeChapterRequirements.filter(r => r.status === "Missing" || r.status === "Partial").length})
                 </button>
                 <button
                   onClick={() => handleStatusFilterChange("Implemented")}
@@ -986,7 +994,7 @@ export function ASVSWorkspace() {
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "no_evidence" ? "bg-white text-purple-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                   title="Zobraziť kontroly bez vyplneného dôkazu alebo poznámky"
                 >
-                  Bez dôkazu ({reqs.filter(r => r.chapterId === activeChapterId && r.status !== "N/A" && (!r.notes || r.notes.trim() === "")).length})
+                  Bez dôkazu ({activeChapterRequirements.filter(r => r.status !== "N/A" && (!r.notes || r.notes.trim() === "")).length})
                 </button>
               </div>
 
