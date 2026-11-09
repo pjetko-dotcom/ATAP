@@ -30,6 +30,7 @@ import {
   Pencil
 } from "lucide-react";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
+import { initialThreats, syncArchitectureThreats } from "../utils/threatModel";
 
 export interface ArchComponent {
   id: string;
@@ -60,6 +61,117 @@ export interface DataFlow {
   protocol: string;
   dataClassification: "Public" | "Internal" | "Confidential" | "Restricted";
   encrypted: boolean;
+}
+
+type TrustZoneColorKey = "red" | "amber" | "blue" | "emerald" | "purple" | "slate";
+
+const TRUST_ZONE_COLORS: Record<TrustZoneColorKey, Pick<TrustZone, "color" | "borderColor" | "bgTint"> & { label: string }> = {
+  red: { label: "Red", color: "text-red-700", borderColor: "border-red-300", bgTint: "bg-red-50/20" },
+  amber: { label: "Amber", color: "text-amber-700", borderColor: "border-amber-300", bgTint: "bg-amber-50/20" },
+  blue: { label: "Blue", color: "text-blue-700", borderColor: "border-blue-300", bgTint: "bg-blue-50/20" },
+  emerald: { label: "Emerald", color: "text-emerald-700", borderColor: "border-emerald-300", bgTint: "bg-emerald-50/20" },
+  purple: { label: "Purple", color: "text-purple-700", borderColor: "border-purple-300", bgTint: "bg-purple-50/20" },
+  slate: { label: "Slate", color: "text-slate-700", borderColor: "border-slate-300", bgTint: "bg-slate-50/20" }
+};
+
+const COMPONENT_NODE_WIDTH = 190;
+const COMPONENT_NODE_HEIGHT = 100;
+const CANVAS_WIDTH = 1300;
+const CANVAS_HEIGHT = 600;
+const MIN_ZONE_WIDTH = COMPONENT_NODE_WIDTH + 40;
+const MIN_ZONE_HEIGHT = COMPONENT_NODE_HEIGHT + 80;
+
+function getTrustZoneColorKey(zone: TrustZone): TrustZoneColorKey {
+  return (Object.keys(TRUST_ZONE_COLORS) as TrustZoneColorKey[])
+    .find(key => TRUST_ZONE_COLORS[key].color === zone.color) ?? "blue";
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(Math.max(value, min), max);
+}
+
+function constrainComponentToZone(component: ArchComponent, zone: TrustZone): ArchComponent {
+  const padding = 10;
+  return {
+    ...component,
+    x: clamp(component.x, zone.x + padding, Math.max(zone.x + padding, zone.x + zone.width - COMPONENT_NODE_WIDTH - padding)),
+    y: clamp(component.y, zone.y + 44, Math.max(zone.y + 44, zone.y + zone.height - COMPONENT_NODE_HEIGHT - padding))
+  };
+}
+
+function constrainTrustZone(zone: TrustZone): TrustZone {
+  const width = clamp(zone.width, MIN_ZONE_WIDTH, CANVAS_WIDTH - 20);
+  const height = clamp(zone.height, MIN_ZONE_HEIGHT, CANVAS_HEIGHT - 20);
+  return {
+    ...zone,
+    width,
+    height,
+    x: clamp(zone.x, 10, CANVAS_WIDTH - width - 10),
+    y: clamp(zone.y, 10, CANVAS_HEIGHT - height - 10)
+  };
+}
+
+function getStoredTrustZones(parsed: { zones?: unknown }): TrustZone[] {
+  if (!Array.isArray(parsed.zones)) return DEFAULT_ZONES;
+  const validZones = parsed.zones.filter((value): value is TrustZone => {
+    if (!value || typeof value !== "object") return false;
+    const zone = value as Record<string, unknown>;
+    return typeof zone.id === "string" &&
+      typeof zone.name === "string" &&
+      typeof zone.x === "number" &&
+      typeof zone.y === "number" &&
+      typeof zone.width === "number" &&
+      typeof zone.height === "number" &&
+      typeof zone.color === "string" &&
+      typeof zone.borderColor === "string" &&
+      typeof zone.bgTint === "string";
+  });
+  return validZones.length ? validZones.map(constrainTrustZone) : DEFAULT_ZONES;
+}
+
+function findComponentPosition(zone: TrustZone, components: ArchComponent[]): { x: number; y: number } {
+  const xStart = zone.x + 10;
+  const yStart = zone.y + 50;
+  const xEnd = Math.max(xStart, zone.x + zone.width - COMPONENT_NODE_WIDTH - 10);
+  const yEnd = Math.max(yStart, zone.y + zone.height - COMPONENT_NODE_HEIGHT - 10);
+
+  for (let y = yStart; y <= yEnd; y += 30) {
+    for (let x = xStart; x <= xEnd; x += 24) {
+      const hasOverlap = components.some(component =>
+        x < component.x + COMPONENT_NODE_WIDTH &&
+        x + COMPONENT_NODE_WIDTH > component.x &&
+        y < component.y + COMPONENT_NODE_HEIGHT &&
+        y + COMPONENT_NODE_HEIGHT > component.y
+      );
+      if (!hasOverlap) return { x, y };
+    }
+  }
+
+  return { x: xStart, y: yStart };
+}
+
+function getFlowEndpoints(from: ArchComponent, to: ArchComponent) {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const scale = Math.max(
+    Math.abs(dx) / COMPONENT_NODE_WIDTH,
+    Math.abs(dy) / COMPONENT_NODE_HEIGHT
+  );
+
+  if (scale === 0) return null;
+
+  const fromCenterX = from.x + COMPONENT_NODE_WIDTH / 2;
+  const fromCenterY = from.y + COMPONENT_NODE_HEIGHT / 2;
+  const toCenterX = to.x + COMPONENT_NODE_WIDTH / 2;
+  const toCenterY = to.y + COMPONENT_NODE_HEIGHT / 2;
+  const sourceScale = 0.5 / scale;
+
+  return {
+    x1: fromCenterX + dx * sourceScale,
+    y1: fromCenterY + dy * sourceScale,
+    x2: toCenterX - dx * sourceScale,
+    y2: toCenterY - dy * sourceScale
+  };
 }
 
 const DEFAULT_ZONES: TrustZone[] = [
@@ -221,10 +333,16 @@ export function ArchitectureModel() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.components && Array.isArray(parsed.components) && parsed.components.length > 0) {
-          return parsed.components;
+          const storedZones = getStoredTrustZones(parsed);
+          return parsed.components.map((component: ArchComponent) => {
+            const zone = storedZones.find(item => item.id === component.zoneId) ?? storedZones[0];
+            return constrainComponentToZone({ ...component, zoneId: zone.id }, zone);
+          });
         }
       }
-    } catch (e) {}
+    } catch (error) {
+      console.error("Failed to load architecture components", error);
+    }
     return DEFAULT_COMPONENTS;
   });
 
@@ -237,15 +355,36 @@ export function ArchitectureModel() {
           return parsed.flows;
         }
       }
-    } catch (e) {}
+    } catch (error) {
+      console.error("Failed to load architecture data flows", error);
+    }
     return DEFAULT_FLOWS;
+  });
+
+  const [zones, setZones] = useState<TrustZone[]>(() => {
+    try {
+      const saved = localStorage.getItem(storageKey);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return getStoredTrustZones(parsed);
+      }
+    } catch (error) {
+      console.error("Failed to load architecture trust zones", error);
+    }
+    return DEFAULT_ZONES;
   });
 
   const [selectedCompId, setSelectedCompId] = useState<string | null>(null);
   const [draggingCompId, setDraggingCompId] = useState<string | null>(null);
+  const [draggingZoneId, setDraggingZoneId] = useState<string | null>(null);
+  const [resizingZoneId, setResizingZoneId] = useState<string | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
   const [isComponentModalOpen, setIsComponentModalOpen] = useState(false);
   const [editingCompId, setEditingCompId] = useState<string | null>(null);
+  const [isZoneModalOpen, setIsZoneModalOpen] = useState(false);
+  const [editingZoneId, setEditingZoneId] = useState<string | null>(null);
+  const [newZoneName, setNewZoneName] = useState("");
+  const [newZoneColor, setNewZoneColor] = useState<TrustZoneColorKey>("blue");
   const [isAddFlowOpen, setIsAddFlowOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -281,21 +420,70 @@ export function ArchitectureModel() {
     setIsComponentModalOpen(true);
   };
 
+  const openAddZoneModal = () => {
+    setEditingZoneId(null);
+    setNewZoneName("");
+    setNewZoneColor("blue");
+    setIsZoneModalOpen(true);
+  };
+
+  const openEditZoneModal = (zone: TrustZone) => {
+    setEditingZoneId(zone.id);
+    setNewZoneName(zone.name);
+    setNewZoneColor(getTrustZoneColorKey(zone));
+    setIsZoneModalOpen(true);
+  };
+
   useEffect(() => {
     if (requestedComponent && components.some(component => component.id === requestedComponent)) {
       setSelectedCompId(requestedComponent);
     }
   }, [requestedComponent, components]);
 
-  // Save to localStorage whenever components or flows change
+  // Save the complete DFD model whenever its components, flows, or trust zones change.
   useEffect(() => {
     const data = {
       components,
       flows,
-      zones: DEFAULT_ZONES
+      zones
     };
-    localStorage.setItem(storageKey, JSON.stringify(data));
-  }, [components, flows, storageKey]);
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(data));
+    } catch (error) {
+      console.error("Failed to save architecture model", error);
+      setToastMessage("Model architektúry sa nepodarilo uložiť do lokálneho úložiska.");
+    }
+  }, [components, flows, zones, storageKey]);
+
+  useEffect(() => {
+    const threatStorageKey = `atap_threats_${analysisId || "default"}`;
+    const savedThreats = localStorage.getItem(threatStorageKey);
+    let threats = initialThreats;
+
+    if (savedThreats) {
+      try {
+        const parsed: unknown = JSON.parse(savedThreats);
+        if (!Array.isArray(parsed)) {
+          console.error("Cannot sync architecture threats: stored threat register is not an array.");
+          return;
+        }
+        threats = parsed;
+      } catch (error) {
+        console.error("Cannot sync architecture threats: stored threat register is invalid.", error);
+        return;
+      }
+    }
+
+    const syncedThreats = syncArchitectureThreats(threats, flows, components, zones);
+    if (JSON.stringify(syncedThreats) !== JSON.stringify(threats)) {
+      try {
+        localStorage.setItem(threatStorageKey, JSON.stringify(syncedThreats));
+      } catch (error) {
+        console.error("Failed to save architecture-generated threats", error);
+        setToastMessage("Automatické hrozby sa nepodarilo uložiť do registra hrozieb.");
+      }
+    }
+  }, [analysisId, components, flows, zones]);
 
   // Load threats associated with selected component
   let threatsForSelected: any[] = [];
@@ -335,41 +523,194 @@ export function ArchitectureModel() {
     const comp = components.find(c => c.id === compId);
     if (!comp) return;
 
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const canvas = canvasRef.current;
+    const rect = canvas?.getBoundingClientRect();
+    if (!canvas || !rect) return;
 
     setDraggingCompId(compId);
     setDragOffset({
-      x: e.clientX - rect.left - comp.x,
-      y: e.clientY - rect.top - comp.y
+      x: e.clientX - rect.left + canvas.scrollLeft - comp.x,
+      y: e.clientY - rect.top + canvas.scrollTop - comp.y
     });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!draggingCompId) return;
-    const rect = canvasRef.current?.getBoundingClientRect();
-    if (!rect) return;
+    const canvas = canvasRef.current;
+    const rect = canvas?.getBoundingClientRect();
+    if (!canvas || !rect) return;
+    const pointerX = e.clientX - rect.left + canvas.scrollLeft;
+    const pointerY = e.clientY - rect.top + canvas.scrollTop;
 
-    const newX = Math.max(10, Math.min(1250, e.clientX - rect.left - dragOffset.x));
-    const newY = Math.max(10, Math.min(500, e.clientY - rect.top - dragOffset.y));
+    if (draggingCompId) {
+      const component = components.find(item => item.id === draggingCompId);
+      const zone = component && zones.find(item => item.id === component.zoneId);
+      if (!component || !zone) return;
 
-    setComponents(prev => prev.map(c => 
-      c.id === draggingCompId ? { ...c, x: newX, y: newY } : c
+      const minX = zone.x + 10;
+      const minY = zone.y + 44;
+      setComponents(prev => prev.map(item => item.id === draggingCompId
+        ? {
+            ...item,
+            x: clamp(pointerX - dragOffset.x, minX, Math.max(minX, zone.x + zone.width - COMPONENT_NODE_WIDTH - 10)),
+            y: clamp(pointerY - dragOffset.y, minY, Math.max(minY, zone.y + zone.height - COMPONENT_NODE_HEIGHT - 10))
+          }
+        : item
+      ));
+      return;
+    }
+
+    if (draggingZoneId) {
+      const zone = zones.find(item => item.id === draggingZoneId);
+      if (!zone) return;
+      const x = clamp(pointerX - dragOffset.x, 10, CANVAS_WIDTH - zone.width - 10);
+      const y = clamp(pointerY - dragOffset.y, 10, CANVAS_HEIGHT - zone.height - 10);
+      const deltaX = x - zone.x;
+      const deltaY = y - zone.y;
+      const movedZone = { ...zone, x, y };
+
+      setZones(prev => prev.map(item => item.id === draggingZoneId ? movedZone : item));
+      setComponents(prev => prev.map(component => component.zoneId === draggingZoneId
+        ? constrainComponentToZone({ ...component, x: component.x + deltaX, y: component.y + deltaY }, movedZone)
+        : component
+      ));
+      return;
+    }
+
+    if (resizingZoneId) {
+      const zone = zones.find(item => item.id === resizingZoneId);
+      if (!zone) return;
+      const resizedZone = {
+        ...zone,
+        width: clamp(pointerX - zone.x, MIN_ZONE_WIDTH, CANVAS_WIDTH - zone.x - 10),
+        height: clamp(pointerY - zone.y, MIN_ZONE_HEIGHT, CANVAS_HEIGHT - zone.y - 10)
+      };
+      setZones(prev => prev.map(item => item.id === resizingZoneId ? resizedZone : item));
+      setComponents(prev => prev.map(component => component.zoneId === resizingZoneId
+        ? constrainComponentToZone(component, resizedZone)
+        : component
+      ));
+    }
+  };
+
+  const handleZoneMouseDown = (e: React.MouseEvent, zone: TrustZone) => {
+    e.stopPropagation();
+    const canvas = canvasRef.current;
+    const rect = canvas?.getBoundingClientRect();
+    if (!canvas || !rect) return;
+    setDraggingZoneId(zone.id);
+    setDragOffset({
+      x: e.clientX - rect.left + canvas.scrollLeft - zone.x,
+      y: e.clientY - rect.top + canvas.scrollTop - zone.y
+    });
+  };
+
+  const handleZoneKeyboardResize = (e: React.KeyboardEvent, zone: TrustZone) => {
+    const steps: Record<string, { width: number; height: number }> = {
+      ArrowRight: { width: 20, height: 0 },
+      ArrowLeft: { width: -20, height: 0 },
+      ArrowDown: { width: 0, height: 20 },
+      ArrowUp: { width: 0, height: -20 }
+    };
+    const step = steps[e.key];
+    if (!step) return;
+    e.preventDefault();
+    const resizedZone = constrainTrustZone({
+      ...zone,
+      width: zone.width + step.width,
+      height: zone.height + step.height
+    });
+    setZones(prev => prev.map(item => item.id === zone.id ? resizedZone : item));
+    setComponents(prev => prev.map(component => component.zoneId === zone.id
+      ? constrainComponentToZone(component, resizedZone)
+      : component
     ));
+  };
+
+  const handleZoneResizeMouseDown = (e: React.MouseEvent, zone: TrustZone) => {
+    e.stopPropagation();
+    setResizingZoneId(zone.id);
   };
 
   const handleMouseUp = () => {
     setDraggingCompId(null);
+    setDraggingZoneId(null);
+    setResizingZoneId(null);
   };
 
   const handleResetArchitecture = () => {
     if (window.confirm("Naozaj chcete obnoviť architektúru na predvolený stav?")) {
       setComponents(DEFAULT_COMPONENTS);
       setFlows(DEFAULT_FLOWS);
+      setZones(DEFAULT_ZONES);
       setSelectedCompId(null);
       setToastMessage("Architektúra bola obnovená na odporúčaný model.");
       setTimeout(() => setToastMessage(null), 3000);
     }
+  };
+
+  const handleSaveZone = (e: React.FormEvent) => {
+    e.preventDefault();
+    const name = newZoneName.trim();
+    if (!name) return;
+    if (zones.some(zone => zone.id !== editingZoneId && zone.name.toLowerCase() === name.toLowerCase())) {
+      alert("Zóna s týmto názvom už existuje.");
+      return;
+    }
+
+    const color = TRUST_ZONE_COLORS[newZoneColor];
+    if (editingZoneId) {
+      setZones(prev => prev.map(zone => zone.id === editingZoneId
+        ? { ...zone, name, color: color.color, borderColor: color.borderColor, bgTint: color.bgTint }
+        : zone
+      ));
+      setToastMessage(`Trust zóna "${name}" bola upravená.`);
+    } else {
+      let id = `zone_${Date.now()}`;
+      let suffix = 2;
+      while (zones.some(zone => zone.id === id)) {
+        id = `zone_${Date.now()}_${suffix}`;
+        suffix += 1;
+      }
+      setZones(prev => [...prev, {
+        id,
+        name,
+        color: color.color,
+        borderColor: color.borderColor,
+        bgTint: color.bgTint,
+        x: clamp(30 + zones.length * 35, 10, CANVAS_WIDTH - 270),
+        y: clamp(40 + zones.length * 25, 10, CANVAS_HEIGHT - 290),
+        width: 260,
+        height: 280
+      }]);
+      setToastMessage(`Trust zóna "${name}" bola vytvorená.`);
+    }
+    setIsZoneModalOpen(false);
+    setTimeout(() => setToastMessage(null), 3000);
+  };
+
+  const handleDeleteZone = (zone: TrustZone) => {
+    if (zones.length < 2) {
+      alert("V modeli musí zostať aspoň jedna trust zóna.");
+      return;
+    }
+    if (!window.confirm(`Odstrániť zónu "${zone.name}"? Jej komponenty sa presunú do inej zóny.`)) return;
+
+    const remainingZones = zones.filter(item => item.id !== zone.id);
+    const fallbackZone = remainingZones[0];
+    const componentsToMove = components.filter(component => component.zoneId === zone.id);
+    const placedComponents = components.filter(component => component.zoneId === fallbackZone.id);
+    const movedComponents = componentsToMove.map(component => {
+      const position = findComponentPosition(fallbackZone, placedComponents);
+      const moved = constrainComponentToZone({ ...component, zoneId: fallbackZone.id, ...position }, fallbackZone);
+      placedComponents.push(moved);
+      return moved;
+    });
+    const movedById = new Map(movedComponents.map(component => [component.id, component]));
+
+    setZones(remainingZones);
+    setComponents(prev => prev.map(component => movedById.get(component.id) ?? component));
+    setToastMessage(`Trust zóna "${zone.name}" bola odstránená.`);
+    setTimeout(() => setToastMessage(null), 3000);
   };
 
   const handleSaveComponent = (e: React.FormEvent) => {
@@ -387,11 +728,20 @@ export function ArchitectureModel() {
     }
 
     const tech = newCompTech.trim() || "Všeobecná služba";
+    const targetZone = zones.find(zone => zone.id === newCompZone);
+    if (!targetZone) {
+      alert("Vybraná trust zóna už neexistuje. Obnovte formulár a skúste znova.");
+      return;
+    }
     if (editingCompId) {
-      setComponents(prev => prev.map(component =>
-        component.id === editingCompId
-          ? { ...component, name, type: newCompType, zoneId: newCompZone, tech }
-          : component
+      const existing = components.find(component => component.id === editingCompId);
+      if (!existing) return;
+      const position = existing.zoneId === newCompZone
+        ? { x: existing.x, y: existing.y }
+        : findComponentPosition(targetZone, components.filter(component => component.id !== editingCompId && component.zoneId === newCompZone));
+      setComponents(prev => prev.map(component => component.id === editingCompId
+        ? constrainComponentToZone({ ...component, ...position, name, type: newCompType, zoneId: newCompZone, tech }, targetZone)
+        : component
       ));
       setSelectedCompId(editingCompId);
       setIsComponentModalOpen(false);
@@ -402,7 +752,7 @@ export function ArchitectureModel() {
     }
 
     const newId = name;
-    const zone = DEFAULT_ZONES.find(z => z.id === newCompZone) || DEFAULT_ZONES[1];
+    const position = findComponentPosition(targetZone, components.filter(component => component.zoneId === newCompZone));
 
     const newComp: ArchComponent = {
       id: newId,
@@ -410,8 +760,7 @@ export function ArchitectureModel() {
       type: newCompType,
       zoneId: newCompZone,
       tech,
-      x: zone.x + 30,
-      y: zone.y + 100 + (components.length * 20) % 200
+      ...position
     };
 
     setComponents(prev => [...prev, newComp]);
@@ -482,7 +831,7 @@ export function ArchitectureModel() {
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Interaktívna mapa komponentov, hraníc dôvery (Trust Boundaries) a šifrovaných tokov dát prepojená so STRIDE hrozbami.
+            Interaktívna mapa komponentov, hraníc dôvery (Trust Boundaries) a šifrovaných tokov dát prepojená so STRIDE hrozbami. Šípka ukazuje smer toku od zdroja k cieľu.
           </p>
         </div>
 
@@ -512,6 +861,14 @@ export function ArchitectureModel() {
           </button>
 
           <button
+            onClick={openAddZoneModal}
+            className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+          >
+            <Layers size={14} />
+            <span>Pridať trust zónu</span>
+          </button>
+
+          <button
             onClick={handleResetArchitecture}
             className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
             title="Resetovať na odporúčanú bezpečnú architektúru"
@@ -537,6 +894,7 @@ export function ArchitectureModel() {
           ref={canvasRef}
           onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
           onClick={() => setSelectedCompId(null)}
           className="flex-1 bg-white rounded-xl border border-slate-200 shadow-xs relative overflow-auto custom-scrollbar select-none min-w-[900px] min-h-[560px]"
           style={{
@@ -545,22 +903,59 @@ export function ArchitectureModel() {
           }}
         >
           {/* Trust Boundaries (Zones) */}
-          {DEFAULT_ZONES.map(zone => (
+          {zones.map(zone => (
             <div
               key={zone.id}
-              className={`absolute rounded-xl border-2 border-dashed ${zone.borderColor} ${zone.bgTint} pointer-events-none transition-all duration-300`}
+              className={`absolute rounded-xl border-2 border-dashed ${zone.borderColor} ${zone.bgTint} pointer-events-none`}
               style={{
                 left: zone.x,
                 top: zone.y,
                 width: zone.width,
-                height: zone.height
+                height: zone.height,
+                transition: draggingZoneId === zone.id || resizingZoneId === zone.id ? "none" : "all 150ms"
               }}
             >
-              <div className="p-3">
+              <div
+                onMouseDown={event => handleZoneMouseDown(event, zone)}
+                className="pointer-events-auto flex items-center justify-between gap-2 p-2.5 cursor-move select-none"
+                title="Potiahnutím presuňte trust zónu"
+              >
                 <span className={`text-[11px] font-bold uppercase tracking-wider ${zone.color}`}>
                   {zone.name}
                 </span>
+                <div className="flex items-center gap-1 shrink-0">
+                  <button
+                    type="button"
+                    onMouseDown={event => event.stopPropagation()}
+                    onClick={() => openEditZoneModal(zone)}
+                    aria-label={`Upraviť zónu ${zone.name}`}
+                    title="Upraviť zónu"
+                    className="pointer-events-auto rounded bg-white/80 p-1 text-slate-500 hover:text-blue-700"
+                  >
+                    <Pencil size={12} />
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={event => event.stopPropagation()}
+                    onClick={() => handleDeleteZone(zone)}
+                    aria-label={`Odstrániť zónu ${zone.name}`}
+                    title="Odstrániť zónu"
+                    className="pointer-events-auto rounded bg-white/80 p-1 text-slate-500 hover:text-red-600"
+                  >
+                    <Trash2 size={12} />
+                  </button>
+                </div>
               </div>
+              <button
+                type="button"
+                onMouseDown={event => handleZoneResizeMouseDown(event, zone)}
+                onKeyDown={event => handleZoneKeyboardResize(event, zone)}
+                aria-label={`Zmeniť veľkosť zóny ${zone.name}. Pomocou šípok upravujte veľkosť po 20 pixeloch.`}
+                title="Potiahnutím zmeňte veľkosť; klávesmi šípok upravujte po 20 px"
+                className="pointer-events-auto absolute bottom-0 right-0 h-5 w-5 cursor-nwse-resize rounded-tl bg-white/80 text-slate-500 hover:text-blue-700"
+              >
+                <Move size={12} className="mx-auto rotate-45" />
+              </button>
             </div>
           ))}
 
@@ -570,7 +965,7 @@ export function ArchitectureModel() {
               <marker
                 id="arrow"
                 viewBox="0 0 10 10"
-                refX="6"
+                refX="8"
                 refY="5"
                 markerWidth="6"
                 markerHeight="6"
@@ -581,7 +976,7 @@ export function ArchitectureModel() {
               <marker
                 id="arrow-selected"
                 viewBox="0 0 10 10"
-                refX="6"
+                refX="8"
                 refY="5"
                 markerWidth="7"
                 markerHeight="7"
@@ -596,11 +991,9 @@ export function ArchitectureModel() {
               const toComp = components.find(c => c.id === flow.to);
               if (!fromComp || !toComp) return null;
 
-              // Center coordinates
-              const x1 = fromComp.x + 95;
-              const y1 = fromComp.y + 35;
-              const x2 = toComp.x + 95;
-              const y2 = toComp.y + 35;
+              const endpoints = getFlowEndpoints(fromComp, toComp);
+              if (!endpoints) return null;
+              const { x1, y1, x2, y2 } = endpoints;
 
               // Midpoint for label
               const midX = (x1 + x2) / 2;
@@ -661,7 +1054,8 @@ export function ArchitectureModel() {
                 style={{
                   left: comp.x,
                   top: comp.y,
-                  width: 190,
+                  width: COMPONENT_NODE_WIDTH,
+                  height: COMPONENT_NODE_HEIGHT,
                   transform: isDragging ? "scale(1.02)" : "scale(1)"
                 }}
                 className={`absolute p-3 rounded-xl border bg-white shadow-xs cursor-move transition-shadow ${
@@ -745,7 +1139,7 @@ export function ArchitectureModel() {
                   <div className="mt-2 space-y-1 text-slate-600 text-[11px]">
                     <div><strong>Typ:</strong> <span className="capitalize">{selectedComp.type}</span></div>
                     <div><strong>Technológia:</strong> {selectedComp.tech}</div>
-                    <div><strong>Hranica dôvery:</strong> {DEFAULT_ZONES.find(z => z.id === selectedComp.zoneId)?.name || "Zóna"}</div>
+                    <div><strong>Hranica dôvery:</strong> {zones.find(z => z.id === selectedComp.zoneId)?.name || "Zóna"}</div>
                   </div>
                 </div>
 
@@ -859,6 +1253,60 @@ export function ArchitectureModel() {
       </div>
 
       {/* Modal: Add or edit component */}
+      {isZoneModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div role="dialog" aria-modal="true" aria-labelledby="zone-modal-title" className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 id="zone-modal-title" className="font-bold text-slate-800 text-sm">
+                {editingZoneId ? "Upraviť trust zónu" : "Pridať trust zónu"}
+              </h3>
+              <button type="button" aria-label="Zavrieť formulár trust zóny" onClick={() => setIsZoneModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={16} />
+              </button>
+            </div>
+            <form onSubmit={handleSaveZone} className="space-y-3.5 text-xs">
+              <div>
+                <label htmlFor="trust-zone-name" className="block font-semibold text-slate-700 mb-1">Názov zóny *</label>
+                <input
+                  id="trust-zone-name"
+                  type="text"
+                  required
+                  maxLength={80}
+                  value={newZoneName}
+                  onChange={event => setNewZoneName(event.target.value)}
+                  placeholder="napr. Verejný internet"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+              <div>
+                <label htmlFor="trust-zone-color" className="block font-semibold text-slate-700 mb-1">Farba zóny</label>
+                <select
+                  id="trust-zone-color"
+                  value={newZoneColor}
+                  onChange={event => setNewZoneColor(event.target.value as TrustZoneColorKey)}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                >
+                  {(Object.keys(TRUST_ZONE_COLORS) as TrustZoneColorKey[]).map(colorKey => (
+                    <option key={colorKey} value={colorKey}>{TRUST_ZONE_COLORS[colorKey].label}</option>
+                  ))}
+                </select>
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Zónu môžete presúvať potiahnutím jej názvu a meniť jej veľkosť potiahnutím pravého dolného rohu. Komponenty zostávajú v priradenej zóne.
+              </p>
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                <button type="button" onClick={() => setIsZoneModalOpen(false)} className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium">
+                  Zrušiť
+                </button>
+                <button type="submit" className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-xs">
+                  {editingZoneId ? "Uložiť zmeny" : "Vytvoriť zónu"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {isComponentModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div role="dialog" aria-modal="true" aria-labelledby="component-modal-title" className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
@@ -906,7 +1354,7 @@ export function ArchitectureModel() {
                   onChange={e => setNewCompZone(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
-                  {DEFAULT_ZONES.map(z => (
+                  {zones.map(z => (
                     <option key={z.id} value={z.id}>{z.name}</option>
                   ))}
                 </select>

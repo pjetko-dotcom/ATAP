@@ -595,7 +595,7 @@ function AnalysisLayoutInner() {
                     />
                     <button
                       type="submit"
-                      className="w-full py-1 bg-slate-800 text-white rounded text-[11px] font-semibold hover:bg-slate-900"
+                      className="w-full py-1 bg-blue-600 text-white rounded text-[11px] font-semibold hover:bg-blue-700"
                     >
                       Zaznamenať do auditu
                     </button>

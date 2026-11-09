@@ -367,7 +367,7 @@ export function Export() {
 
             <button
               onClick={handleDownloadCSV}
-              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-800 text-white text-xs font-semibold rounded-lg shadow-xs hover:bg-slate-700 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-blue-600 text-white text-xs font-semibold rounded-lg shadow-xs hover:bg-blue-700 transition-colors cursor-pointer"
             >
               <Download size={15} />
               <span>Stiahnuť CSV (.csv)</span>

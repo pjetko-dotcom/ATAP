@@ -11,72 +11,15 @@ import { Search, Plus, Filter, ShieldAlert, Edit2, Trash2, X, AlertTriangle, Che
 import { HelpTooltip } from "./HelpTooltip";
 import { asvsRequirements } from "../data/asvsData";
 import { suggestThreatAsvsRequirements } from "../utils/threatAsvs";
-
-type LikelihoodLevel = "Exceptionally" | "Unlikely" | "Probably" | "Frequently";
-type ImpactLevel = "Minor" | "Moderate" | "Major" | "Critical";
-type RiskLevel = "Very Low" | "Low" | "Medium" | "High" | "Critical";
-type ThreatStatus = "Open" | "Mitigated" | "Remediated" | "Accepted";
-
-interface Threat {
-  id: string;
-  title: string;
-  description: string;
-  stride: string;
-  likelihood: LikelihoodLevel;
-  impact: ImpactLevel;
-  risk: RiskLevel;
-  status: ThreatStatus;
-  mitigation: string;
-  componentIds?: string[];
-  asvsRefs?: string[];
-}
-
-const initialThreats: Threat[] = [
-  {
-    id: "TR-001",
-    title: "Session Hijacking via XSS",
-    description: "An attacker could steal session cookies if XSS vulnerabilities exist in the user profile inputs.",
-    stride: "Elevation of Privilege",
-    likelihood: "Probably",
-    impact: "Major",
-    risk: "High",
-    status: "Open",
-    mitigation: "V4.3.1 (HttpOnly cookies), V5.1.1 (Output encoding)"
-  },
-  {
-    id: "TR-002",
-    title: "Parameter Tampering on Checkout",
-    description: "Manipulation of product prices during the checkout process via intercepting proxy.",
-    stride: "Tampering",
-    likelihood: "Probably",
-    impact: "Major",
-    risk: "High",
-    status: "Mitigated",
-    mitigation: "V5.1.4 (Server-side validation)"
-  },
-  {
-    id: "TR-003",
-    title: "Brute Force of Admin Login",
-    description: "Automated credential stuffing against the administrative portal.",
-    stride: "Spoofing",
-    likelihood: "Frequently",
-    impact: "Major",
-    risk: "Critical",
-    status: "Open",
-    mitigation: "V2.2.1 (Anti-automation), V2.3.1 (MFA)"
-  },
-  {
-    id: "TR-004",
-    title: "Information Disclosure via Stack Traces",
-    description: "Unhandled exceptions leaking internal network paths and database versions.",
-    stride: "Information Disclosure",
-    likelihood: "Exceptionally",
-    impact: "Minor",
-    risk: "Very Low",
-    status: "Accepted",
-    mitigation: "Risk accepted for internal dev environments. To be fixed in Prod."
-  }
-];
+import {
+  calculateThreatRisk as calculateRisk,
+  initialThreats,
+  type ImpactLevel,
+  type LikelihoodLevel,
+  type RiskLevel,
+  type Threat,
+  type ThreatStatus
+} from "../utils/threatModel";
 
 function getThreatAsvsReferences(threat: Threat): string[] {
   const references = threat.asvsRefs || (threat.mitigation.match(/V\d+(?:\.\d+)*/g) || []);
@@ -96,19 +39,6 @@ const statusStyles: Record<ThreatStatus, string> = {
   Mitigated: "bg-yellow-50 text-yellow-700 border-yellow-200",
   Remediated: "bg-green-50 text-green-700 border-green-200",
   Accepted: "bg-slate-50 text-slate-600 border-slate-200"
-};
-
-// Standard 4x4 Risk Matrix Calculator
-const calculateRisk = (likelihood: LikelihoodLevel, impact: ImpactLevel): RiskLevel => {
-  const scoresLikelihood = { "Exceptionally": 1, "Unlikely": 2, "Probably": 3, "Frequently": 4 };
-  const scoresImpact = { "Minor": 1, "Moderate": 2, "Major": 3, "Critical": 4 };
-  const score = scoresLikelihood[likelihood] * scoresImpact[impact];
-  
-  if (score >= 12) return "Critical";
-  if (score >= 8) return "High";
-  if (score >= 4) return "Medium";
-  if (score >= 2) return "Low";
-  return "Very Low";
 };
 
 const RISK_CELL_STYLES: Record<RiskLevel, string> = {
@@ -528,6 +458,7 @@ export function ThreatRegister() {
       componentIds: selectedComponentIds.filter(id => availableComponents.some(component => component.id === id)),
       asvsRefs: Array.from(new Set(asvsReferenceText.match(/V\d+(?:\.\d+)*/g) || []))
         .filter(id => asvsRequirements.some(requirement => requirement.id === id)),
+      architectureFlowId: editingThreat?.architectureFlowId,
     };
 
     if (editingThreat) {
@@ -716,6 +647,11 @@ export function ThreatRegister() {
                   <td className="px-6 py-4 font-mono text-xs text-slate-400 font-medium">{threat.id}</td>
                   <td className="px-6 py-4">
                     <p className="font-bold text-slate-800">{threat.title}</p>
+                    {threat.architectureFlowId && (
+                      <span title="Automaticky vytvorená a synchronizovaná podľa toku cez hranicu trust zón" className="mt-1 inline-block rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+                        Architecture
+                      </span>
+                    )}
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2">{threat.description}</p>
                   </td>
                   <td className="px-6 py-4">

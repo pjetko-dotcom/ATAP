@@ -551,22 +551,22 @@ export function Layout() {
             ref={searchButtonRef}
             type="button"
             onClick={openWorkspaceSearch}
-            aria-label="Hľadať v projekte"
-            title="Hľadať (Ctrl+K)"
+            aria-label="Find in project"
+            title="Find (Ctrl+K)"
             className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
           >
             <div className="shrink-0"><Search size={16} /></div>
-            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Hľadať <kbd className="ml-1 rounded border border-slate-700 px-1 text-[10px]">Ctrl K</kbd></span>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Find <kbd className="ml-1 rounded border border-slate-700 px-1 text-[10px]">Ctrl K</kbd></span>
           </button>
           <button
             type="button"
             onClick={() => setIsBackupModalOpen(true)}
-            aria-label="Zálohovať alebo obnoviť projekty"
-            title="Záloha a obnova projektov"
+            aria-label="Backup and restore projects"
+            title="Backup & Restore"
             className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
           >
             <div className="shrink-0"><Database size={16} /></div>
-            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Záloha a obnova</span>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Backup &amp; Restore</span>
           </button>
           <button 
             onClick={() => setIsHelpOpen(true)}
@@ -717,7 +717,7 @@ export function Layout() {
             <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end rounded-b-xl">
               <button 
                 onClick={() => setIsHelpOpen(false)}
-                className="px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded shadow-sm hover:bg-slate-700"
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded shadow-sm hover:bg-blue-700"
               >
                 Close
               </button>

@@ -191,7 +191,7 @@ export function FindingsAndGaps() {
             onClick={exportFindingsReport}
             aria-label="Export findings report as CSV"
             title="Download findings report as CSV"
-            className="flex items-center gap-2 px-4 py-2 bg-slate-800 text-white text-sm font-medium rounded-md shadow-sm hover:bg-slate-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700 transition-colors"
           >
             <FileText size={16} />
             Export Report (.csv)

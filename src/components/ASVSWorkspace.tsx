@@ -681,7 +681,7 @@ export function ASVSWorkspace() {
               <button 
                 onClick={() => setIsExportMenuOpen(!isExportMenuOpen)}
                 disabled={isExportingExcel}
-                className="px-3 py-1.5 flex items-center gap-1.5 text-xs bg-slate-800 text-white rounded-md hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-50 shadow-xs whitespace-nowrap"
+                className="px-3 py-1.5 flex items-center gap-1.5 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors cursor-pointer disabled:opacity-50 shadow-xs whitespace-nowrap"
               >
                 {isExportingExcel ? (
                   <>
@@ -1624,7 +1624,7 @@ export function ASVSWorkspace() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-1.5 bg-slate-800 hover:bg-slate-900 text-white rounded-lg text-xs font-bold shadow-xs"
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs"
                 >
                   Označiť ako N/A
                 </button>

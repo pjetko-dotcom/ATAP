@@ -73,7 +73,7 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 - **STRIDE Threat Modeling:** Analýza systémovej architektúry podľa metodiky Microsoft STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege).
 - **Threat Register & 5x5 Matica Rizík:** Dynamická matica pravdepodobnosti a dopadu (Likelihood × Impact) s filtrovaním hrozieb podľa kategórie a stavu mitigácie.
 - **Findings & Gap Analysis:** Automatizované porovnanie implementácie voči ASVS 5.0 a detekcia chýbajúcich alebo čiastočných kontrol.
-- **Architecture Model:** Vizuálne modelovanie komponentov aplikácie, hraníc dôvery (trust boundaries) a dátových tokov.
+- **Architecture Model:** Vizuálne modelovanie komponentov, spravovateľných trust zón a dátových tokov so šípkami smeru. Komponenty zostávajú v priradených zónach; toky medzi rôznymi zónami vytvárajú synchronizované STRIDE scenáre na odborné posúdenie.
 - **Audit Trail & Správa Verzií:** Sledovanie histórie zmien, snapshoty stavov a bezpečný import/export dát do JSON formátu.
 - **Excel & CSV Export:** Generovanie oficiálnych audítorských reportov priamo do zošita Microsoft Excel pomocou `exceljs`.
 

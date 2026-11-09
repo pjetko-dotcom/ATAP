@@ -5,6 +5,14 @@ import { sanitizeCsvCell } from "./csv";
 import { generateFindingsFromAsvs } from "./findings";
 import { computeVersionDiff } from "./versionDiff";
 import { suggestThreatAsvsRequirements } from "./threatAsvs";
+import {
+  calculateThreatRisk,
+  syncArchitectureThreats,
+  type ArchitectureThreatComponent,
+  type ArchitectureThreatFlow,
+  type ArchitectureThreatZone,
+  type Threat
+} from "./threatModel";
 import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
 import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
 import { asvsRequirements } from "../data/asvsData";
@@ -257,6 +265,77 @@ test("suggests ASVS controls from STRIDE threat details", () => {
   assert.ok(bruteForceSuggestions.some(suggestion => suggestion.sectionName.toLowerCase().includes("authentication")));
   assert.ok(bruteForceSuggestions.length <= 5);
   assert.deepEqual(suggestThreatAsvsRequirements("Spoofing", "", ""), []);
+});
+
+test("generates one linked STRIDE threat for each cross-zone flow without duplicates", () => {
+  const flows: ArchitectureThreatFlow[] = [{
+    id: "flow-1",
+    from: "client",
+    to: "api",
+    dataClassification: "Restricted",
+    encrypted: true
+  }];
+  const components: ArchitectureThreatComponent[] = [
+    { id: "client", name: "Client", zoneId: "internet" },
+    { id: "api", name: "API", zoneId: "internal" }
+  ];
+  const zones: ArchitectureThreatZone[] = [
+    { id: "internet", name: "Internet" },
+    { id: "internal", name: "Internal" }
+  ];
+
+  const first = syncArchitectureThreats([], flows, components, zones);
+  const second = syncArchitectureThreats(first, flows, components, zones);
+
+  assert.equal(first.length, 1);
+  assert.equal(first[0].architectureFlowId, "flow-1");
+  assert.deepEqual(first[0].componentIds, ["client", "api"]);
+  assert.equal(first[0].impact, "Critical");
+  assert.equal(first[0].risk, "High");
+  assert.equal(second.length, 1);
+});
+
+test("updates and removes generated threats with their boundary flow while preserving manual threats", () => {
+  const flow: ArchitectureThreatFlow = {
+    id: "flow-1",
+    from: "client",
+    to: "api",
+    dataClassification: "Confidential",
+    encrypted: false
+  };
+  const components: ArchitectureThreatComponent[] = [
+    { id: "client", name: "Client", zoneId: "internet" },
+    { id: "api", name: "API", zoneId: "internal" }
+  ];
+  const zones: ArchitectureThreatZone[] = [
+    { id: "internet", name: "Internet" },
+    { id: "internal", name: "Internal" }
+  ];
+  const manualThreat: Threat = {
+    id: "TR-100",
+    title: "Manual threat",
+    description: "Manually recorded",
+    stride: "Spoofing",
+    likelihood: "Unlikely",
+    impact: "Minor",
+    risk: "Low",
+    status: "Open",
+    mitigation: ""
+  };
+  const generated = syncArchitectureThreats([manualThreat], [flow], components, zones);
+  const resolved = syncArchitectureThreats(generated, [flow], [
+    components[0],
+    { ...components[1], zoneId: "internet" }
+  ], zones);
+
+  assert.equal(generated.length, 2);
+  assert.match(generated.find(threat => threat.architectureFlowId)?.description ?? "", /unencrypted/);
+  assert.deepEqual(resolved, [manualThreat]);
+});
+
+test("calculates architecture threat risk using the same threat-register scale", () => {
+  assert.equal(calculateThreatRisk("Unlikely", "Critical"), "High");
+  assert.equal(calculateThreatRisk("Frequently", "Critical"), "Critical");
 });
 
 after(() => {
