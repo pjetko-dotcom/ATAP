@@ -73,7 +73,7 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 - **STRIDE Threat Modeling:** Analýza systémovej architektúry podľa metodiky Microsoft STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege).
 - **Threat Register & 5x5 Matica Rizík:** Dynamická matica pravdepodobnosti a dopadu (Likelihood × Impact) s filtrovaním hrozieb podľa kategórie a stavu mitigácie.
 - **Findings & Gap Analysis:** Automatizované porovnanie implementácie voči ASVS 5.0 a detekcia chýbajúcich alebo čiastočných kontrol.
-- **Architecture Model:** Vizuálne modelovanie komponentov, spravovateľných trust zón a dátových tokov so šípkami smeru. Komponenty zostávajú v priradených zónach; toky medzi rôznymi zónami vytvárajú synchronizované STRIDE scenáre na odborné posúdenie.
+- **Architecture Model:** Vizuálne modelovanie komponentov, spravovateľných trust zón a editovateľných dátových tokov. Toky evidujú protokol, typ prenosu, klasifikáciu a popis dát, šifrovanie aj autentifikáciu; paralelné spojenia sú vizuálne rozlíšené a systém ich vedie okolo prekážajúcich komponentov. Prekrytia alebo zostávajúce prekážky vyvolajú upozornenie, prekročenie trust zóny je zvýraznené a toky cez hranice zón vytvárajú kontextové STRIDE návrhy na kontrolu a úpravu.
 - **Audit Trail & Správa Verzií:** Sledovanie histórie zmien, snapshoty stavov a bezpečný import/export dát do JSON formátu.
 - **Excel & CSV Export:** Generovanie oficiálnych audítorských reportov priamo do zošita Microsoft Excel pomocou `exceljs`.
 
@@ -86,7 +86,7 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 | `dev` | `npm run dev` | Spustí lokálny dev server na porte 3000 |
 | `build` | `npm run build` | Vytvorí produkčný webový build v `dist/` |
 | `lint` | `npm run lint` | Skontroluje integritu TypeScript typov (`tsc --noEmit`) |
-| `test` | `npm test` | Spustí cielené testy záloh, CSV sanitizácie a CSP |
+| `test` | `npm test` | Spustí testy záloh, exportu, DFD geometrie a STRIDE synchronizácie |
 | `clean` | `npm run clean` | Vyčistí priečinky `dist/`, `server.cjs` a `release/` |
 | `electron:dev` | `npm run electron:dev` | Vývojový režim pre desktop s Vite hot-reloadom |
 | `electron:preview` | `npm run electron:preview` | Otestuje produkčný lokálny build v Electrone |

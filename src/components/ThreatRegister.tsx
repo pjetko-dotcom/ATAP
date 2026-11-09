@@ -459,6 +459,9 @@ export function ThreatRegister() {
       asvsRefs: Array.from(new Set(asvsReferenceText.match(/V\d+(?:\.\d+)*/g) || []))
         .filter(id => asvsRequirements.some(requirement => requirement.id === id)),
       architectureFlowId: editingThreat?.architectureFlowId,
+      architectureFlowStride: editingThreat?.architectureFlowId ? formData.get("stride") as string : editingThreat?.architectureFlowStride,
+      architectureReviewed: editingThreat?.architectureFlowId ? true : editingThreat?.architectureReviewed,
+      architectureCustomized: editingThreat?.architectureFlowId ? true : editingThreat?.architectureCustomized,
     };
 
     if (editingThreat) {
@@ -648,9 +651,28 @@ export function ThreatRegister() {
                   <td className="px-6 py-4">
                     <p className="font-bold text-slate-800">{threat.title}</p>
                     {threat.architectureFlowId && (
-                      <span title="Automaticky vytvorená a synchronizovaná podľa toku cez hranicu trust zón" className="mt-1 inline-block rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
-                        Architecture
-                      </span>
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        <span title="Automaticky vytvorený návrh scenára podľa toku cez hranicu trust zón. Overte jeho relevantnosť." className="inline-block rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+                          Architecture
+                        </span>
+                        {threat.architectureCustomized && (
+                          <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">Upravené</span>
+                        )}
+                        {threat.architectureReviewed ? (
+                          <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">Skontrolované</span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => setThreats(current => current.map(item =>
+                              item.id === threat.id ? { ...item, architectureReviewed: true } : item
+                            ))}
+                            title="Označiť STRIDE návrh ako skontrolovaný"
+                            className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 hover:bg-amber-100"
+                          >
+                            Vyžaduje kontrolu · Označiť
+                          </button>
+                        )}
+                      </div>
                     )}
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2">{threat.description}</p>
                   </td>

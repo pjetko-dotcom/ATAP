@@ -16,6 +16,9 @@ export interface Threat {
   componentIds?: string[];
   asvsRefs?: string[];
   architectureFlowId?: string;
+  architectureFlowStride?: string;
+  architectureReviewed?: boolean;
+  architectureCustomized?: boolean;
 }
 
 export interface ArchitectureThreatComponent {
@@ -35,6 +38,9 @@ export interface ArchitectureThreatFlow {
   to: string;
   dataClassification: "Public" | "Internal" | "Confidential" | "Restricted";
   encrypted: boolean;
+  authenticated?: boolean;
+  transferType?: "Synchronous" | "Asynchronous";
+  dataDescription?: string;
 }
 
 export const initialThreats: Threat[] = [
@@ -106,12 +112,27 @@ export function calculateThreatRisk(likelihood: LikelihoodLevel, impact: ImpactL
   return "Very Low";
 }
 
+export function getSuggestedStrideCategories(flow: ArchitectureThreatFlow): string[] {
+  const categories = ["Elevation of Privilege", "Denial of Service"];
+  if (!flow.authenticated) categories.push("Spoofing", "Repudiation");
+  if (!flow.encrypted) categories.push("Tampering");
+  if (!flow.encrypted && flow.dataClassification !== "Public") {
+    categories.push("Information Disclosure");
+  }
+  return categories;
+}
+
+function getStrideCode(stride: string): string {
+  return stride.split(/\s+/).map(word => word[0]).join("").toUpperCase();
+}
+
 function createArchitectureThreat(
   flow: ArchitectureThreatFlow,
   source: ArchitectureThreatComponent,
   target: ArchitectureThreatComponent,
   sourceZone: ArchitectureThreatZone,
   targetZone: ArchitectureThreatZone,
+  stride: string,
   id: string
 ): Threat {
   const impact: Record<ArchitectureThreatFlow["dataClassification"], ImpactLevel> = {
@@ -125,18 +146,35 @@ function createArchitectureThreat(
     ? "The flow is marked as encrypted; verify encryption configuration, certificate validation, and endpoint identity."
     : "The flow is marked as unencrypted; assess confidentiality and tampering exposure and require appropriate transport protection.";
 
+  const scenarioByStride: Record<string, string> = {
+    "Elevation of Privilege": `A lower-trust source may reach privileged operations in ${target.name} without sufficient authorization.`,
+    Spoofing: `An unauthenticated sender may impersonate a trusted client or service when communicating with ${target.name}.`,
+    Tampering: `An attacker may modify data in transit between ${source.name} and ${target.name}.`,
+    Repudiation: `Without authenticated, attributable requests, actions arriving at ${target.name} may be difficult to trace to their source.`,
+    "Information Disclosure": `Sensitive data may be exposed while moving from ${source.name} to ${target.name}.`,
+    "Denial of Service": flow.transferType === "Asynchronous"
+      ? `An attacker may overwhelm queues or consumers handling this asynchronous flow.`
+      : `An attacker may exhaust resources or block requests along this synchronous flow.`
+  };
+  const dataContext = flow.dataDescription?.trim()
+    ? ` Data described by the model: ${flow.dataDescription.trim()}.`
+    : "";
+
   return {
     id,
-    title: `Trust-boundary access: ${source.name} → ${target.name}`,
-    description: `This data flow crosses from "${sourceZone.name}" into "${targetZone.name}". If the receiving component does not enforce authentication, authorization, and input validation, a lower-trust source could gain unauthorized access or influence protected operations. This is an automatically generated scenario, not a confirmed vulnerability. ${encryptedNote}`,
-    stride: "Elevation of Privilege",
+    title: `${stride}: ${source.name} → ${target.name}`,
+    description: `This data flow crosses from "${sourceZone.name}" into "${targetZone.name}". ${scenarioByStride[stride]}${dataContext} This is an automatically generated scenario, not a confirmed vulnerability. ${encryptedNote}`,
+    stride,
     likelihood: "Unlikely",
     impact: threatImpact,
     risk: calculateThreatRisk("Unlikely", threatImpact),
     status: "Open",
-    mitigation: "Review authentication, authorization, input validation, transport protection, and security logging at this trust boundary.",
+    mitigation: `Review ${stride === "Spoofing" ? "sender authentication and identity validation" : stride === "Tampering" ? "message integrity and input validation" : stride === "Repudiation" ? "attributable identity and audit logging" : stride === "Information Disclosure" ? "encryption and data minimization" : stride === "Denial of Service" ? "rate limits, timeouts, and resource limits" : "authorization and least privilege"} at this trust boundary.`,
     componentIds: [source.id, target.id],
-    architectureFlowId: flow.id
+    architectureFlowId: flow.id,
+    architectureFlowStride: stride,
+    architectureReviewed: false,
+    architectureCustomized: false
   };
 }
 
@@ -158,43 +196,57 @@ export function syncArchitectureThreats(
     return sourceZone && targetZone ? [{ flow, source, target, sourceZone, targetZone }] : [];
   });
   const boundaryFlowIds = new Set(boundaryFlows.map(({ flow }) => flow.id));
-  const synced = threats.filter(threat =>
-    !threat.architectureFlowId || boundaryFlowIds.has(threat.architectureFlowId)
-  );
+  const synced = threats.filter(threat => {
+    if (!threat.architectureFlowId) return true;
+    if (!boundaryFlowIds.has(threat.architectureFlowId)) return false;
+    return threat.architectureCustomized || getSuggestedStrideCategories(
+      boundaryFlows.find(({ flow }) => flow.id === threat.architectureFlowId)!.flow
+    ).includes(threat.architectureFlowStride ?? "Elevation of Privilege");
+  });
 
   for (const boundary of boundaryFlows) {
-    const existingIndex = synced.findIndex(threat => threat.architectureFlowId === boundary.flow.id);
-    if (existingIndex >= 0) {
-      const current = synced[existingIndex];
-      synced[existingIndex] = {
-        ...createArchitectureThreat(
-          boundary.flow,
-          boundary.source,
-          boundary.target,
-          boundary.sourceZone,
-          boundary.targetZone,
-          current.id
-        ),
-        status: current.status
-      };
-      continue;
-    }
+    for (const stride of getSuggestedStrideCategories(boundary.flow)) {
+      const currentIndex = synced.findIndex(threat =>
+        threat.architectureFlowId === boundary.flow.id &&
+        (threat.architectureFlowStride ?? "Elevation of Privilege") === stride
+      );
+      if (currentIndex >= 0) {
+        const current = synced[currentIndex];
+        if (!current.architectureCustomized) {
+          synced[currentIndex] = {
+            ...createArchitectureThreat(
+              boundary.flow,
+              boundary.source,
+              boundary.target,
+              boundary.sourceZone,
+              boundary.targetZone,
+              stride,
+              current.id
+            ),
+            status: current.status,
+            architectureReviewed: current.architectureReviewed
+          };
+        }
+        continue;
+      }
 
-    const baseId = `ATAP-${boundary.flow.id}`;
-    let id = baseId;
-    let suffix = 2;
-    while (synced.some(threat => threat.id === id)) {
-      id = `${baseId}-${suffix}`;
-      suffix += 1;
+      const baseId = `ATAP-${boundary.flow.id}-${getStrideCode(stride)}`;
+      let id = baseId;
+      let suffix = 2;
+      while (synced.some(threat => threat.id === id)) {
+        id = `${baseId}-${suffix}`;
+        suffix += 1;
+      }
+      synced.push(createArchitectureThreat(
+        boundary.flow,
+        boundary.source,
+        boundary.target,
+        boundary.sourceZone,
+        boundary.targetZone,
+        stride,
+        id
+      ));
     }
-    synced.push(createArchitectureThreat(
-      boundary.flow,
-      boundary.source,
-      boundary.target,
-      boundary.sourceZone,
-      boundary.targetZone,
-      id
-    ));
   }
 
   return synced;

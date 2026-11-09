@@ -7,12 +7,14 @@ import { computeVersionDiff } from "./versionDiff";
 import { suggestThreatAsvsRequirements } from "./threatAsvs";
 import {
   calculateThreatRisk,
+  getSuggestedStrideCategories,
   syncArchitectureThreats,
   type ArchitectureThreatComponent,
   type ArchitectureThreatFlow,
   type ArchitectureThreatZone,
   type Threat
 } from "./threatModel";
+import { getDiagramLayoutIssues, getFlowPathGeometry } from "./dfd";
 import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
 import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
 import { asvsRequirements } from "../data/asvsData";
@@ -267,7 +269,7 @@ test("suggests ASVS controls from STRIDE threat details", () => {
   assert.deepEqual(suggestThreatAsvsRequirements("Spoofing", "", ""), []);
 });
 
-test("generates one linked STRIDE threat for each cross-zone flow without duplicates", () => {
+test("generates contextual STRIDE suggestions for cross-zone flows without duplicates", () => {
   const flows: ArchitectureThreatFlow[] = [{
     id: "flow-1",
     from: "client",
@@ -287,12 +289,17 @@ test("generates one linked STRIDE threat for each cross-zone flow without duplic
   const first = syncArchitectureThreats([], flows, components, zones);
   const second = syncArchitectureThreats(first, flows, components, zones);
 
-  assert.equal(first.length, 1);
-  assert.equal(first[0].architectureFlowId, "flow-1");
-  assert.deepEqual(first[0].componentIds, ["client", "api"]);
-  assert.equal(first[0].impact, "Critical");
-  assert.equal(first[0].risk, "High");
-  assert.equal(second.length, 1);
+  assert.deepEqual(first.map(threat => threat.architectureFlowStride), [
+    "Elevation of Privilege",
+    "Denial of Service",
+    "Spoofing",
+    "Repudiation"
+  ]);
+  assert.ok(first.every(threat => threat.architectureFlowId === "flow-1"));
+  assert.ok(first.every(threat => JSON.stringify(threat.componentIds) === JSON.stringify(["client", "api"])));
+  assert.ok(first.every(threat => threat.impact === "Critical" && threat.risk === "High"));
+  assert.ok(first.every(threat => threat.architectureReviewed === false));
+  assert.equal(second.length, first.length);
 });
 
 test("updates and removes generated threats with their boundary flow while preserving manual threats", () => {
@@ -328,9 +335,92 @@ test("updates and removes generated threats with their boundary flow while prese
     { ...components[1], zoneId: "internet" }
   ], zones);
 
-  assert.equal(generated.length, 2);
-  assert.match(generated.find(threat => threat.architectureFlowId)?.description ?? "", /unencrypted/);
+  assert.equal(generated.length, 7);
+  assert.match(generated.find(threat => threat.architectureFlowStride === "Tampering")?.description ?? "", /unencrypted/);
   assert.deepEqual(resolved, [manualThreat]);
+});
+
+test("preserves reviewed customized architecture scenarios and removes obsolete generated scenarios", () => {
+  const flow: ArchitectureThreatFlow = {
+    id: "flow-1",
+    from: "client",
+    to: "api",
+    dataClassification: "Confidential",
+    encrypted: true,
+    authenticated: true
+  };
+  const components: ArchitectureThreatComponent[] = [
+    { id: "client", name: "Client", zoneId: "internet" },
+    { id: "api", name: "API", zoneId: "internal" }
+  ];
+  const zones: ArchitectureThreatZone[] = [
+    { id: "internet", name: "Internet" },
+    { id: "internal", name: "Internal" }
+  ];
+  const generated = syncArchitectureThreats([], [flow], components, zones);
+  const editedThreat: Threat = {
+    ...generated[0],
+    title: "Reviewed title",
+    architectureReviewed: true,
+    architectureCustomized: true
+  };
+  const synced = syncArchitectureThreats([editedThreat, ...generated.slice(1)], [flow], components, zones);
+
+  assert.equal(synced[0].title, "Reviewed title");
+  assert.equal(synced[0].architectureReviewed, true);
+  assert.equal(synced[0].architectureCustomized, true);
+  assert.equal(synced.length, generated.length);
+});
+
+test("recommends flow threats based on authentication, encryption, and classification", () => {
+  assert.deepEqual(getSuggestedStrideCategories({
+    id: "secure",
+    from: "client",
+    to: "api",
+    dataClassification: "Public",
+    encrypted: true,
+    authenticated: true
+  }), ["Elevation of Privilege", "Denial of Service"]);
+  assert.ok(getSuggestedStrideCategories({
+    id: "sensitive",
+    from: "client",
+    to: "api",
+    dataClassification: "Restricted",
+    encrypted: false,
+    authenticated: false
+  }).includes("Information Disclosure"));
+});
+
+test("routes parallel flows around each other and identifies layout overlaps", () => {
+  const from = { id: "a", name: "A", x: 0, y: 0, width: 190, height: 100 };
+  const to = { id: "b", name: "B", x: 400, y: 0, width: 190, height: 100 };
+  const firstPath = getFlowPathGeometry(from, to, 0, 2);
+  const secondPath = getFlowPathGeometry(from, to, 1, 2);
+  const reversePath = getFlowPathGeometry(to, from, 1, 2);
+  assert.ok(firstPath && secondPath);
+  assert.ok(reversePath);
+  assert.notEqual(firstPath.path, secondPath.path);
+  assert.notEqual(firstPath.labelY, secondPath.labelY);
+  assert.notEqual(firstPath.labelY, reversePath.labelY);
+  assert.equal(getFlowPathGeometry(from, from), null);
+  const detour = getFlowPathGeometry(from, to, 0, 1, [{
+    id: "obstacle",
+    name: "Obstacle",
+    x: 260,
+    y: 20,
+    width: 80,
+    height: 60
+  }]);
+  assert.ok(detour);
+  assert.deepEqual(detour.obstructedComponentIds, []);
+  assert.notEqual(detour.labelY, (from.y + to.y) / 2 + from.height / 2);
+
+  const issues = getDiagramLayoutIssues(
+    [{ ...from, id: "zone-1" }, { ...to, id: "zone-2", x: 100 }],
+    [from, { ...to, x: 100 }]
+  );
+  assert.equal(issues.overlappingZones.length, 1);
+  assert.equal(issues.overlappingComponents.length, 1);
 });
 
 test("calculates architecture threat risk using the same threat-register scale", () => {

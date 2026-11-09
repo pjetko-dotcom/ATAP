@@ -21,6 +21,7 @@ import {
   ExternalLink, 
   Check, 
   ArrowRight, 
+  AlertTriangle,
   RefreshCw,
   Zap,
   Sliders,
@@ -31,6 +32,7 @@ import {
 } from "lucide-react";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
 import { initialThreats, syncArchitectureThreats } from "../utils/threatModel";
+import { getDiagramLayoutIssues, getFlowPathGeometry } from "../utils/dfd";
 
 export interface ArchComponent {
   id: string;
@@ -61,6 +63,35 @@ export interface DataFlow {
   protocol: string;
   dataClassification: "Public" | "Internal" | "Confidential" | "Restricted";
   encrypted: boolean;
+  authenticated: boolean;
+  transferType: "Synchronous" | "Asynchronous";
+  dataDescription: string;
+}
+
+function normalizeStoredDataFlow(value: unknown): DataFlow | null {
+  if (!value || typeof value !== "object") return null;
+  const flow = value as Record<string, unknown>;
+  if (
+    typeof flow.id !== "string" ||
+    typeof flow.from !== "string" ||
+    typeof flow.to !== "string" ||
+    typeof flow.protocol !== "string"
+  ) return null;
+
+  const dataClassification = ["Public", "Internal", "Confidential", "Restricted"].includes(String(flow.dataClassification))
+    ? flow.dataClassification as DataFlow["dataClassification"]
+    : "Internal";
+  return {
+    id: flow.id,
+    from: flow.from,
+    to: flow.to,
+    protocol: flow.protocol,
+    dataClassification,
+    encrypted: typeof flow.encrypted === "boolean" ? flow.encrypted : false,
+    authenticated: typeof flow.authenticated === "boolean" ? flow.authenticated : false,
+    transferType: flow.transferType === "Asynchronous" ? "Asynchronous" : "Synchronous",
+    dataDescription: typeof flow.dataDescription === "string" ? flow.dataDescription : ""
+  };
 }
 
 type TrustZoneColorKey = "red" | "amber" | "blue" | "emerald" | "purple" | "slate";
@@ -148,30 +179,6 @@ function findComponentPosition(zone: TrustZone, components: ArchComponent[]): { 
   }
 
   return { x: xStart, y: yStart };
-}
-
-function getFlowEndpoints(from: ArchComponent, to: ArchComponent) {
-  const dx = to.x - from.x;
-  const dy = to.y - from.y;
-  const scale = Math.max(
-    Math.abs(dx) / COMPONENT_NODE_WIDTH,
-    Math.abs(dy) / COMPONENT_NODE_HEIGHT
-  );
-
-  if (scale === 0) return null;
-
-  const fromCenterX = from.x + COMPONENT_NODE_WIDTH / 2;
-  const fromCenterY = from.y + COMPONENT_NODE_HEIGHT / 2;
-  const toCenterX = to.x + COMPONENT_NODE_WIDTH / 2;
-  const toCenterY = to.y + COMPONENT_NODE_HEIGHT / 2;
-  const sourceScale = 0.5 / scale;
-
-  return {
-    x1: fromCenterX + dx * sourceScale,
-    y1: fromCenterY + dy * sourceScale,
-    x2: toCenterX - dx * sourceScale,
-    y2: toCenterY - dy * sourceScale
-  };
 }
 
 const DEFAULT_ZONES: TrustZone[] = [
@@ -285,7 +292,10 @@ const DEFAULT_FLOWS: DataFlow[] = [
     to: "API Gateway",
     protocol: "HTTPS / TLS 1.3 (REST)",
     dataClassification: "Confidential",
-    encrypted: true
+    encrypted: true,
+    authenticated: true,
+    transferType: "Synchronous",
+    dataDescription: "User requests and session data"
   },
   {
     id: "flow_2",
@@ -293,7 +303,10 @@ const DEFAULT_FLOWS: DataFlow[] = [
     to: "Auth Service",
     protocol: "mTLS / gRPC (Token Verify)",
     dataClassification: "Restricted",
-    encrypted: true
+    encrypted: true,
+    authenticated: true,
+    transferType: "Synchronous",
+    dataDescription: "Identity tokens"
   },
   {
     id: "flow_3",
@@ -301,7 +314,10 @@ const DEFAULT_FLOWS: DataFlow[] = [
     to: "Core Backend API",
     protocol: "Internal HTTP (mTLS Header)",
     dataClassification: "Confidential",
-    encrypted: true
+    encrypted: true,
+    authenticated: true,
+    transferType: "Synchronous",
+    dataDescription: "Business requests and customer data"
   },
   {
     id: "flow_4",
@@ -309,7 +325,10 @@ const DEFAULT_FLOWS: DataFlow[] = [
     to: "Main Database",
     protocol: "TLS Connection (Prepared Statements)",
     dataClassification: "Restricted",
-    encrypted: true
+    encrypted: true,
+    authenticated: true,
+    transferType: "Synchronous",
+    dataDescription: "Persisted application records"
   },
   {
     id: "flow_5",
@@ -317,7 +336,10 @@ const DEFAULT_FLOWS: DataFlow[] = [
     to: "Payment Gateway",
     protocol: "HTTPS (HMAC Signature Webhook)",
     dataClassification: "Restricted",
-    encrypted: true
+    encrypted: true,
+    authenticated: true,
+    transferType: "Asynchronous",
+    dataDescription: "Payment events and transaction metadata"
   }
 ];
 
@@ -352,7 +374,9 @@ export function ArchitectureModel() {
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed.flows && Array.isArray(parsed.flows)) {
-          return parsed.flows;
+          return parsed.flows
+            .map(normalizeStoredDataFlow)
+            .filter((flow: DataFlow | null): flow is DataFlow => flow !== null);
         }
       }
     } catch (error) {
@@ -386,6 +410,7 @@ export function ArchitectureModel() {
   const [newZoneName, setNewZoneName] = useState("");
   const [newZoneColor, setNewZoneColor] = useState<TrustZoneColorKey>("blue");
   const [isAddFlowOpen, setIsAddFlowOpen] = useState(false);
+  const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // New component form state
@@ -399,6 +424,10 @@ export function ArchitectureModel() {
   const [newFlowTo, setNewFlowTo] = useState("");
   const [newFlowProtocol, setNewFlowProtocol] = useState("HTTPS / TLS 1.3");
   const [newFlowClassification, setNewFlowClassification] = useState<DataFlow["dataClassification"]>("Confidential");
+  const [newFlowEncrypted, setNewFlowEncrypted] = useState(false);
+  const [newFlowAuthenticated, setNewFlowAuthenticated] = useState(false);
+  const [newFlowTransferType, setNewFlowTransferType] = useState<DataFlow["transferType"]>("Synchronous");
+  const [newFlowDataDescription, setNewFlowDataDescription] = useState("");
 
   const canvasRef = useRef<HTMLDivElement>(null);
 
@@ -432,6 +461,32 @@ export function ArchitectureModel() {
     setNewZoneName(zone.name);
     setNewZoneColor(getTrustZoneColorKey(zone));
     setIsZoneModalOpen(true);
+  };
+
+  const openAddFlowModal = (from = components[0]?.id ?? "", to = components[1]?.id ?? "") => {
+    setEditingFlowId(null);
+    setNewFlowFrom(from);
+    setNewFlowTo(to);
+    setNewFlowProtocol("HTTPS / TLS 1.3");
+    setNewFlowClassification("Confidential");
+    setNewFlowEncrypted(false);
+    setNewFlowAuthenticated(false);
+    setNewFlowTransferType("Synchronous");
+    setNewFlowDataDescription("");
+    setIsAddFlowOpen(true);
+  };
+
+  const openEditFlowModal = (flow: DataFlow) => {
+    setEditingFlowId(flow.id);
+    setNewFlowFrom(flow.from);
+    setNewFlowTo(flow.to);
+    setNewFlowProtocol(flow.protocol);
+    setNewFlowClassification(flow.dataClassification);
+    setNewFlowEncrypted(flow.encrypted);
+    setNewFlowAuthenticated(flow.authenticated);
+    setNewFlowTransferType(flow.transferType);
+    setNewFlowDataDescription(flow.dataDescription);
+    setIsAddFlowOpen(true);
   };
 
   useEffect(() => {
@@ -786,19 +841,32 @@ export function ArchitectureModel() {
       alert("Zvoľte odlišný zdrojový a cieľový komponent.");
       return;
     }
+    if (!newFlowProtocol.trim()) {
+      alert("Zadajte protokol alebo spôsob komunikácie.");
+      return;
+    }
 
     const newFlow: DataFlow = {
-      id: `flow_${Date.now()}`,
+      id: editingFlowId ?? `flow_${Date.now()}`,
       from: newFlowFrom,
       to: newFlowTo,
-      protocol: newFlowProtocol,
+      protocol: newFlowProtocol.trim(),
       dataClassification: newFlowClassification,
-      encrypted: true
+      encrypted: newFlowEncrypted,
+      authenticated: newFlowAuthenticated,
+      transferType: newFlowTransferType,
+      dataDescription: newFlowDataDescription.trim()
     };
 
-    setFlows(prev => [...prev, newFlow]);
+    setFlows(prev => editingFlowId
+      ? prev.map(flow => flow.id === editingFlowId ? newFlow : flow)
+      : [...prev, newFlow]
+    );
     setIsAddFlowOpen(false);
-    setToastMessage(`Tok dát z ${newFlowFrom} do ${newFlowTo} bol pridaný.`);
+    setEditingFlowId(null);
+    setToastMessage(editingFlowId
+      ? `Tok dát z ${newFlowFrom} do ${newFlowTo} bol aktualizovaný.`
+      : `Tok dát z ${newFlowFrom} do ${newFlowTo} bol pridaný.`);
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -817,6 +885,54 @@ export function ArchitectureModel() {
   };
 
   const selectedComp = components.find(c => c.id === selectedCompId);
+  const layoutIssues = getDiagramLayoutIssues(
+    zones.map(zone => ({ id: zone.id, name: zone.name, x: zone.x, y: zone.y, width: zone.width, height: zone.height })),
+    components.map(component => ({
+      id: component.id,
+      name: component.name,
+      x: component.x,
+      y: component.y,
+      width: COMPONENT_NODE_WIDTH,
+      height: COMPONENT_NODE_HEIGHT
+    }))
+  );
+  const overlappingZoneIds = new Set(layoutIssues.overlappingZones.flatMap(([first, second]) => [first.id, second.id]));
+  const overlappingComponentIds = new Set(layoutIssues.overlappingComponents.flatMap(([first, second]) => [first.id, second.id]));
+  const flowPairOffsets = new Map<string, { index: number; count: number }>();
+  const flowsByPair = new Map<string, DataFlow[]>();
+  for (const flow of flows) {
+    const pairKey = [flow.from, flow.to].sort().join("\u0000");
+    flowsByPair.set(pairKey, [...(flowsByPair.get(pairKey) ?? []), flow]);
+  }
+  for (const pairFlows of flowsByPair.values()) {
+    pairFlows.forEach((flow, index) => flowPairOffsets.set(flow.id, { index, count: pairFlows.length }));
+  }
+  const componentRectangles = components.map(component => ({
+    id: component.id,
+    name: component.name,
+    x: component.x,
+    y: component.y,
+    width: COMPONENT_NODE_WIDTH,
+    height: COMPONENT_NODE_HEIGHT
+  }));
+  const flowGeometries = new Map(flows.flatMap(flow => {
+    const from = componentRectangles.find(component => component.id === flow.from);
+    const to = componentRectangles.find(component => component.id === flow.to);
+    if (!from || !to) return [];
+    const offset = flowPairOffsets.get(flow.id);
+    const geometry = getFlowPathGeometry(
+      from,
+      to,
+      offset?.index ?? 0,
+      offset?.count ?? 1,
+      componentRectangles.filter(component => component.id !== flow.from && component.id !== flow.to)
+    );
+    return geometry ? [[flow.id, geometry] as const] : [];
+  }));
+  const obstructedFlowIds = flows.filter(flow => (flowGeometries.get(flow.id)?.obstructedComponentIds.length ?? 0) > 0);
+  const obstructedComponentIds = new Set(
+    obstructedFlowIds.flatMap(flow => flowGeometries.get(flow.id)?.obstructedComponentIds ?? [])
+  );
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
@@ -850,9 +966,7 @@ export function ArchitectureModel() {
                 alert("Najprv vytvorte aspoň dva komponenty na prepojenie.");
                 return;
               }
-              setNewFlowFrom(components[0].id);
-              setNewFlowTo(components[1].id);
-              setIsAddFlowOpen(true);
+              openAddFlowModal(components[0].id, components[1].id);
             }}
             className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
@@ -887,7 +1001,32 @@ export function ArchitectureModel() {
       )}
 
       {/* Main Workspace (Canvas + Inspector Drawer) */}
-      <div className="flex-1 flex overflow-hidden p-6 gap-4">
+      <div className="flex-1 flex flex-col overflow-hidden p-6 gap-3">
+        {(layoutIssues.overlappingZones.length > 0 || layoutIssues.overlappingComponents.length > 0 || obstructedFlowIds.length > 0) && (
+          <div role="alert" className="shrink-0 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
+            <div className="flex items-center gap-2 font-semibold">
+              <AlertTriangle size={14} />
+              <span>Rozloženie diagramu obsahuje prekrývajúce sa prvky.</span>
+            </div>
+            {layoutIssues.overlappingZones.length > 0 && (
+              <p className="mt-1">Trust zóny: {layoutIssues.overlappingZones.map(([a, b]) => `${a.name} / ${b.name}`).join(", ")}</p>
+            )}
+            {layoutIssues.overlappingComponents.length > 0 && (
+              <p className="mt-1">Komponenty: {layoutIssues.overlappingComponents.map(([a, b]) => `${a.name} / ${b.name}`).join(", ")}</p>
+            )}
+            {obstructedFlowIds.length > 0 && (
+              <p className="mt-1">
+                Toky vedené cez komponenty: {obstructedFlowIds.map(flow => {
+                  const blockedBy = flowGeometries.get(flow.id)?.obstructedComponentIds
+                    .map(id => components.find(component => component.id === id)?.name ?? id)
+                    .join(", ");
+                  return `${flow.from} → ${flow.to} (${blockedBy})`;
+                }).join("; ")}
+              </p>
+            )}
+          </div>
+        )}
+        <div className="flex-1 flex overflow-hidden gap-4 min-h-0">
         
         {/* Canvas Container */}
         <div 
@@ -906,7 +1045,9 @@ export function ArchitectureModel() {
           {zones.map(zone => (
             <div
               key={zone.id}
-              className={`absolute rounded-xl border-2 border-dashed ${zone.borderColor} ${zone.bgTint} pointer-events-none`}
+              className={`absolute rounded-xl border-2 border-dashed ${zone.borderColor} ${zone.bgTint} pointer-events-none ${
+                overlappingZoneIds.has(zone.id) ? "ring-4 ring-amber-400/70" : ""
+              }`}
               style={{
                 left: zone.x,
                 top: zone.y,
@@ -984,6 +1125,28 @@ export function ArchitectureModel() {
               >
                 <path d="M 0 1 L 8 5 L 0 9 z" fill="#1d4ed8" />
               </marker>
+              <marker
+                id="arrow-boundary"
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="6"
+                markerHeight="6"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#ea580c" />
+              </marker>
+              <marker
+                id="arrow-boundary-selected"
+                viewBox="0 0 10 10"
+                refX="8"
+                refY="5"
+                markerWidth="7"
+                markerHeight="7"
+                orient="auto-start-reverse"
+              >
+                <path d="M 0 1 L 8 5 L 0 9 z" fill="#c2410c" />
+              </marker>
             </defs>
 
             {flows.map(flow => {
@@ -991,51 +1154,61 @@ export function ArchitectureModel() {
               const toComp = components.find(c => c.id === flow.to);
               if (!fromComp || !toComp) return null;
 
-              const endpoints = getFlowEndpoints(fromComp, toComp);
-              if (!endpoints) return null;
-              const { x1, y1, x2, y2 } = endpoints;
+              const geometry = flowGeometries.get(flow.id);
+              if (!geometry) return null;
 
-              // Midpoint for label
-              const midX = (x1 + x2) / 2;
-              const midY = (y1 + y2) / 2;
+              const labelWidth = Math.min(110, geometry.length - 36);
+              const showFlowLabel = labelWidth >= 42;
+              const maxLabelCharacters = Math.floor((labelWidth - 12) / 5);
+              const flowLabel = flow.protocol.length > maxLabelCharacters
+                ? `${flow.protocol.substring(0, maxLabelCharacters - 1)}…`
+                : flow.protocol;
 
               const isFlowHighlighted = selectedCompId === flow.from || selectedCompId === flow.to;
+              const crossesTrustBoundary = fromComp.zoneId !== toComp.zoneId;
+              const stroke = crossesTrustBoundary
+                ? (isFlowHighlighted ? "#c2410c" : "#ea580c")
+                : (isFlowHighlighted ? "#2563eb" : "#94a3b8");
 
               return (
                 <g key={flow.id}>
+                  <title>{`Tok dát: ${flow.protocol}; ${flow.transferType.toLowerCase()}; ${crossesTrustBoundary ? "prekračuje hranicu trust zóny" : "v rámci jednej trust zóny"}`}</title>
                   {/* Flow line */}
-                  <line
-                    x1={x1}
-                    y1={y1}
-                    x2={x2}
-                    y2={y2}
-                    stroke={isFlowHighlighted ? "#2563eb" : "#94a3b8"}
+                  <path
+                    d={geometry.path}
+                    fill="none"
+                    stroke={stroke}
                     strokeWidth={isFlowHighlighted ? 2.5 : 1.8}
-                    strokeDasharray={flow.encrypted ? undefined : "4 4"}
-                    markerEnd={isFlowHighlighted ? "url(#arrow-selected)" : "url(#arrow)"}
+                    strokeDasharray={flow.encrypted ? undefined : "6 4"}
+                    markerEnd={crossesTrustBoundary
+                      ? (isFlowHighlighted ? "url(#arrow-boundary-selected)" : "url(#arrow-boundary)")
+                      : (isFlowHighlighted ? "url(#arrow-selected)" : "url(#arrow)")}
                   />
 
-                  {/* Flow label */}
-                  <rect
-                    x={midX - 55}
-                    y={midY - 10}
-                    width={110}
-                    height={20}
-                    rx={4}
-                    fill="#ffffff"
-                    stroke={isFlowHighlighted ? "#bfdbfe" : "#e2e8f0"}
-                    strokeWidth={1}
-                  />
-                  <text
-                    x={midX}
-                    y={midY + 3.5}
-                    textAnchor="middle"
-                    fontSize="9"
-                    fontWeight="600"
-                    fill={isFlowHighlighted ? "#1e40af" : "#64748b"}
-                  >
-                    {flow.protocol.length > 20 ? `${flow.protocol.substring(0, 18)}...` : flow.protocol}
-                  </text>
+                  {showFlowLabel && (
+                    <>
+                      <rect
+                        x={geometry.labelX - labelWidth / 2}
+                        y={geometry.labelY - 10}
+                        width={labelWidth}
+                        height={20}
+                        rx={4}
+                        fill="#ffffff"
+                        stroke={crossesTrustBoundary ? "#fed7aa" : isFlowHighlighted ? "#bfdbfe" : "#e2e8f0"}
+                        strokeWidth={1}
+                      />
+                      <text
+                        x={geometry.labelX}
+                        y={geometry.labelY + 3.5}
+                        textAnchor="middle"
+                        fontSize="9"
+                        fontWeight="600"
+                        fill={crossesTrustBoundary ? "#c2410c" : isFlowHighlighted ? "#1e40af" : "#64748b"}
+                      >
+                        {flowLabel}
+                      </text>
+                    </>
+                  )}
                 </g>
               );
             })}
@@ -1062,7 +1235,7 @@ export function ArchitectureModel() {
                   isSelected 
                     ? "ring-2 ring-blue-500 border-blue-600 shadow-md z-20" 
                     : "border-slate-200 hover:border-slate-400 hover:shadow-sm z-10"
-                }`}
+                } ${overlappingComponentIds.has(comp.id) || obstructedComponentIds.has(comp.id) ? "outline outline-2 outline-amber-400" : ""}`}
               >
                 <div className="flex items-center justify-between gap-1 mb-1.5">
                   <div className="flex items-center gap-1.5">
@@ -1224,16 +1397,32 @@ export function ArchitectureModel() {
                             {f.from} → {f.to}
                           </div>
                           <div className="text-[10px] text-slate-500">
-                            {f.protocol}
+                            {f.protocol} · {f.dataClassification} · {f.transferType.toLowerCase()}
+                          </div>
+                          <div className="text-[10px] text-slate-500">
+                            {f.encrypted ? "Šifrovaný" : "Nešifrovaný"} · {f.authenticated ? "Autentifikovaný" : "Bez autentifikácie"}
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDeleteFlow(f.id)}
-                          className="text-slate-400 hover:text-red-600 p-1"
-                          title="Zmazať tok"
-                        >
-                          <Trash2 size={12} />
-                        </button>
+                        <div className="flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => openEditFlowModal(f)}
+                            className="text-slate-400 hover:text-blue-600 p-1"
+                            title="Upraviť tok"
+                            aria-label={`Upraviť tok ${f.from} do ${f.to}`}
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFlow(f.id)}
+                            className="text-slate-400 hover:text-red-600 p-1"
+                            title="Zmazať tok"
+                            aria-label={`Zmazať tok ${f.from} do ${f.to}`}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -1250,6 +1439,7 @@ export function ArchitectureModel() {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Modal: Add or edit component */}
@@ -1394,10 +1584,10 @@ export function ArchitectureModel() {
       {/* Modal: Add Flow */}
       {isAddFlowOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
+          <div role="dialog" aria-modal="true" aria-labelledby="flow-modal-title" className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="font-bold text-slate-800 text-sm">Pridať tok dát (Data Flow)</h3>
-              <button onClick={() => setIsAddFlowOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <h3 id="flow-modal-title" className="font-bold text-slate-800 text-sm">{editingFlowId ? "Upraviť tok dát" : "Pridať tok dát (Data Flow)"}</h3>
+              <button type="button" aria-label="Zavrieť formulár toku" onClick={() => setIsAddFlowOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
@@ -1432,7 +1622,7 @@ export function ArchitectureModel() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Protokol & Šifrovanie</label>
+                <label className="block font-semibold text-slate-700 mb-1">Protokol / spôsob komunikácie</label>
                 <input
                   type="text"
                   required
@@ -1444,10 +1634,34 @@ export function ArchitectureModel() {
               </div>
 
               <div>
+                <label className="block font-semibold text-slate-700 mb-1">Typ prenosu</label>
+                <select
+                  value={newFlowTransferType}
+                  onChange={e => setNewFlowTransferType(e.target.value as DataFlow["transferType"])}
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
+                >
+                  <option value="Synchronous">Synchrónny (request / response)</option>
+                  <option value="Asynchronous">Asynchrónny (fronta / udalosť)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">Popis prenášaných údajov</label>
+                <textarea
+                  value={newFlowDataDescription}
+                  onChange={e => setNewFlowDataDescription(e.target.value)}
+                  maxLength={500}
+                  rows={2}
+                  placeholder="napr. prihlasovacie údaje, osobné údaje alebo platobné udalosti"
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none resize-y"
+                />
+              </div>
+
+              <div>
                 <label className="block font-semibold text-slate-700 mb-1">Klasifikácia prenášaných dát</label>
                 <select
                   value={newFlowClassification}
-                  onChange={e => setNewFlowClassification(e.target.value as any)}
+                  onChange={e => setNewFlowClassification(e.target.value as DataFlow["dataClassification"])}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
                 >
                   <option value="Public">Verejné (Public)</option>
@@ -1455,6 +1669,17 @@ export function ArchitectureModel() {
                   <option value="Confidential">Dôverné (Confidential)</option>
                   <option value="Restricted">Prísne tajné / Citlivé (Restricted)</option>
                 </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2.5 text-slate-700">
+                  <input type="checkbox" checked={newFlowEncrypted} onChange={e => setNewFlowEncrypted(e.target.checked)} />
+                  <span>Šifrovaný prenos</span>
+                </label>
+                <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2.5 text-slate-700">
+                  <input type="checkbox" checked={newFlowAuthenticated} onChange={e => setNewFlowAuthenticated(e.target.checked)} />
+                  <span>Autentifikovaný odosielateľ</span>
+                </label>
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
@@ -1469,7 +1694,7 @@ export function ArchitectureModel() {
                   type="submit"
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-xs"
                 >
-                  Vytvoriť tok
+                  {editingFlowId ? "Uložiť zmeny" : "Vytvoriť tok"}
                 </button>
               </div>
             </form>
