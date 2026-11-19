@@ -21,6 +21,8 @@ import {
   UserCheck
 } from "lucide-react";
 import { ASVS_VERSION, asvsChapters, asvsRequirements, ASVSRequirement } from "../data/asvsData";
+import { getInitialThreatsForAnalysis, summarizeThreats, type Threat } from "../utils/threatModel";
+import { calculateAsvsCoverage } from "../utils/asvsMetrics";
 
 interface ExecutiveReportModalProps {
   isOpen: boolean;
@@ -69,17 +71,26 @@ export function ExecutiveReportModal({
   } catch (e) {}
 
   // Filter to target level
-  const targetLevelNum = typeof asvsLevel === "number" ? asvsLevel : parseInt(asvsLevel, 10) || 2;
-  const applicableReqs = reqs.filter(r => r.level <= targetLevelNum);
+  const storedTargetLevel = localStorage.getItem(`atap_asvs_target_level_${analysisId}`);
+  const requestedLevel = typeof asvsLevel === "number" ? asvsLevel : parseInt(asvsLevel, 10) || 2;
+  const targetLevelNum = storedTargetLevel === "all"
+    ? "all"
+    : storedTargetLevel && [1, 2, 3].includes(Number(storedTargetLevel))
+      ? Number(storedTargetLevel)
+      : requestedLevel;
+  const targetLevelLabel = targetLevelNum === "all" ? "All Levels (L1-L3)" : `L${targetLevelNum}`;
+  const applicableReqs = reqs.filter(r => targetLevelNum === "all" || r.level <= targetLevelNum);
 
   // Load threats
-  let threats: any[] = [];
+  let threats: Threat[] = getInitialThreatsForAnalysis(analysisId);
   try {
     const rawThreats = localStorage.getItem(`atap_threats_${analysisId}`);
     if (rawThreats) {
       threats = JSON.parse(rawThreats);
     }
-  } catch (e) {}
+  } catch (error) {
+    console.error("Failed to load report threats", error);
+  }
 
   // Load context
   let context: any = {};
@@ -97,13 +108,9 @@ export function ExecutiveReportModal({
   const partial = applicableReqs.filter(r => r.status === "Partial");
   const na = applicableReqs.filter(r => r.status === "N/A");
 
-  const evaluatedCount = implemented.length + missing.length + partial.length;
-  const complianceScore = evaluatedCount > 0 
-    ? Math.round(((implemented.length + partial.length * 0.5) / evaluatedCount) * 100)
-    : 0;
+  const complianceScore = calculateAsvsCoverage(applicableReqs);
 
-  const openThreats = threats.filter(t => t.status === "Open");
-  const criticalThreats = threats.filter(t => t.risk === "Critical" || t.risk === "High");
+  const threatSummary = summarizeThreats(threats);
 
   // Chapter statistics
   const chapterStats = asvsChapters.map(ch => {
@@ -189,7 +196,7 @@ export function ExecutiveReportModal({
                   Dôverné / Bezpečnostný audit
                 </span>
                 <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded">
-                  OWASP ASVS {ASVS_VERSION} (Level {asvsLevel})
+                  OWASP ASVS {ASVS_VERSION} ({targetLevelLabel})
                 </span>
                 <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded ${
                   status === "Final" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
@@ -226,7 +233,7 @@ export function ExecutiveReportModal({
                 }`}>
                   {complianceScore}%
                 </p>
-                <span className="text-[10px] text-slate-400">z relevantných požiadaviek L{asvsLevel}</span>
+                <span className="text-[10px] text-slate-400">z relevantných požiadaviek {targetLevelLabel}</span>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
@@ -248,15 +255,15 @@ export function ExecutiveReportModal({
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
                 <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">STRIDE hrozby</span>
                 <p className="text-2xl font-extrabold text-purple-600 mt-1">
-                  {openThreats.length} <span className="text-xs font-normal text-slate-400">otvorených</span>
+                  {threatSummary.open} <span className="text-xs font-normal text-slate-400">otvorených</span>
                 </p>
-                <span className="text-[10px] text-slate-400">{criticalThreats.length} s vysokým rizikom</span>
+                <span className="text-[10px] text-slate-400">{threatSummary.openHighOrCritical} s vysokým/kritickým otvoreným rizikom</span>
               </div>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
               <p>
-                Predložená správa sumarizuje bezpečnostný stav systému <strong>{analysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> na cieľovej úrovni <strong>L{asvsLevel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako zistenie (medzera) vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
+                Predložená správa sumarizuje bezpečnostný stav systému <strong>{analysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> v rozsahu <strong>{targetLevelLabel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako zistenie (medzera) vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
               </p>
             </div>
           </div>

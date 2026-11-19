@@ -681,8 +681,8 @@ export function Layout() {
             </div>
             <div className="p-4 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600">
               <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">Welcome to Application Threat Analysis Platform (ATAP)</h3>
-                <p>ATAP V{appVersion} is designed to streamline the threat modeling and security verification process using the OWASP ASVS 5.0 framework.</p>
+                <h3 className="font-bold text-slate-800 text-base mb-2">Welcome to Application Threat Analysis & Modeling Platform (ATAP)</h3>
+                <p>ATAP means <strong>Application Threat Analysis &amp; Modeling Platform</strong>. It supports threat modeling and security verification using OWASP ASVS 5.0 and Microsoft STRIDE.</p>
               </section>
               
               <section>
@@ -692,7 +692,7 @@ export function Layout() {
                   <li><strong>Architecture Model:</strong> Detail the system components, data flows, and trust boundaries that form your attack surface.</li>
                   <li><strong>STRIDE Analysis:</strong> Utilize the Microsoft STRIDE reference dashboard to systematically identify Spoofing, Tampering, Repudiation, Information Disclosure, DoS, and EoP threats based on your architecture.</li>
                   <li><strong>ASVS Workspace:</strong> Evaluate the application against the full OWASP ASVS 5.0 standard. Features all 17 chapters and 350+ controls. Use the sidebar to navigate chapters, filter by target level (L1-L3), and track implementation status.</li>
-                  <li><strong>Threat Register:</strong> Manage identified threats, applying STRIDE categorizations, and prioritize them using the interactive 5x5 Risk Matrix based on Likelihood and Impact.</li>
+                  <li><strong>Threat Register:</strong> Manage identified threats, apply STRIDE categories, and prioritize them using the 4×4 risk matrix based on Likelihood and Impact. The likelihood scale has four levels; the impact scale has four levels.</li>
                   <li><strong>Findings & Gaps:</strong> Automatically cross-reference your architecture and ASVS workspace to auto-generate security gap tickets. This turns missing/partial compliance requirements into actionable development tasks.</li>
                 </ul>
               </section>
@@ -701,7 +701,7 @@ export function Layout() {
                 <h3 className="font-bold text-slate-800 text-base mb-2">Tips for Analysis & Reporting</h3>
                 <ul className="list-disc pl-5 space-y-2">
                   <li>In the <strong>ASVS Workspace</strong>, use the <em>Target Level</em> dropdown to automatically filter out requirements that exceed the application's required risk profile.</li>
-                  <li>In the <strong>Threat Register</strong>, click on the numbers within the Risk Matrix grid to visually highlight threats corresponding to specific likelihood/impact clusters.</li>
+                  <li>In the <strong>Threat Register</strong>, hover over a cell in the 4×4 Risk Matrix to see the number of open threats at that likelihood/impact combination.</li>
                   <li>Clicking <strong>Generate Gap Analysis</strong> under Findings & Gaps will instantly poll your ASVS workspace for any controls marked as "Missing" or "Partial", translating them into formal gaps with severities.</li>
                 </ul>
               </section>

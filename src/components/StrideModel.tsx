@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Shield, Server, Database, Activity, Lock, AlertTriangle, ArrowRight } from "lucide-react";
+import { getInitialThreatsForAnalysis } from "../utils/threatModel";
 
 interface Threat {
   id: string;
@@ -33,15 +34,7 @@ export function StrideModel() {
       } catch (e) {
         console.error(e);
       }
-    } else {
-      // Load initials just for display if nothing is set
-      setThreats([
-        { id: "TR-001", title: "Session Hijacking via XSS", description: "An attacker could steal session cookies if XSS vulnerabilities exist in the user profile inputs.", stride: "Elevation of Privilege", status: "Open" },
-        { id: "TR-002", title: "Parameter Tampering on Checkout", description: "Manipulation of product prices during the checkout process via intercepting proxy.", stride: "Tampering", status: "Mitigated" },
-        { id: "TR-003", title: "Brute Force of Admin Login", description: "Automated credential stuffing against the administrative portal.", stride: "Spoofing", status: "Open" },
-        { id: "TR-004", title: "Information Disclosure via Stack Traces", description: "Unhandled exceptions leaking internal network paths and database versions.", stride: "Information Disclosure", status: "Accepted" }
-      ]);
-    }
+    } else setThreats(getInitialThreatsForAnalysis(analysisId));
   }, [analysisId]);
 
   const strideCategories = [

@@ -22,6 +22,7 @@ import { VersionDiffModal } from "./VersionDiffModal";
 import { ProjectSwitcher } from "./ProjectSwitcher";
 import { RenameProjectModal } from "./RenameProjectModal";
 import { getCurrentUserName } from "../utils/activityLog";
+import { calculateAsvsCoverage } from "../utils/asvsMetrics";
 
 const COMPONENT_ICONS: Record<string, React.ComponentType<any>> = {
   "Frontend App": LayoutTemplate,
@@ -159,9 +160,24 @@ function AnalysisLayoutInner() {
     { id: "1", action: "Created Analysis Workspace", user: getCurrentUserName(), time: "Just now" }
   ]);
 
-  const totalReqs = displayReqs.length;
-  const implementedCount = displayReqs.filter(r => r.status === "Implemented").length;
-  const progressPercentage = totalReqs > 0 ? Math.round((implementedCount / totalReqs) * 100) : 0;
+  const savedTargetLevel = isHistorical
+    ? activeSnapshot?.data?.targetLevel
+    : localStorage.getItem(`atap_asvs_target_level_${currentAnalysis.id}`);
+  const progressLevel = savedTargetLevel === "all"
+    ? "all"
+    : Number(savedTargetLevel || activeSnapshot?.asvsLevel || currentAnalysis.asvsLevel);
+  const assessmentLevel = progressLevel === "all"
+    ? "all"
+    : progressLevel === 1 || progressLevel === 2 || progressLevel === 3 ? progressLevel : 2;
+  const scopedRequirements = displayReqs.filter(requirement =>
+    assessmentLevel === "all" || requirement.level <= assessmentLevel
+  );
+  const evaluatedRequirements = scopedRequirements.filter(requirement =>
+    ["Implemented", "Partial", "Missing"].includes(requirement.status)
+  );
+  const totalReqs = evaluatedRequirements.length;
+  const implementedCount = evaluatedRequirements.filter(requirement => requirement.status === "Implemented").length;
+  const progressPercentage = calculateAsvsCoverage(scopedRequirements);
 
   // Components mapping for Right Sidebar
   const componentsList = [
@@ -538,7 +554,7 @@ function AnalysisLayoutInner() {
                 </div>
                 <div className="mt-2 flex justify-between text-[11px] text-slate-500">
                   <span>Implemented: {implementedCount}</span>
-                  <span>Total: {totalReqs}</span>
+                  <span>Evaluated: {totalReqs}</span>
                 </div>
               </div>
 

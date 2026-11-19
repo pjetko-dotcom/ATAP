@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AnalysisVersionSnapshot } from '../types/versioning';
-import { asvsRequirements } from '../data/asvsData';
+import { asvsRequirements, type ASVSRequirement } from '../data/asvsData';
 import { getCurrentUserName, LOCAL_ACTIVITY_ACTOR } from '../utils/activityLog';
+import { getInitialThreatsForAnalysis, summarizeThreats, type Threat } from '../utils/threatModel';
+import { calculateAsvsCoverage } from '../utils/asvsMetrics';
 
 export interface Analysis {
   id: string;
@@ -17,6 +19,58 @@ export interface Analysis {
 
 const STORAGE_KEY = 'atap_analyses';
 
+const SEED_V1_THREATS: Threat[] = [
+  {
+    id: "TR-001",
+    title: "Session Hijacking via XSS",
+    description: "An attacker could steal session cookies if XSS vulnerabilities exist in the user profile inputs.",
+    stride: "Elevation of Privilege",
+    likelihood: "Probably",
+    impact: "Major",
+    risk: "High",
+    status: "Open",
+    mitigation: "V4.3.1 (HttpOnly cookies), V5.1.1 (Output encoding)"
+  },
+  {
+    id: "TR-002",
+    title: "Parameter Tampering on Checkout",
+    description: "Manipulation of product prices during checkout process via intercepting proxy.",
+    stride: "Tampering",
+    likelihood: "Probably",
+    impact: "Major",
+    risk: "High",
+    status: "Open",
+    mitigation: "V5.1.4 (Server-side validation)"
+  },
+  {
+    id: "TR-003",
+    title: "Brute Force of Admin Login",
+    description: "Automated credential stuffing against the administrative portal.",
+    stride: "Spoofing",
+    likelihood: "Frequently",
+    impact: "Major",
+    risk: "Critical",
+    status: "Open",
+    mitigation: "V2.2.1 (Anti-automation), V2.3.1 (MFA)"
+  }
+];
+
+const SEED_V1_ASVS_REQS: ASVSRequirement[] = asvsRequirements.map((req, idx) => {
+  if (req.id === "V2.1.1") {
+    return { ...req, status: "Missing", notes: "Chýba validácia komplexity hesiel na backend API." };
+  }
+  if (req.id === "V3.2.1") {
+    return { ...req, status: "Partial", notes: "Tokeny nemajú nastavenú automatickú rotáciu." };
+  }
+  if (idx % 3 === 0) {
+    return { ...req, status: "Implemented" };
+  }
+  return { ...req, status: req.status || "Missing" };
+});
+
+const SEED_V1_SCOPED_REQS = SEED_V1_ASVS_REQS.filter(requirement => requirement.level <= 2);
+const SEED_V1_THREAT_SUMMARY = summarizeThreats(SEED_V1_THREATS);
+
 // Seed initial baseline snapshot for Retail Banking API v1.0
 const SEED_V1_SNAPSHOT: AnalysisVersionSnapshot = {
   version: "1.0",
@@ -27,12 +81,14 @@ const SEED_V1_SNAPSHOT: AnalysisVersionSnapshot = {
   changeSummary: "Iniciálna verzia bezpečnostnej analýzy pred vstupom do auditu. Identifikované kľúčové riziká v autentifikácii a parameter tampering.",
   asvsLevel: "2",
   metrics: {
-    asvsCoverage: 48,
-    totalOpenThreats: 3,
-    criticalRisks: 2,
-    openFindings: 22,
-    totalImplemented: 24,
-    totalReqs: 50
+    asvsCoverage: calculateAsvsCoverage(SEED_V1_ASVS_REQS, 2),
+    totalOpenThreats: SEED_V1_THREAT_SUMMARY.open,
+    criticalRisks: SEED_V1_THREAT_SUMMARY.openHighOrCritical,
+    openFindings: SEED_V1_SCOPED_REQS.filter(requirement =>
+      requirement.status === "Missing" || requirement.status === "Partial"
+    ).length,
+    totalImplemented: SEED_V1_SCOPED_REQS.filter(requirement => requirement.status === "Implemented").length,
+    totalReqs: SEED_V1_SCOPED_REQS.length
   },
   data: {
     context: {
@@ -42,54 +98,8 @@ const SEED_V1_SNAPSHOT: AnalysisVersionSnapshot = {
       userTypes: ["Unauthenticated", "Customer", "Admin"],
       internetFacing: true
     },
-    threats: [
-      {
-        id: "TR-001",
-        title: "Session Hijacking via XSS",
-        description: "An attacker could steal session cookies if XSS vulnerabilities exist in the user profile inputs.",
-        stride: "Elevation of Privilege",
-        likelihood: "Probably",
-        impact: "Major",
-        risk: "High",
-        status: "Open",
-        mitigation: "V4.3.1 (HttpOnly cookies), V5.1.1 (Output encoding)"
-      },
-      {
-        id: "TR-002",
-        title: "Parameter Tampering on Checkout",
-        description: "Manipulation of product prices during checkout process via intercepting proxy.",
-        stride: "Tampering",
-        likelihood: "Probably",
-        impact: "Major",
-        risk: "High",
-        status: "Open",
-        mitigation: "V5.1.4 (Server-side validation)"
-      },
-      {
-        id: "TR-003",
-        title: "Brute Force of Admin Login",
-        description: "Automated credential stuffing against the administrative portal.",
-        stride: "Spoofing",
-        likelihood: "Frequently",
-        impact: "Major",
-        risk: "Critical",
-        status: "Open",
-        mitigation: "V2.2.1 (Anti-automation), V2.3.1 (MFA)"
-      }
-    ],
-    asvsReqs: asvsRequirements.map((req, idx) => {
-      // In baseline v1.0, some reqs were Missing or Partial
-      if (req.id === "V2.1.1") {
-        return { ...req, status: "Missing", notes: "Chýba validácia komplexity hesiel na backend API." };
-      }
-      if (req.id === "V3.2.1") {
-        return { ...req, status: "Partial", notes: "Tokeny nemajú nastavenú automatickú rotáciu." };
-      }
-      if (idx % 3 === 0) {
-        return { ...req, status: "Implemented" };
-      }
-      return { ...req, status: req.status || "Missing" };
-    })
+    threats: SEED_V1_THREATS,
+    asvsReqs: SEED_V1_ASVS_REQS
   }
 };
 
@@ -285,7 +295,7 @@ export function useAnalyses() {
       if (stored) reqsList = JSON.parse(stored);
     } catch (e) {}
 
-    let threatsList: any[] = [];
+    let threatsList: any[] = getInitialThreatsForAnalysis(analysisId);
     try {
       const stored = localStorage.getItem(threatsKey);
       if (stored) threatsList = JSON.parse(stored);
@@ -318,12 +328,17 @@ export function useAnalyses() {
     const storedTargetLevel = localStorage.getItem(targetLvlKey);
     const targetLevel = storedTargetLevel === "all" ? "all" : Number(storedTargetLevel) || undefined;
 
-    const totalRelevant = reqsList.filter((r: any) => r.status !== "N/A").length;
-    const implementedCount = reqsList.filter((r: any) => r.status === "Implemented").length;
-    const asvsCoverage = totalRelevant > 0 ? Math.round((implementedCount / totalRelevant) * 100) : 0;
-    const openFindings = reqsList.filter((r: any) => r.status === "Missing" || r.status === "Partial").length;
-    const totalOpenThreats = threatsList.filter((t: any) => t.status === "Open").length;
-    const criticalRisks = threatsList.filter((t: any) => t.status === "Open" && (t.risk === "Critical" || t.risk === "High")).length;
+    const assessmentLevel = targetLevel ?? (Number(targetAnalysis.asvsLevel) || 2);
+    const assessmentRequirements = reqsList.filter((r: any) =>
+      assessmentLevel === "all" || r.level <= assessmentLevel
+    );
+    const asvsCoverage = calculateAsvsCoverage(assessmentRequirements);
+    const openFindings = assessmentRequirements.filter((r: any) =>
+      (r.status === "Missing" || r.status === "Partial")
+    ).length;
+    const threatSummary = summarizeThreats(threatsList);
+    const totalOpenThreats = threatSummary.open;
+    const criticalRisks = threatSummary.openHighOrCritical;
 
     // 2. Build snapshot
     const snapshot: AnalysisVersionSnapshot = {
@@ -339,8 +354,8 @@ export function useAnalyses() {
         totalOpenThreats,
         criticalRisks,
         openFindings,
-        totalImplemented: implementedCount,
-        totalReqs: reqsList.length
+        totalImplemented: assessmentRequirements.filter((r: any) => r.status === "Implemented").length,
+        totalReqs: assessmentRequirements.length
       },
       data: {
         context: contextData,

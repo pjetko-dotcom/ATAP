@@ -10,6 +10,8 @@ import { Plus, Trash2, Pencil, ShieldAlert, CheckCircle, FileText, LayoutTemplat
 import { useAnalyses } from "../hooks/useAnalyses";
 import { RenameProjectModal } from "./RenameProjectModal";
 import { BackupRestoreModal } from "./BackupRestoreModal";
+import { getInitialThreatsForAnalysis, summarizeThreats, type RiskLevel, type ThreatStatus } from "../utils/threatModel";
+import { calculateAsvsCoverage } from "../utils/asvsMetrics";
 
 interface AnalysisMetrics {
   totalOpenThreats: number;
@@ -25,13 +27,31 @@ interface ProgressStep {
 }
 
 interface DashboardThreat {
-  id?: string;
-  status?: string;
-  risk?: string;
+  status: ThreatStatus;
+  risk: RiskLevel;
 }
 
 interface DashboardRequirement {
+  level?: number;
   status?: string;
+}
+
+interface DashboardCoverageRequirement extends DashboardRequirement {
+  level: number;
+  status: string;
+}
+
+function getAnalysisTargetLevel(analysisId: string, asvsLevel: string): number | "all" {
+  const projectLevel = Number(asvsLevel);
+  let targetLevel: number | "all" = [1, 2, 3].includes(projectLevel) ? projectLevel : 2;
+  try {
+    const storedTargetLevel = localStorage.getItem(`atap_asvs_target_level_${analysisId}`);
+    if (storedTargetLevel === "all") targetLevel = "all";
+    else if ([1, 2, 3].includes(Number(storedTargetLevel))) targetLevel = Number(storedTargetLevel);
+  } catch (error) {
+    console.error("Failed to load dashboard target ASVS level", error);
+  }
+  return targetLevel;
 }
 
 function readStoredValue<T>(key: string, fallback: T): T {
@@ -44,23 +64,28 @@ function readStoredValue<T>(key: string, fallback: T): T {
   }
 }
 
-function getAnalysisProgress(analysisId: string): ProgressStep[] {
+function getAnalysisProgress(analysisId: string, asvsLevel: string): ProgressStep[] {
   const context = readStoredValue<Record<string, unknown> | null>(`atap_context_${analysisId}`, null);
   const architecture = readStoredValue<{ components?: unknown[] } | null>(`atap_architecture_${analysisId}`, null);
-  const threats = readStoredValue<Array<{ id?: string }> | null>(`atap_threats_${analysisId}`, null);
+  const storedThreats = readStoredValue<Array<{ id?: string }> | null>(`atap_threats_${analysisId}`, null);
+  const targetLevel = getAnalysisTargetLevel(analysisId, asvsLevel);
+  const hasThreats = (storedThreats ?? getInitialThreatsForAnalysis(analysisId)).length > 0;
   const requirements = readStoredValue<DashboardRequirement[] | null>(`atap_asvs_v5_${analysisId}`, null)
     || readStoredValue<DashboardRequirement[] | null>(`atap_asvs_${analysisId}`, null);
-  const relevantRequirements = requirements?.filter(requirement => requirement.status !== "N/A") ?? [];
+  const scopedRequirements = requirements?.filter(requirement =>
+    targetLevel === "all" || typeof requirement.level !== "number" || requirement.level <= targetLevel
+  ) ?? [];
+  const relevantRequirements = scopedRequirements.filter(requirement => requirement.status !== "N/A");
   const gaps = relevantRequirements.some(requirement => requirement.status === "Missing" || requirement.status === "Partial");
 
   return [
     { label: "Kontext", path: "context", complete: !!context?.businessPurpose && !!context?.dataClassification },
     { label: "Architektúra", path: "architecture", complete: (architecture?.components?.length ?? 0) > 0 },
-    { label: "STRIDE", path: "threats", complete: (threats?.length ?? 0) > 0 },
+    { label: "STRIDE", path: "threats", complete: hasThreats },
     {
       label: "ASVS",
       path: "asvs",
-      complete: !!requirements?.length && requirements.every(requirement =>
+      complete: scopedRequirements.length > 0 && scopedRequirements.every(requirement =>
         ["Implemented", "Partial", "Missing", "N/A"].includes(requirement.status || "")
       ),
     },
@@ -68,34 +93,29 @@ function getAnalysisProgress(analysisId: string): ProgressStep[] {
   ];
 }
 
-function getAnalysisMetrics(analysisId: string): AnalysisMetrics {
+function getAnalysisMetrics(analysisId: string, asvsLevel: string): AnalysisMetrics {
   // 1. Load threats
   const threatsKey = `atap_threats_${analysisId}`;
   const storedThreats = readStoredValue<DashboardThreat[] | null>(threatsKey, null);
-  const threatsList = storedThreats || [
-      { id: "TR-001", status: "Open", risk: "High" },
-      { id: "TR-002", status: "Mitigated", risk: "High" },
-      { id: "TR-003", status: "Open", risk: "Critical" },
-      { id: "TR-004", status: "Accepted", risk: "Very Low" }
-    ];
-  const totalOpenThreats = threatsList.filter(t => t.status === "Open").length;
-  const criticalRisks = threatsList.filter(t => t.status === "Open" && (t.risk === "Critical" || t.risk === "High")).length;
+  const threatsList = storedThreats ?? getInitialThreatsForAnalysis(analysisId);
+  const threatSummary = summarizeThreats(threatsList);
 
   // 2. Load ASVS Gaps & Coverage
-  const asvsList = readStoredValue<DashboardRequirement[] | null>(`atap_asvs_v5_${analysisId}`, null)
-    || readStoredValue<DashboardRequirement[]>(`atap_asvs_${analysisId}`, []);
-  
-  // Calculate coverage
-  const totalRelevant = asvsList.filter(r => r.status !== "N/A").length;
-  const implementedCount = asvsList.filter(r => r.status === "Implemented").length;
-  const asvsCoverage = totalRelevant > 0 ? Math.round((implementedCount / totalRelevant) * 100) : 0;
+  const asvsList = readStoredValue<DashboardCoverageRequirement[] | null>(`atap_asvs_v5_${analysisId}`, null)
+    || readStoredValue<DashboardCoverageRequirement[]>(`atap_asvs_${analysisId}`, []);
+  const level = Number(asvsLevel);
+  const targetLevel = getAnalysisTargetLevel(analysisId, asvsLevel);
+  const scopedRequirements = targetLevel === "all"
+    ? asvsList
+    : asvsList.filter(requirement => requirement.level <= targetLevel);
+  const asvsCoverage = calculateAsvsCoverage(scopedRequirements);
 
   // Calculate gaps (Missing or Partial)
-  const openFindings = asvsList.filter(r => r.status === "Missing" || r.status === "Partial").length;
+  const openFindings = scopedRequirements.filter(r => r.status === "Missing" || r.status === "Partial").length;
 
   return {
-    totalOpenThreats,
-    criticalRisks,
+    totalOpenThreats: threatSummary.open,
+    criticalRisks: threatSummary.openHighOrCritical,
     openFindings,
     asvsCoverage
   };
@@ -117,8 +137,8 @@ export function Dashboard() {
   let totalCriticalRisks = 0;
 
   const enrichedAnalyses = analyses.map(analysis => {
-    const metrics = getAnalysisMetrics(analysis.id);
-    const progress = getAnalysisProgress(analysis.id);
+    const metrics = getAnalysisMetrics(analysis.id, analysis.asvsLevel);
+    const progress = getAnalysisProgress(analysis.id, analysis.asvsLevel);
     totalOpenFindings += metrics.openFindings;
     totalCriticalRisks += metrics.criticalRisks;
     return {
@@ -199,7 +219,7 @@ export function Dashboard() {
 
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase text-slate-400 tracking-wider">Critical & High Risks</p>
+              <p className="text-xs font-semibold uppercase text-slate-400 tracking-wider">Open High & Critical Risks</p>
               <p className="text-3xl font-extrabold text-red-600 mt-2">{totalCriticalRisks || "-"}</p>
             </div>
             <div className="w-12 h-12 bg-red-50 text-red-600 rounded-xl flex items-center justify-center shrink-0">
@@ -288,7 +308,7 @@ export function Dashboard() {
                     <td className="px-6 py-4 text-center">
                       {analysis.metrics.totalOpenThreats > 0 ? (
                         <span className="inline-flex items-center justify-center px-2.5 py-1 text-xs font-bold bg-orange-50 text-orange-700 rounded-full border border-orange-200">
-                          {analysis.metrics.totalOpenThreats} Open ({analysis.metrics.criticalRisks} Critical)
+                          {analysis.metrics.totalOpenThreats} Open ({analysis.metrics.criticalRisks} High/Critical)
                         </span>
                       ) : (
                         <span className="text-xs text-slate-400">None logged</span>

@@ -154,7 +154,7 @@ export function VersionHistoryModal() {
                         <span>•</span>
                         <span>Otvorené hrozby: <strong className="text-slate-800">{snap.metrics?.totalOpenThreats ?? 0}</strong></span>
                         <span>•</span>
-                        <span>Kritické: <strong className="text-red-600">{snap.metrics?.criticalRisks ?? 0}</strong></span>
+                        <span>Otvorené High/Critical: <strong className="text-red-600">{snap.metrics?.criticalRisks ?? 0}</strong></span>
                       </div>
                     </div>
 

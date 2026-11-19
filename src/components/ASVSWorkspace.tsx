@@ -37,6 +37,7 @@ import {
   ASVSRequirement, 
   getRequirementsForTriage 
 } from "../data/asvsData";
+import { calculateAsvsCoverage } from "../utils/asvsMetrics";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
 import { useAnalysisVersion } from "../context/AnalysisVersionContext";
 import { HelpTooltip } from "./HelpTooltip";
@@ -281,12 +282,13 @@ export function ASVSWorkspace() {
   ).length;
 
   // Dynamic Progress Stats Computation
-  const totalRelevant = effectiveReqs.filter(r => r.status !== "N/A").length;
-  const implementedCount = effectiveReqs.filter(r => r.status === "Implemented").length;
-  const coverage = totalRelevant > 0 ? Math.round((implementedCount / totalRelevant) * 100) : 0;
-  const findingsCount = effectiveReqs.filter(r => r.status === "Missing" || r.status === "Partial").length;
-  const notRelevantCount = effectiveReqs.filter(r => r.status === "N/A").length;
-  const triagedExcludedCount = effectiveReqs.filter(r => !!r.triageReason).length;
+  const scopedRequirements = effectiveReqs.filter(matchesTargetLevel);
+  const totalRelevant = scopedRequirements.filter(r => r.status !== "N/A").length;
+  const implementedCount = scopedRequirements.filter(r => r.status === "Implemented").length;
+  const coverage = calculateAsvsCoverage(scopedRequirements, "all");
+  const findingsCount = scopedRequirements.filter(r => r.status === "Missing" || r.status === "Partial").length;
+  const notRelevantCount = scopedRequirements.filter(r => r.status === "N/A").length;
+  const triagedExcludedCount = scopedRequirements.filter(r => !!r.triageReason).length;
 
   useEffect(() => {
     return () => {

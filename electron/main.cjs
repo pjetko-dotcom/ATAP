@@ -13,7 +13,7 @@ function createWindow() {
     height: 850,
     minWidth: 1024,
     minHeight: 700,
-    title: 'ATAP - Threat Analysis Platform',
+    title: 'ATAP - Application Threat Analysis & Modeling Platform',
     icon: path.join(__dirname, '../public/favicon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -127,8 +127,8 @@ function createMenu(isDev) {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
               title: 'O aplikácii ATAP',
-              message: 'ATAP - Application Threat Analysis Platform',
-              detail: 'Verzia 5.2.1 Desktop (Offline Ready)\nOWASP ASVS 5.0 Workspace & STRIDE Threat Modeling System.',
+              message: 'ATAP - Application Threat Analysis & Modeling Platform',
+              detail: `Verzia ${app.getVersion()} Desktop (Offline Ready)\nOWASP ASVS 5.0 Workspace & STRIDE Threat Modeling System.`,
               buttons: ['OK']
             });
           }

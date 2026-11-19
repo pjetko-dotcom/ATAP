@@ -31,7 +31,7 @@ import {
   Pencil
 } from "lucide-react";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
-import { initialThreats, syncArchitectureThreats } from "../utils/threatModel";
+import { getInitialThreatsForAnalysis, syncArchitectureThreats, type Threat } from "../utils/threatModel";
 import { getDiagramLayoutIssues, getFlowPathGeometry } from "../utils/dfd";
 
 export interface ArchComponent {
@@ -513,7 +513,7 @@ export function ArchitectureModel() {
   useEffect(() => {
     const threatStorageKey = `atap_threats_${analysisId || "default"}`;
     const savedThreats = localStorage.getItem(threatStorageKey);
-    let threats = initialThreats;
+    let threats = getInitialThreatsForAnalysis(analysisId);
 
     if (savedThreats) {
       try {
@@ -541,20 +541,27 @@ export function ArchitectureModel() {
   }, [analysisId, components, flows, zones]);
 
   // Load threats associated with selected component
-  let threatsForSelected: any[] = [];
+  let threatsForSelected: Array<Pick<Threat, "id" | "stride" | "title">> = [];
   if (selectedCompId) {
     try {
       const rawThreats = localStorage.getItem(`atap_threats_${analysisId || "default"}`);
       if (rawThreats) {
-        const parsed = JSON.parse(rawThreats);
-        threatsForSelected = parsed.filter((t: any) => 
-          (Array.isArray(t.componentIds) && t.componentIds.includes(selectedCompId)) ||
-          (t.title && t.title.toLowerCase().includes(selectedCompId.toLowerCase())) ||
-          (t.description && t.description.toLowerCase().includes(selectedCompId.toLowerCase())) ||
-          (t.mitigation && t.mitigation.toLowerCase().includes(selectedCompId.toLowerCase()))
-        );
+        const parsed: unknown = JSON.parse(rawThreats);
+        threatsForSelected = Array.isArray(parsed)
+          ? parsed.filter((threat): threat is Pick<Threat, "id" | "stride" | "title"> => {
+              if (!threat || typeof threat !== "object") return false;
+              const item = threat as Partial<Threat>;
+              return typeof item.id === "string" &&
+                typeof item.stride === "string" &&
+                typeof item.title === "string" &&
+                Array.isArray(item.componentIds) &&
+                item.componentIds.includes(selectedCompId);
+            })
+          : [];
       }
-    } catch (e) {}
+    } catch (error) {
+      console.error("Failed to load threats linked to the selected component", error);
+    }
   }
 
   // Load ASVS controls mapped to selected component
@@ -1334,8 +1341,8 @@ export function ArchitectureModel() {
 
                   {threatsForSelected.length > 0 ? (
                     <div className="space-y-1.5">
-                      {threatsForSelected.map((threat: any) => (
-                        <div key={threat.id} className="p-2 bg-slate-50 border border-slate-200 rounded text-[11px]">
+                      {threatsForSelected.map(threat => (
+                        <Link key={threat.id} to={`/analysis/${analysisId}/threats?search=${encodeURIComponent(threat.id)}`} className="block p-2 bg-slate-50 border border-slate-200 rounded text-[11px] hover:border-blue-300 hover:bg-blue-50">
                           <div className="flex items-center justify-between">
                             <strong className="text-slate-800">{threat.id}</strong>
                             <span className="text-[9px] font-bold text-purple-700 bg-purple-100 px-1 rounded">
@@ -1343,7 +1350,7 @@ export function ArchitectureModel() {
                             </span>
                           </div>
                           <p className="text-slate-600 mt-1 line-clamp-2">{threat.title}</p>
-                        </div>
+                        </Link>
                       ))}
                     </div>
                   ) : (

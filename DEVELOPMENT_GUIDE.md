@@ -1,6 +1,6 @@
 # ATAP Developer Guide
 
-This guide is the practical reference for setting up, running, testing, and releasing ATAP from a fresh clone. For the product overview see [README.md](./README.md); for Windows Electron packaging see [BUILD_ELECTRON.md](./BUILD_ELECTRON.md).
+This guide is the practical reference for setting up, running, testing, and releasing ATAP from a fresh clone. For the product overview see [README.md](./README.md); for the product and UX rules see [PRODUCT_DESIGN_MANUAL.md](./PRODUCT_DESIGN_MANUAL.md) and [UX_RECOMMENDATIONS.md](./UX_RECOMMENDATIONS.md); for release security see [RELEASE_SECURITY_CHECKLIST.md](./RELEASE_SECURITY_CHECKLIST.md); for Windows Electron packaging see [BUILD_ELECTRON.md](./BUILD_ELECTRON.md).
 
 ## Requirements
 
@@ -38,7 +38,7 @@ Do not copy `node_modules/`, `dist/`, or `release/` between machines. They are g
 | `npm run electron:preview` | Build and open the production renderer in Electron without making installers. |
 | `npm run electron:build` | Build and package the Electron application for the host platform. |
 
-Before submitting changes, run `npm run lint`, `npm test`, and `npm run build`. For changes to Electron startup, routing, or packaging, also use `npm run electron:preview` or `npm run electron:build`.
+Before submitting changes, run `npm run lint`, `npm test`, and `npm run build`. For changes to Electron startup, routing, or packaging, also use `npm run electron:preview` or `npm run electron:build`. Before distribution, complete the [release security checklist](./RELEASE_SECURITY_CHECKLIST.md).
 
 ## Source layout
 
@@ -49,8 +49,10 @@ Before submitting changes, run `npm run lint`, `npm test`, and `npm run build`. 
 - `src/data/asvsData.ts`: ASVS 5.0.0 catalog and triage data used by the UI. The source CSV is `asvs_5.0.0_en.csv`.
 - `src/utils/`: backup/restore, exports, CSV sanitization, findings, version comparisons, and other shared logic.
 - `src/db/` and `server.ts`: Drizzle/PostgreSQL schema and the Express server/API.
+- `start.cjs`: forces production mode before loading the bundled server for `npm run start`.
 - `electron/`: Electron main process and preload bridge.
 - `contentSecurityPolicy.ts`: shared Content Security Policy construction.
+- `PRODUCT_DESIGN_MANUAL.md`, `UX_RECOMMENDATIONS.md`, and `RELEASE_SECURITY_CHECKLIST.md`: product behavior, interaction principles, and release gates.
 - `dist/` and `release/`: generated build output; never edit or commit these as source.
 
 ## Data and persistence
@@ -74,7 +76,9 @@ The Architecture Model stores components, data flows, and trust zones together i
 
 Flows can be created or edited with their protocol, synchronous/asynchronous transfer type, data description and classification, encryption, and sender authentication. Older saved flows remain readable; missing security attributes are treated as unknown/unset rather than assumed secure. Parallel connections are curved apart, and the renderer tries alternate curves to route around intervening components. Flows crossing between trust zones are highlighted in orange. The canvas reports and highlights overlapping zones/components and reports any remaining flow obstructions.
 
-A flow crosses a trust boundary when its source and target components belong to different zones. Each such flow gets STRIDE scenario suggestions linked to both components in `atap_threats_<id>`. Suggestions adapt to encryption, authentication, classification, and transfer type; they are review prompts, not confirmed vulnerabilities. The Threat Register marks them as needing review and allows marking them reviewed. Editing a generated scenario preserves its link and status and marks it as customized, so synchronization will not overwrite the user's changes. Unmodified generated scenarios track the current flow details and are removed when the flow is deleted, no longer crosses zones, or no longer warrants that STRIDE category. Manually entered threats are not removed by this synchronization.
+A flow crosses a trust boundary when its source and target components belong to different zones. Each such flow gets STRIDE scenario suggestions linked to both component IDs in `atap_threats_<id>`. Suggestions adapt to encryption, authentication, classification, and transfer type; they are review prompts, not confirmed vulnerabilities. The Threat Register marks them as needing review and allows marking them reviewed. Editing a generated scenario preserves its link and status and marks it as customized, so synchronization will not overwrite the user's changes. Unmodified generated scenarios track the current flow details and are removed when the flow is deleted, no longer crosses zones, or no longer warrants that STRIDE category. Removing a component also removes its connected flows; manually entered threats are not removed by DFD synchronization.
+
+Threat metrics use one shared definition: **open** means status `Open`; **open high/critical** additionally requires a `High` or `Critical` risk. `Mitigated`, `Remediated`, and `Accepted` threats do not contribute to open-risk totals. The seeded example analysis (`id=1`) has sample threats; newly created analyses start without sample threats. See the [product manual](./PRODUCT_DESIGN_MANUAL.md) for risk and ASVS formulas.
 
 Use the JSON backup/restore feature when moving local workspace data between browsers or machines. A production deployment of the Express API is not, by itself, a synchronized multi-user workspace: the React workspace uses local storage, and the API/database integration is limited. The API has no authentication or authorization and must not be exposed to an untrusted network without adding them.
 

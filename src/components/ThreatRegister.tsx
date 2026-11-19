@@ -13,7 +13,9 @@ import { asvsRequirements } from "../data/asvsData";
 import { suggestThreatAsvsRequirements } from "../utils/threatAsvs";
 import {
   calculateThreatRisk as calculateRisk,
-  initialThreats,
+  getNextThreatId,
+  getInitialThreatsForAnalysis,
+  summarizeThreats,
   type ImpactLevel,
   type LikelihoodLevel,
   type RiskLevel,
@@ -336,11 +338,12 @@ export function ThreatRegister() {
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch (e) {
-        return initialThreats;
+      } catch (error) {
+        console.error("Failed to load threat register", error);
+        return [];
       }
     }
-    return initialThreats;
+    return getInitialThreatsForAnalysis(analysisId);
   });
 
   useEffect(() => {
@@ -385,9 +388,7 @@ export function ThreatRegister() {
   });
 
   // Stats
-  const totalOpen = threats.filter(t => t.status === "Open").length;
-  const highCriticalOpen = threats.filter(t => t.status === "Open" && (t.risk === "High" || t.risk === "Critical")).length;
-  const mitigated = threats.filter(t => t.status === "Mitigated").length;
+  const threatSummary = summarizeThreats(threats);
 
   // Filtering
   const filteredThreats = threats.filter(t => {
@@ -446,7 +447,7 @@ export function ThreatRegister() {
     const impact = formData.get("impact") as ImpactLevel;
     
     const newThreat: Threat = {
-      id: editingThreat ? editingThreat.id : `TR-${String(threats.length + 1).padStart(3, '0')}`,
+      id: editingThreat ? editingThreat.id : getNextThreatId(threats),
       title: formData.get("title") as string,
       description: formData.get("description") as string,
       stride: formData.get("stride") as string,
@@ -480,7 +481,7 @@ export function ThreatRegister() {
         <div className="flex flex-wrap items-center gap-2">
           <ShieldAlert className="text-blue-600" size={18} />
           <h2 className="text-sm font-bold text-slate-800">Threat Landscape & Risk Matrix</h2>
-          <span className="text-xs text-slate-400 font-medium hidden md:inline-block">• {threats.length} logged, {totalOpen} open</span>
+          <span className="text-xs text-slate-400 font-medium hidden md:inline-block">• {threatSummary.total} logged, {threatSummary.open} open</span>
         </div>
         <button
           onClick={() => {
@@ -516,8 +517,8 @@ export function ThreatRegister() {
                   <AlertTriangle size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-800">{highCriticalOpen}</p>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Critical/High Risks</p>
+                  <p className="text-2xl font-bold text-slate-800">{threatSummary.openHighOrCritical}</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500">Open High/Critical Risks</p>
                 </div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -525,7 +526,7 @@ export function ThreatRegister() {
                   <ShieldAlert size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-800">{totalOpen}</p>
+                  <p className="text-2xl font-bold text-slate-800">{threatSummary.open}</p>
                   <p className="text-xs font-semibold uppercase text-slate-500">Total Open Threats</p>
                 </div>
               </div>
@@ -534,7 +535,7 @@ export function ThreatRegister() {
                   <CheckCircle size={24} />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold text-slate-800">{mitigated}</p>
+                  <p className="text-2xl font-bold text-slate-800">{threatSummary.mitigated}</p>
                   <p className="text-xs font-semibold uppercase text-slate-500">Mitigated Threats</p>
                 </div>
               </div>

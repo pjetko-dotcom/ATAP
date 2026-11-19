@@ -20,6 +20,8 @@ import { useAnalysisVersion } from "../context/AnalysisVersionContext";
 import { computeVersionDiff } from "../utils/versionDiff";
 import { AnalysisVersionSnapshot } from "../types/versioning";
 import { asvsRequirements } from "../data/asvsData";
+import { getInitialThreatsForAnalysis, summarizeThreats } from "../utils/threatModel";
+import { calculateAsvsCoverage } from "../utils/asvsMetrics";
 
 export function VersionDiffModal() {
   const { 
@@ -45,7 +47,7 @@ export function VersionDiffModal() {
       if (stored) reqsList = JSON.parse(stored);
     } catch (e) {}
 
-    let threatsList: any[] = [];
+    let threatsList: any[] = getInitialThreatsForAnalysis(analysis.id);
     try {
       const stored = localStorage.getItem(threatsKey);
       if (stored) threatsList = JSON.parse(stored);
@@ -74,12 +76,17 @@ export function VersionDiffModal() {
     const storedTargetLevel = localStorage.getItem(`atap_asvs_target_level_${analysis.id}`);
     const targetLevel = storedTargetLevel === "all" ? "all" : Number(storedTargetLevel) || undefined;
 
-    const totalRelevant = reqsList.filter((r: any) => r.status !== "N/A").length;
-    const implementedCount = reqsList.filter((r: any) => r.status === "Implemented").length;
-    const asvsCoverage = totalRelevant > 0 ? Math.round((implementedCount / totalRelevant) * 100) : 0;
-    const openFindings = reqsList.filter((r: any) => r.status === "Missing" || r.status === "Partial").length;
-    const totalOpenThreats = threatsList.filter((t: any) => t.status === "Open").length;
-    const criticalRisks = threatsList.filter((t: any) => t.status === "Open" && (t.risk === "Critical" || t.risk === "High")).length;
+    const assessmentLevel = targetLevel ?? (Number(analysis.asvsLevel) || 2);
+    const assessmentRequirements = reqsList.filter((r: any) =>
+      assessmentLevel === "all" || r.level <= assessmentLevel
+    );
+    const asvsCoverage = calculateAsvsCoverage(assessmentRequirements);
+    const openFindings = assessmentRequirements.filter((r: any) =>
+      (r.status === "Missing" || r.status === "Partial")
+    ).length;
+    const threatSummary = summarizeThreats(threatsList);
+    const totalOpenThreats = threatSummary.open;
+    const criticalRisks = threatSummary.openHighOrCritical;
 
     return {
       version: currentWorkingVersion,
@@ -93,8 +100,8 @@ export function VersionDiffModal() {
         totalOpenThreats,
         criticalRisks,
         openFindings,
-        totalImplemented: implementedCount,
-        totalReqs: reqsList.length
+        totalImplemented: assessmentRequirements.filter((r: any) => r.status === "Implemented").length,
+        totalReqs: assessmentRequirements.length
       },
       data: {
         context: contextData,
@@ -167,7 +174,7 @@ export function VersionDiffModal() {
       `ASVS Pokrytie: ${snapA.metrics.asvsCoverage}% -> ${snapB.metrics.asvsCoverage}% (${diffResult.metricsDelta.asvsCoverageDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.asvsCoverageDelta}%)`,
       `Splnené požiadavky: ${snapA.metrics.totalImplemented} -> ${snapB.metrics.totalImplemented} (${diffResult.metricsDelta.implementedDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.implementedDelta})`,
       `Otvorené hrozby: ${snapA.metrics.totalOpenThreats} -> ${snapB.metrics.totalOpenThreats} (${diffResult.metricsDelta.openThreatsDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.openThreatsDelta})`,
-      `Kritické riziká: ${snapA.metrics.criticalRisks} -> ${snapB.metrics.criticalRisks} (${diffResult.metricsDelta.criticalRisksDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.criticalRisksDelta})`,
+      `Otvorené riziká High/Critical: ${snapA.metrics.criticalRisks} -> ${snapB.metrics.criticalRisks} (${diffResult.metricsDelta.criticalRisksDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.criticalRisksDelta})`,
       `Počet zmenených ASVS požiadaviek: ${diffResult.asvsDiffs.length}`,
       `Počet zmien v registri hrozieb: ${diffResult.threatDiffs.length}`,
       `Počet zmien kontextu, architektúry a nastavení: ${diffResult.contextDiffs.length + diffResult.settingsDiffs.length}`,
@@ -349,9 +356,9 @@ export function VersionDiffModal() {
             </div>
           </div>
 
-          {/* Critical Risks */}
+          {/* Open High/Critical Risks */}
           <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Kritické riziká</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Otvorené High/Critical riziká</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-bold text-slate-800">
                 {snapA.metrics?.criticalRisks ?? 0} ➔ {snapB.metrics?.criticalRisks ?? 0}

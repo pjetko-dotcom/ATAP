@@ -2,7 +2,7 @@
 
 ## Implementované v aktuálnej iterácii
 
-1. **Obmedzenie API na localhost:** Express binduje na `127.0.0.1`; port sa nastavuje cez `PORT` (predvolené `3000`). API zostáva bez autentifikácie a nie je určené na vzdialené zdieľané nasadenie.
+1. **Bind servera a API:** Express štandardne binduje na `0.0.0.0` (port `3000`), nie iba na localhost. Nastavte `HOST=127.0.0.1` pre lokálne použitie. API zostáva bez autentifikácie a nie je určené na vzdialené zdieľané nasadenie.
 2. **Electron navigácia a sandbox:** renderer používa sandbox, bez Node integrácie a s izolovaným kontextom. Produkčné navigácie sú obmedzené na aplikáciu; HTTPS externé odkazy sa otvárajú v predvolenom prehliadači.
 3. **Content Security Policy:** centrálna CSP sa poskytuje serverovou hlavičkou aj HTML meta tagom. Vývojové zdroje Vite/HMR sú odlíšené od produkcie.
 4. **Activity log — obmedzenie:** odstránená je falošná pevná identita; log zobrazuje skutočné lokálne záznamy a označuje sa výslovne ako upraviteľný. Autor verzie je lokálne zadaný a neoverený. Záznamy nie sú autentifikované ani nemenné, a preto nejde o dôkazný alebo dôveryhodný bezpečnostný audit.

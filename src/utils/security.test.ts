@@ -3,11 +3,15 @@ import { after, afterEach, beforeEach, test } from "node:test";
 import { MAX_BACKUP_SIZE, restoreBackup, validateBackup } from "./backupRestore";
 import { sanitizeCsvCell } from "./csv";
 import { generateFindingsFromAsvs } from "./findings";
+import { calculateAsvsCoverage } from "./asvsMetrics";
 import { computeVersionDiff } from "./versionDiff";
 import { suggestThreatAsvsRequirements } from "./threatAsvs";
 import {
   calculateThreatRisk,
+  getInitialThreatsForAnalysis,
+  getNextThreatId,
   getSuggestedStrideCategories,
+  summarizeThreats,
   syncArchitectureThreats,
   type ArchitectureThreatComponent,
   type ArchitectureThreatFlow,
@@ -163,6 +167,17 @@ test("generates findings only from current ASVS gaps and preserves matching stat
     },
   ]);
   assert.deepEqual(generateFindingsFromAsvs([], existing), []);
+});
+
+test("calculates ASVS coverage consistently with target-level scope and partial weight", () => {
+  assert.equal(calculateAsvsCoverage([
+    { level: 1, status: "Implemented" },
+    { level: 1, status: "Partial" },
+    { level: 2, status: "Missing" },
+    { level: 2, status: "N/A" },
+    { level: 3, status: "Implemented" }
+  ], 2), 50);
+  assert.equal(calculateAsvsCoverage([{ level: 1, status: "N/A" }]), 0);
 });
 
 test("uses a stricter production CSP and development-only Vite allowances", () => {
@@ -426,6 +441,25 @@ test("routes parallel flows around each other and identifies layout overlaps", (
 test("calculates architecture threat risk using the same threat-register scale", () => {
   assert.equal(calculateThreatRisk("Unlikely", "Critical"), "High");
   assert.equal(calculateThreatRisk("Frequently", "Critical"), "Critical");
+  assert.equal(calculateThreatRisk("Exceptionally", "Minor"), "Very Low");
+  assert.equal(calculateThreatRisk("Unlikely", "Minor"), "Low");
+  assert.equal(calculateThreatRisk("Unlikely", "Moderate"), "Medium");
+  assert.equal(calculateThreatRisk("Probably", "Critical"), "Critical");
+});
+
+test("uses consistent threat counts and avoids reusing IDs after deletions", () => {
+  const summary = summarizeThreats([
+    { status: "Open", risk: "High" },
+    { status: "Open", risk: "Critical" },
+    { status: "Mitigated", risk: "Critical" },
+    { status: "Accepted", risk: "High" },
+    { status: "Remediated", risk: "Low" }
+  ]);
+  assert.deepEqual(summary, { total: 5, open: 2, openHighOrCritical: 2, mitigated: 1 });
+  assert.equal(getNextThreatId([{ id: "TR-001" }, { id: "TR-004" }, { id: "ATAP-flow-DOS" }]), "TR-005");
+  assert.equal(getNextThreatId([]), "TR-001");
+  assert.equal(getInitialThreatsForAnalysis("1").length, 4);
+  assert.deepEqual(getInitialThreatsForAnalysis("new-project"), []);
 });
 
 after(() => {

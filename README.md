@@ -2,6 +2,8 @@
 
 A professional, enterprise-grade application for conducting automated threat analysis, tracking security requirements, and modeling architecture using standard industry methodologies (**OWASP ASVS 5.0** and **Microsoft STRIDE**).
 
+**ATAP** stands for **Application Threat Analysis & Modeling Platform**.
+
 Aplikácia je navrhnutá pre duálne nasadenie: ako **moderná webová full-stack aplikácia**, tak aj ako **100% offline desktopová aplikácia pre Windows (Electron)**.
 
 ---
@@ -27,6 +29,15 @@ V repozitári sú pripravené podrobné sprievodcovské dokumenty:
 
 * **[🔐 Bezpečnostné následné kroky (SECURITY_FOLLOW_UPS.md)](./SECURITY_FOLLOW_UPS.md)**:
   * Záznam realizovaných bezpečnostných opatrení a otvorených odporúčaní na ďalšie iterácie.
+
+* **[🧭 Produktový a dizajnový manuál (PRODUCT_DESIGN_MANUAL.md)](./PRODUCT_DESIGN_MANUAL.md)**:
+  * Názvoslovie, metodika, dátové väzby, metriky a pravidlá UX/accessibility.
+
+* **[🧩 UX odporúčania (UX_RECOMMENDATIONS.md)](./UX_RECOMMENDATIONS.md)**:
+  * Prioritizované návrhy na zlepšenie používateľského flow.
+
+* **[✅ Bezpečnostný checklist buildov a releasov (RELEASE_SECURITY_CHECKLIST.md)](./RELEASE_SECURITY_CHECKLIST.md)**:
+  * Kontroly zdrojov, závislostí, buildov, Electron konfigurácie a distribúcie.
 
 ---
 
@@ -60,8 +71,8 @@ npm ci
 npm run electron:build
 ```
 Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `release/`:
-* `ATAP Threat Analysis Platform Setup <verzia>.exe` (NSIS inštalátor)
-* `ATAP Threat Analysis Platform <verzia>.exe` (portable verzia)
+* `ATAP - Application Threat Analysis & Modeling Platform Setup <verzia>.exe` (NSIS inštalátor)
+* `ATAP - Application Threat Analysis & Modeling Platform <verzia>.exe` (portable verzia)
 
 Číslo verzie sa berie z `package.json`; názvy súborov sa menia podľa neho. Podrobnosti o vývoji a aktuálnych príkazoch nájdete v [DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md).
 
@@ -71,7 +82,7 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 
 - **OWASP ASVS 5.0 Workspace:** Kompletná integrácia všetkých 17 kapitol a 350+ bezpečnostných požiadaviek pokrývajúcich úrovne L1 až L3 s mapovaním na komponenty architektúry a správou výnimiek.
 - **STRIDE Threat Modeling:** Analýza systémovej architektúry podľa metodiky Microsoft STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege).
-- **Threat Register & 5x5 Matica Rizík:** Dynamická matica pravdepodobnosti a dopadu (Likelihood × Impact) s filtrovaním hrozieb podľa kategórie a stavu mitigácie.
+- **Threat Register & 4×4 Matica Rizík:** Matica štyroch úrovní pravdepodobnosti a štyroch úrovní dopadu (Likelihood × Impact) s filtrovaním hrozieb podľa kategórie a stavu mitigácie.
 - **Findings & Gap Analysis:** Automatizované porovnanie implementácie voči ASVS 5.0 a detekcia chýbajúcich alebo čiastočných kontrol.
 - **Architecture Model:** Vizuálne modelovanie komponentov, spravovateľných trust zón a editovateľných dátových tokov. Toky evidujú protokol, typ prenosu, klasifikáciu a popis dát, šifrovanie aj autentifikáciu; paralelné spojenia sú vizuálne rozlíšené a systém ich vedie okolo prekážajúcich komponentov. Prekrytia alebo zostávajúce prekážky vyvolajú upozornenie, prekročenie trust zóny je zvýraznené a toky cez hranice zón vytvárajú kontextové STRIDE návrhy na kontrolu a úpravu.
 - **Audit Trail & Správa Verzií:** Sledovanie histórie zmien, snapshoty stavov a bezpečný import/export dát do JSON formátu.
@@ -106,7 +117,8 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
   * **Web Security:** Striktne zapnutá (`webSecurity: true`).
   * **Sandbox & Bezpečná navigácia:** Produkčná navigácia je obmedzená na aplikačnú stránku; HTTPS externé odkazy sa otvárajú v systémovom prehliadači.
 * Activity log sa uchováva lokálne a možno ho upraviť. Nejde o dôveryhodný ani nemenný bezpečnostný audit; ďalšie kroky sú popísané v [SECURITY_FOLLOW_UPS.md](./SECURITY_FOLLOW_UPS.md).
+* Pred zostavením alebo distribúciou overte [bezpečnostný checklist releasu](./RELEASE_SECURITY_CHECKLIST.md); produkčný Express server štandardne počúva na `0.0.0.0` a jeho API nemá autentifikáciu.
 
 ---
 
-Podrobné informácie nájdete v **[DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md)**, **[BUILD_ELECTRON.md](./BUILD_ELECTRON.md)** a **[MIGRATION_AND_DEVELOPMENT.md](./MIGRATION_AND_DEVELOPMENT.md)**.
+Podrobné informácie nájdete v **[DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md)**, **[BUILD_ELECTRON.md](./BUILD_ELECTRON.md)**, **[MIGRATION_AND_DEVELOPMENT.md](./MIGRATION_AND_DEVELOPMENT.md)** a [produktovom manuáli](./PRODUCT_DESIGN_MANUAL.md).

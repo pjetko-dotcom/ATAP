@@ -90,6 +90,39 @@ export const initialThreats: Threat[] = [
   }
 ];
 
+export function getInitialThreatsForAnalysis(analysisId?: string): Threat[] {
+  return analysisId === "1" ? initialThreats : [];
+}
+
+export interface ThreatSummary {
+  total: number;
+  open: number;
+  openHighOrCritical: number;
+  mitigated: number;
+}
+
+export function summarizeThreats(threats: readonly Pick<Threat, "status" | "risk">[]): ThreatSummary {
+  return threats.reduce<ThreatSummary>((summary, threat) => {
+    summary.total += 1;
+    if (threat.status === "Open") {
+      summary.open += 1;
+      if (threat.risk === "High" || threat.risk === "Critical") {
+        summary.openHighOrCritical += 1;
+      }
+    }
+    if (threat.status === "Mitigated") summary.mitigated += 1;
+    return summary;
+  }, { total: 0, open: 0, openHighOrCritical: 0, mitigated: 0 });
+}
+
+export function getNextThreatId(threats: readonly Pick<Threat, "id">[]): string {
+  const maxId = threats.reduce((max, threat) => {
+    const match = /^TR-(\d+)$/.exec(threat.id);
+    return match ? Math.max(max, Number(match[1])) : max;
+  }, 0);
+  return `TR-${String(maxId + 1).padStart(3, "0")}`;
+}
+
 export function calculateThreatRisk(likelihood: LikelihoodLevel, impact: ImpactLevel): RiskLevel {
   const scoresLikelihood: Record<LikelihoodLevel, number> = {
     Exceptionally: 1,

@@ -1,7 +1,7 @@
 {
-  "name": "react-example",
+  "name": "atap-threat-analysis-platform",
   "private": true,
-  "version": "5.2.7",
+  "version": "5.2.8",
   "type": "module",
   "main": "electron/main.cjs",
   "engines": {
@@ -11,7 +11,7 @@
   "scripts": {
     "dev": "tsx server.ts",
     "build": "vite build && esbuild server.ts --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
+    "start": "node start.cjs",
     "clean": "rm -rf dist server.cjs release",
     "lint": "tsc --noEmit",
     "test": "tsx --test src/utils/security.test.ts",
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "com.atap.threatanalysis",
-    "productName": "ATAP Threat Analysis Platform",
+    "productName": "ATAP - Application Threat Analysis & Modeling Platform",
     "files": [
       "dist/**/*",
       "electron/**/*"

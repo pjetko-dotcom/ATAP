@@ -1,6 +1,6 @@
 # 🖥️ Návod na Build a Spustenie Electron Desktop Aplikácie (Windows 11)
 
-Tento dokument obsahuje návod na prípravu vývojového prostredia, spustenie a vytvorenie inštalačných balíčkov (`.exe`) aplikácie **ATAP (Application Threat Analysis Platform)** pre Windows.
+Tento dokument obsahuje návod na prípravu vývojového prostredia, spustenie a vytvorenie inštalačných balíčkov (`.exe`) aplikácie **ATAP (Application Threat Analysis & Modeling Platform)** pre Windows.
 
 ---
 
@@ -112,6 +112,7 @@ npm run electron:build
 * Renderer beží so sandboxom, bez Node integrácie a s izolovaným kontextom. DevTools sú dostupné len počas vývoja.
 * Produkčná CSP povoľuje iba deklarované zdroje aplikácie a AI API. Pri pridaní externého zdroja aktualizujte `contentSecurityPolicy.ts` zámerne a otestujte vývojový aj produkčný režim.
 * Údaje a audit log sú lokálne v `localStorage`; log je upraviteľný a nepovažuje sa za nemenný bezpečnostný audit.
+* Pred distribúciou vykonajte kontroly v [RELEASE_SECURITY_CHECKLIST.md](./RELEASE_SECURITY_CHECKLIST.md). Vývojový Express server štandardne počúva na `0.0.0.0:3000`; jeho API nemá autentifikáciu. Nepovažujte to za bezpečnú konfiguráciu verejného servera.
 
 ---
 
@@ -121,8 +122,8 @@ Po úspešnom dokončení príkazu nájdete v priečinku `release/` dva typy bin
 
 | Súbor | Typ | Určenie |
 | :--- | :--- | :--- |
-| `ATAP Threat Analysis Platform Setup <verzia>.exe` | **NSIS Inštalátor** | Štandardný Windows inštalátor. Verzia v názve sa berie z `package.json`. |
-| `ATAP Threat Analysis Platform <verzia>.exe` | **Portable Verzia** | Samostatný jedno-súborový program. Názov obsahuje verziu z `package.json`. |
+| `ATAP - Application Threat Analysis & Modeling Platform Setup <verzia>.exe` | **NSIS Inštalátor** | Štandardný Windows inštalátor. Verzia v názve sa berie z `package.json`. |
+| `ATAP - Application Threat Analysis & Modeling Platform <verzia>.exe` | **Portable Verzia** | Samostatný jedno-súborový program. Názov obsahuje verziu z `package.json`. |
 | `win-unpacked/` | **Rozbalená verzia** | Rozbalený adresár aplikácie pripravený na okamžité spustenie bez inštalácie (užitočné na rýchle testovanie). |
 
 ---
@@ -142,6 +143,7 @@ $env:CSC_LINK="C:\cesta\k\certifikatu.pfx"
 $env:CSC_KEY_PASSWORD="vase_heslo_k_certifikatu"
 npm run electron:build
 ```
+Na zdieľanom alebo CI zariadení načítajte tieto hodnoty z chráneného secret managera; nezapisujte ich do repozitára, build logov ani príkazovej histórie.
 
 ---
 
@@ -183,8 +185,8 @@ npm run electron:build
 ## 🚀 9. Rýchly ťahák (Cheat Sheet)
 
 ```powershell
-# 1. Inštalácia
-npm install
+# 1. Reprodukovateľná inštalácia
+npm ci
 
 # 2. Vývoj
 npm run electron:dev
