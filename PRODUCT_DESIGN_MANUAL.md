@@ -19,12 +19,20 @@ Keep the current project visible in navigation. Preserve entered data when movin
 ## DFD and threat-register contract
 
 - An architecture model is stored as `atap_architecture_<analysisId>` with `components`, `flows`, and `zones`.
-- A flow is a directed relation from one existing component to another. Its source and target component IDs, protocol, data classification, encryption, sender authentication, transfer type, and data description are security-relevant inputs.
+- A flow is a directed relation from one existing component to another. Its source and target component IDs, protocol, data classification, encryption, sender authentication, transfer type, and data description are security-relevant inputs. TLS flows may also record a cipher suite, key-exchange/KEM proposal, and a derived PQC design status (`unknown`, `classical`, or `post-quantum`). These are proposed architecture details, not evidence that a deployed endpoint uses them.
 - A flow is treated as crossing a trust boundary only when both endpoint components and both zones exist and their zone IDs differ. Missing endpoints or zones do not generate threats.
 - Suggested STRIDE scenarios are synchronized into `atap_threats_<analysisId>`, connected to the flow ID and both component IDs. They are review prompts. Editing one marks it customized; synchronization must preserve customized scenarios and manual threats.
 - Removing a component removes connected flows. Deleting a flow, making its endpoints same-zone, or changing the flow's security properties updates or removes only uncustomized generated scenarios as appropriate.
 - The Architecture Model shows threats only when their `componentIds` explicitly include the selected component. Selecting one opens that threat in the Threat Register.
 - ASVS traceability is separate from STRIDE generation: users map controls to components and threats; DFD changes must not silently mark controls implemented or generate findings without an ASVS status.
+
+### DFD interaction and cryptography
+
+- Component technology stacks and flow protocols are alphabetized selectors that support keyboard type-to-select. Custom values and older stored values remain editable.
+- TLS cipher suites are recorded separately from key exchange. The available cipher-suite choices are AES-GCM suites based on [NIST SP 800-52 Rev. 2](https://csrc.nist.gov/pubs/sp/800/52/r2/final); the key-exchange/KEM choices use NIST P-curves and ML-KEM parameter sets from [FIPS 203](https://csrc.nist.gov/pubs/fips/203/final).
+- An unspecified key exchange has the explicit PQC design status `unknown`. Selecting a classical or ML-KEM option changes the derived status to `classical` or `post-quantum`; this is not a deployment verification, and the TLS endpoint must support the proposed algorithm.
+- Flow connectors open their editor by mouse or keyboard (Enter/Space). The canvas supports horizontal and vertical scrolling, zoom controls, and Ctrl+mouse-wheel zooming.
+- DFD review is optional and user-triggered. Warnings about missing protection or unspecified TLS/PQC details never block editing or saving. They are review prompts, not confirmed vulnerabilities, and the dialog closes with Cancel or Escape.
 
 ### STRIDE suggestion rules
 

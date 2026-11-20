@@ -28,7 +28,10 @@ import {
   X,
   FileCode2,
   Network,
-  Pencil
+  Pencil,
+  ZoomIn,
+  ZoomOut,
+  Maximize2
 } from "lucide-react";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
 import { getInitialThreatsForAnalysis, syncArchitectureThreats, type Threat } from "../utils/threatModel";
@@ -61,11 +64,34 @@ export interface DataFlow {
   from: string;
   to: string;
   protocol: string;
+  cipherSuite?: string;
+  keyExchange?: string;
+  pqcStatus?: "unknown" | "classical" | "post-quantum";
   dataClassification: "Public" | "Internal" | "Confidential" | "Restricted";
   encrypted: boolean;
   authenticated: boolean;
   transferType: "Synchronous" | "Asynchronous";
   dataDescription: string;
+}
+
+interface DfdReviewIssue {
+  flowId: string;
+  flowName: string;
+  severity: "warning" | "info";
+  message: string;
+}
+
+function getPqcDesignStatus(keyExchange?: string): NonNullable<DataFlow["pqcStatus"]> {
+  if (!keyExchange) return "unknown";
+  return keyExchange.startsWith("ML-KEM-") ? "post-quantum" : "classical";
+}
+
+function getPqcDesignStatusLabel(status: NonNullable<DataFlow["pqcStatus"]>): string {
+  switch (status) {
+    case "classical": return "Klasický";
+    case "post-quantum": return "Postkvantový";
+    case "unknown": return "Neznámy";
+  }
 }
 
 function normalizeStoredDataFlow(value: unknown): DataFlow | null {
@@ -81,11 +107,15 @@ function normalizeStoredDataFlow(value: unknown): DataFlow | null {
   const dataClassification = ["Public", "Internal", "Confidential", "Restricted"].includes(String(flow.dataClassification))
     ? flow.dataClassification as DataFlow["dataClassification"]
     : "Internal";
+  const keyExchange = typeof flow.keyExchange === "string" ? flow.keyExchange : undefined;
   return {
     id: flow.id,
     from: flow.from,
     to: flow.to,
     protocol: flow.protocol,
+    cipherSuite: typeof flow.cipherSuite === "string" ? flow.cipherSuite : undefined,
+    keyExchange,
+    pqcStatus: getPqcDesignStatus(keyExchange),
     dataClassification,
     encrypted: typeof flow.encrypted === "boolean" ? flow.encrypted : false,
     authenticated: typeof flow.authenticated === "boolean" ? flow.authenticated : false,
@@ -109,8 +139,85 @@ const COMPONENT_NODE_WIDTH = 190;
 const COMPONENT_NODE_HEIGHT = 100;
 const CANVAS_WIDTH = 1300;
 const CANVAS_HEIGHT = 600;
+const MIN_CANVAS_ZOOM = 0.5;
+const MAX_CANVAS_ZOOM = 2;
 const MIN_ZONE_WIDTH = COMPONENT_NODE_WIDTH + 40;
 const MIN_ZONE_HEIGHT = COMPONENT_NODE_HEIGHT + 80;
+const CUSTOM_TECH_STACK = "__custom__";
+const TECHNOLOGY_STACK_OPTIONS = [
+  ".NET / ASP.NET Core",
+  "AWS Lambda",
+  "Azure Functions",
+  "C# / .NET",
+  "Go / OAuth2 / OIDC / JWT",
+  "HTTPS Webhook / REST",
+  "Java / Spring Boot",
+  "JavaScript / Node.js",
+  "Kafka / Event Streaming",
+  "Kong / Cloudflare TLS 1.3",
+  "MongoDB",
+  "MySQL",
+  "Node.js / Express / gRPC",
+  "PostgreSQL (Encrypted at Rest)",
+  "Python / Django",
+  "Python / FastAPI",
+  "Redis",
+  "Ruby on Rails",
+  "Rust",
+  "S3-compatible Object Storage",
+  "SOAP / XML",
+  "TypeScript / Vite / Tailwind",
+  "WebSocket",
+  "Všeobecná služba",
+  "Zig",
+  "ZooKeeper"
+].sort((a, b) => a.localeCompare(b, "sk", { sensitivity: "base" }));
+const CUSTOM_FLOW_PROTOCOL = "__custom_protocol__";
+const FLOW_PROTOCOL_OPTIONS = [
+  "AMQP",
+  "DNS",
+  "gRPC",
+  "HTTP / REST",
+  "HTTPS / TLS 1.2",
+  "HTTPS / TLS 1.3",
+  "HTTPS / TLS 1.3 (JSON REST)",
+  "HTTPS / TLS 1.3 (REST)",
+  "HTTPS (HMAC Signature Webhook)",
+  "HTTPS Webhook / REST",
+  "Internal HTTP (mTLS Header)",
+  "Kafka",
+  "mTLS",
+  "mTLS / gRPC (Token Verify)",
+  "MQTT over TLS",
+  "PostgreSQL / TLS",
+  "SFTP / SSH",
+  "SMTP / STARTTLS",
+  "SOAP / XML over HTTPS",
+  "TCP",
+  "TLS Connection (Prepared Statements)",
+  "WebSocket / WSS"
+].sort((a, b) => a.localeCompare(b, "sk", { sensitivity: "base" }));
+const NIST_CIPHER_SUITES = [
+  "TLS_AES_128_GCM_SHA256",
+  "TLS_AES_256_GCM_SHA384",
+  "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256",
+  "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384",
+  "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256",
+  "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+].sort((a, b) => a.localeCompare(b, "en"));
+const NIST_KEY_EXCHANGE_OPTIONS = [
+  "ECDHE with NIST P-256 (secp256r1)",
+  "ECDHE with NIST P-384 (secp384r1)",
+  "ECDHE with NIST P-521 (secp521r1)",
+  "ML-KEM-512 (FIPS 203)",
+  "ML-KEM-768 (FIPS 203)",
+  "ML-KEM-1024 (FIPS 203)"
+].sort((a, b) => a.localeCompare(b, "en"));
+
+function usesTlsCrypto(protocol: string, encrypted: boolean): boolean {
+  return /https|m?tls|wss|starttls/i.test(protocol) ||
+    (encrypted && /http|grpc|websocket|mqtt|postgres|smtp/i.test(protocol));
+}
 
 function getTrustZoneColorKey(zone: TrustZone): TrustZoneColorKey {
   return (Object.keys(TRUST_ZONE_COLORS) as TrustZoneColorKey[])
@@ -411,6 +518,7 @@ export function ArchitectureModel() {
   const [newZoneColor, setNewZoneColor] = useState<TrustZoneColorKey>("blue");
   const [isAddFlowOpen, setIsAddFlowOpen] = useState(false);
   const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
+  const [isDfdReviewOpen, setIsDfdReviewOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // New component form state
@@ -418,11 +526,15 @@ export function ArchitectureModel() {
   const [newCompType, setNewCompType] = useState<ArchComponent["type"]>("service");
   const [newCompZone, setNewCompZone] = useState("zone_internal");
   const [newCompTech, setNewCompTech] = useState("");
+  const [newCompCustomTech, setNewCompCustomTech] = useState("");
 
   // New flow form state
   const [newFlowFrom, setNewFlowFrom] = useState("");
   const [newFlowTo, setNewFlowTo] = useState("");
   const [newFlowProtocol, setNewFlowProtocol] = useState("HTTPS / TLS 1.3");
+  const [newFlowCustomProtocol, setNewFlowCustomProtocol] = useState("");
+  const [newFlowCipherSuite, setNewFlowCipherSuite] = useState("");
+  const [newFlowKeyExchange, setNewFlowKeyExchange] = useState("");
   const [newFlowClassification, setNewFlowClassification] = useState<DataFlow["dataClassification"]>("Confidential");
   const [newFlowEncrypted, setNewFlowEncrypted] = useState(false);
   const [newFlowAuthenticated, setNewFlowAuthenticated] = useState(false);
@@ -430,6 +542,48 @@ export function ArchitectureModel() {
   const [newFlowDataDescription, setNewFlowDataDescription] = useState("");
 
   const canvasRef = useRef<HTMLDivElement>(null);
+  const [canvasZoom, setCanvasZoom] = useState(1);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const handleWheel = (event: WheelEvent) => {
+      if (!event.ctrlKey) return;
+      event.preventDefault();
+
+      const zoomFactor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+      const nextZoom = clamp(canvasZoom * zoomFactor, MIN_CANVAS_ZOOM, MAX_CANVAS_ZOOM);
+      if (nextZoom === canvasZoom) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const pointerX = event.clientX - rect.left;
+      const pointerY = event.clientY - rect.top;
+      const contentX = (canvas.scrollLeft + pointerX) / canvasZoom;
+      const contentY = (canvas.scrollTop + pointerY) / canvasZoom;
+      setCanvasZoom(nextZoom);
+      requestAnimationFrame(() => {
+        const currentCanvas = canvasRef.current;
+        if (!currentCanvas) return;
+        currentCanvas.scrollLeft = contentX * nextZoom - pointerX;
+        currentCanvas.scrollTop = contentY * nextZoom - pointerY;
+      });
+    };
+
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
+  }, [canvasZoom]);
+
+  useEffect(() => {
+    if (!isDfdReviewOpen) return;
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      setIsDfdReviewOpen(false);
+    };
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [isDfdReviewOpen]);
 
   const openAddComponentModal = () => {
     setEditingCompId(null);
@@ -437,6 +591,7 @@ export function ArchitectureModel() {
     setNewCompType("service");
     setNewCompZone("zone_internal");
     setNewCompTech("");
+    setNewCompCustomTech("");
     setIsComponentModalOpen(true);
   };
 
@@ -445,7 +600,13 @@ export function ArchitectureModel() {
     setNewCompName(component.name);
     setNewCompType(component.type);
     setNewCompZone(component.zoneId);
-    setNewCompTech(component.tech);
+    if (TECHNOLOGY_STACK_OPTIONS.includes(component.tech)) {
+      setNewCompTech(component.tech);
+      setNewCompCustomTech("");
+    } else {
+      setNewCompTech(CUSTOM_TECH_STACK);
+      setNewCompCustomTech(component.tech);
+    }
     setIsComponentModalOpen(true);
   };
 
@@ -468,6 +629,9 @@ export function ArchitectureModel() {
     setNewFlowFrom(from);
     setNewFlowTo(to);
     setNewFlowProtocol("HTTPS / TLS 1.3");
+    setNewFlowCustomProtocol("");
+    setNewFlowCipherSuite("");
+    setNewFlowKeyExchange("");
     setNewFlowClassification("Confidential");
     setNewFlowEncrypted(false);
     setNewFlowAuthenticated(false);
@@ -480,7 +644,15 @@ export function ArchitectureModel() {
     setEditingFlowId(flow.id);
     setNewFlowFrom(flow.from);
     setNewFlowTo(flow.to);
-    setNewFlowProtocol(flow.protocol);
+    if (FLOW_PROTOCOL_OPTIONS.includes(flow.protocol)) {
+      setNewFlowProtocol(flow.protocol);
+      setNewFlowCustomProtocol("");
+    } else {
+      setNewFlowProtocol(CUSTOM_FLOW_PROTOCOL);
+      setNewFlowCustomProtocol(flow.protocol);
+    }
+    setNewFlowCipherSuite(flow.cipherSuite ?? "");
+    setNewFlowKeyExchange(flow.keyExchange ?? "");
     setNewFlowClassification(flow.dataClassification);
     setNewFlowEncrypted(flow.encrypted);
     setNewFlowAuthenticated(flow.authenticated);
@@ -591,8 +763,8 @@ export function ArchitectureModel() {
 
     setDraggingCompId(compId);
     setDragOffset({
-      x: e.clientX - rect.left + canvas.scrollLeft - comp.x,
-      y: e.clientY - rect.top + canvas.scrollTop - comp.y
+      x: (e.clientX - rect.left + canvas.scrollLeft) / canvasZoom - comp.x,
+      y: (e.clientY - rect.top + canvas.scrollTop) / canvasZoom - comp.y
     });
   };
 
@@ -600,8 +772,8 @@ export function ArchitectureModel() {
     const canvas = canvasRef.current;
     const rect = canvas?.getBoundingClientRect();
     if (!canvas || !rect) return;
-    const pointerX = e.clientX - rect.left + canvas.scrollLeft;
-    const pointerY = e.clientY - rect.top + canvas.scrollTop;
+    const pointerX = (e.clientX - rect.left + canvas.scrollLeft) / canvasZoom;
+    const pointerY = (e.clientY - rect.top + canvas.scrollTop) / canvasZoom;
 
     if (draggingCompId) {
       const component = components.find(item => item.id === draggingCompId);
@@ -661,8 +833,8 @@ export function ArchitectureModel() {
     if (!canvas || !rect) return;
     setDraggingZoneId(zone.id);
     setDragOffset({
-      x: e.clientX - rect.left + canvas.scrollLeft - zone.x,
-      y: e.clientY - rect.top + canvas.scrollTop - zone.y
+      x: (e.clientX - rect.left + canvas.scrollLeft) / canvasZoom - zone.x,
+      y: (e.clientY - rect.top + canvas.scrollTop) / canvasZoom - zone.y
     });
   };
 
@@ -789,7 +961,7 @@ export function ArchitectureModel() {
       return;
     }
 
-    const tech = newCompTech.trim() || "Všeobecná služba";
+    const tech = (newCompTech === CUSTOM_TECH_STACK ? newCompCustomTech : newCompTech).trim() || "Všeobecná služba";
     const targetZone = zones.find(zone => zone.id === newCompZone);
     if (!targetZone) {
       alert("Vybraná trust zóna už neexistuje. Obnovte formulár a skúste znova.");
@@ -848,16 +1020,21 @@ export function ArchitectureModel() {
       alert("Zvoľte odlišný zdrojový a cieľový komponent.");
       return;
     }
-    if (!newFlowProtocol.trim()) {
+    const protocol = (newFlowProtocol === CUSTOM_FLOW_PROTOCOL ? newFlowCustomProtocol : newFlowProtocol).trim();
+    if (!protocol) {
       alert("Zadajte protokol alebo spôsob komunikácie.");
       return;
     }
+    const showTlsCryptoOptions = usesTlsCrypto(protocol, newFlowEncrypted);
 
     const newFlow: DataFlow = {
       id: editingFlowId ?? `flow_${Date.now()}`,
       from: newFlowFrom,
       to: newFlowTo,
-      protocol: newFlowProtocol.trim(),
+      protocol,
+      cipherSuite: showTlsCryptoOptions ? newFlowCipherSuite || undefined : undefined,
+      keyExchange: showTlsCryptoOptions ? newFlowKeyExchange || undefined : undefined,
+      pqcStatus: showTlsCryptoOptions ? getPqcDesignStatus(newFlowKeyExchange) : undefined,
       dataClassification: newFlowClassification,
       encrypted: newFlowEncrypted,
       authenticated: newFlowAuthenticated,
@@ -940,6 +1117,57 @@ export function ArchitectureModel() {
   const obstructedComponentIds = new Set(
     obstructedFlowIds.flatMap(flow => flowGeometries.get(flow.id)?.obstructedComponentIds ?? [])
   );
+  const selectedFlowProtocol = newFlowProtocol === CUSTOM_FLOW_PROTOCOL
+    ? newFlowCustomProtocol
+    : newFlowProtocol;
+  const showTlsCryptoOptions = usesTlsCrypto(selectedFlowProtocol, newFlowEncrypted);
+  const dfdReviewIssues: DfdReviewIssue[] = flows.flatMap(flow => {
+    const flowName = `${flow.from} → ${flow.to}`;
+    const issues: DfdReviewIssue[] = [];
+    const hasExplicitTlsProtocol = /https|m?tls|wss|starttls/i.test(flow.protocol);
+
+    if (!flow.encrypted && flow.dataClassification !== "Public") {
+      issues.push({
+        flowId: flow.id,
+        flowName,
+        severity: "warning",
+        message: `${flow.dataClassification} dáta sú označené ako nešifrované.`
+      });
+    } else if (hasExplicitTlsProtocol && !flow.encrypted) {
+      issues.push({
+        flowId: flow.id,
+        flowName,
+        severity: "warning",
+        message: "Protokol uvádza TLS, ale prenos je označený ako nešifrovaný."
+      });
+    }
+
+    if (!flow.authenticated && ["Confidential", "Restricted"].includes(flow.dataClassification)) {
+      issues.push({
+        flowId: flow.id,
+        flowName,
+        severity: "warning",
+        message: `${flow.dataClassification} dáta sú označené bez autentifikácie odosielateľa.`
+      });
+    }
+
+    if (usesTlsCrypto(flow.protocol, flow.encrypted)) {
+      const cryptoGaps = [
+        !flow.cipherSuite ? "cipher suite nie je určená" : "",
+        getPqcDesignStatus(flow.keyExchange) === "unknown" ? "PQC stav je neznámy" : ""
+      ].filter(Boolean);
+      if (cryptoGaps.length) {
+        issues.push({
+          flowId: flow.id,
+          flowName,
+          severity: "info",
+          message: `V návrhu: ${cryptoGaps.join("; ")}.`
+        });
+      }
+    }
+
+    return issues;
+  });
 
   return (
     <div className="flex flex-col h-full bg-slate-50 overflow-hidden">
@@ -979,6 +1207,16 @@ export function ArchitectureModel() {
           >
             <Plus size={14} />
             <span>Prepojiť tokom dát</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setIsDfdReviewOpen(true)}
+            className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Voliteľná kontrola návrhu DFD"
+          >
+            <ShieldAlert size={14} className="text-amber-600" />
+            <span>Kontrola návrhu</span>
           </button>
 
           <button
@@ -1036,18 +1274,31 @@ export function ArchitectureModel() {
         <div className="flex-1 flex overflow-hidden gap-4 min-h-0">
         
         {/* Canvas Container */}
-        <div 
-          ref={canvasRef}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          onMouseLeave={handleMouseUp}
-          onClick={() => setSelectedCompId(null)}
-          className="flex-1 bg-white rounded-xl border border-slate-200 shadow-xs relative overflow-auto custom-scrollbar select-none min-w-[900px] min-h-[560px]"
-          style={{
-            backgroundImage: `radial-gradient(#cbd5e1 1px, transparent 1px)`,
-            backgroundSize: "24px 24px"
-          }}
-        >
+        <div className="flex-1 min-w-0 min-h-0 relative">
+          <div
+            ref={canvasRef}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUp}
+            onMouseLeave={handleMouseUp}
+            onClick={() => setSelectedCompId(null)}
+            className="absolute inset-0 bg-white rounded-xl border border-slate-200 shadow-xs overflow-auto custom-scrollbar select-none"
+            style={{
+              backgroundImage: `radial-gradient(#cbd5e1 1px, transparent 1px)`,
+              backgroundSize: `${24 * canvasZoom}px ${24 * canvasZoom}px`
+            }}
+          >
+            <div style={{ position: "relative", width: CANVAS_WIDTH * canvasZoom, height: CANVAS_HEIGHT * canvasZoom }}>
+              <div
+                style={{
+                  position: "absolute",
+                  left: 0,
+                  top: 0,
+                  width: CANVAS_WIDTH,
+                  height: CANVAS_HEIGHT,
+                  transform: `scale(${canvasZoom})`,
+                  transformOrigin: "top left"
+                }}
+              >
           {/* Trust Boundaries (Zones) */}
           {zones.map(zone => (
             <div
@@ -1173,13 +1424,21 @@ export function ArchitectureModel() {
 
               const isFlowHighlighted = selectedCompId === flow.from || selectedCompId === flow.to;
               const crossesTrustBoundary = fromComp.zoneId !== toComp.zoneId;
+              const flowTitle = [
+                `Tok dát: ${flow.protocol}; ${flow.transferType.toLowerCase()}; ${crossesTrustBoundary ? "prekračuje hranicu trust zóny" : "v rámci jednej trust zóny"}`,
+                ...(flow.cipherSuite ? [`Cipher suite: ${flow.cipherSuite}`] : []),
+                ...(flow.keyExchange ? [`Výmena kľúčov / KEM: ${flow.keyExchange}`] : []),
+                ...(usesTlsCrypto(flow.protocol, flow.encrypted)
+                  ? [`PQC stav návrhu: ${getPqcDesignStatusLabel(flow.pqcStatus ?? getPqcDesignStatus(flow.keyExchange))}`]
+                  : [])
+              ].join("; ");
               const stroke = crossesTrustBoundary
                 ? (isFlowHighlighted ? "#c2410c" : "#ea580c")
                 : (isFlowHighlighted ? "#2563eb" : "#94a3b8");
 
               return (
                 <g key={flow.id}>
-                  <title>{`Tok dát: ${flow.protocol}; ${flow.transferType.toLowerCase()}; ${crossesTrustBoundary ? "prekračuje hranicu trust zóny" : "v rámci jednej trust zóny"}`}</title>
+                  <title>{flowTitle}</title>
                   {/* Flow line */}
                   <path
                     d={geometry.path}
@@ -1216,6 +1475,28 @@ export function ArchitectureModel() {
                       </text>
                     </>
                   )}
+                  <path
+                    d={geometry.path}
+                    fill="none"
+                    stroke="transparent"
+                    strokeWidth={16}
+                    pointerEvents="stroke"
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`Upraviť tok ${flow.from} do ${flow.to}`}
+                    onMouseDown={event => event.stopPropagation()}
+                    onClick={event => {
+                      event.stopPropagation();
+                      openEditFlowModal(flow);
+                    }}
+                    onKeyDown={event => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      event.stopPropagation();
+                      openEditFlowModal(flow);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  />
                 </g>
               );
             })}
@@ -1270,6 +1551,44 @@ export function ArchitectureModel() {
             );
           })}
         </div>
+              </div>
+            </div>
+          <div className="absolute top-3 right-3 z-30 flex items-center gap-1 rounded-lg border border-slate-200 bg-white/95 p-1 shadow-sm">
+            <button
+              type="button"
+              onClick={() => setCanvasZoom(current => clamp(current - 0.1, MIN_CANVAS_ZOOM, MAX_CANVAS_ZOOM))}
+              disabled={canvasZoom <= MIN_CANVAS_ZOOM}
+              aria-label="Oddialiť DFD diagram"
+              title="Oddialiť"
+              className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ZoomOut size={16} />
+            </button>
+            <span className="min-w-[3rem] text-center text-[11px] font-medium text-slate-600">
+              {Math.round(canvasZoom * 100)}%
+            </span>
+            <button
+              type="button"
+              onClick={() => setCanvasZoom(current => clamp(current + 0.1, MIN_CANVAS_ZOOM, MAX_CANVAS_ZOOM))}
+              disabled={canvasZoom >= MAX_CANVAS_ZOOM}
+              aria-label="Priblížiť DFD diagram"
+              title="Priblížiť"
+              className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <ZoomIn size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setCanvasZoom(1)}
+              disabled={canvasZoom === 1}
+              aria-label="Obnoviť mierku DFD diagramu"
+              title="Obnoviť mierku"
+              className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              <Maximize2 size={15} />
+            </button>
+          </div>
+        </div>
 
         {/* Right Inspector Drawer */}
         <div className="w-80 bg-white rounded-xl border border-slate-200 shadow-xs flex flex-col overflow-hidden shrink-0">
@@ -1320,6 +1639,59 @@ export function ArchitectureModel() {
                     <div><strong>Typ:</strong> <span className="capitalize">{selectedComp.type}</span></div>
                     <div><strong>Technológia:</strong> {selectedComp.tech}</div>
                     <div><strong>Hranica dôvery:</strong> {zones.find(z => z.id === selectedComp.zoneId)?.name || "Zóna"}</div>
+                  </div>
+                </div>
+
+                {/* Associated Data Flows */}
+                <div className="pt-4 border-t border-slate-100">
+                  <span className="font-bold text-slate-700 block mb-2">
+                    Prepojené toky dát
+                  </span>
+                  <div className="space-y-1.5">
+                    {flows.filter(f => f.from === selectedComp.id || f.to === selectedComp.id).map(f => (
+                      <div key={f.id} className="p-2 bg-slate-50 border border-slate-200 rounded text-[11px] flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-slate-800">
+                            {f.from} → {f.to}
+                          </div>
+                          <div className="text-[10px] text-slate-500">
+                            {f.protocol} · {f.dataClassification} · {f.transferType.toLowerCase()}
+                          </div>
+                          {(f.cipherSuite || f.keyExchange || usesTlsCrypto(f.protocol, f.encrypted)) && (
+                            <div className="text-[10px] text-slate-500 break-all">
+                              {f.cipherSuite && <div><strong>Cipher suite:</strong> {f.cipherSuite}</div>}
+                              {f.keyExchange && <div><strong>Výmena kľúčov / KEM:</strong> {f.keyExchange}</div>}
+                              {usesTlsCrypto(f.protocol, f.encrypted) && (
+                                <div><strong>PQC stav návrhu:</strong> {getPqcDesignStatusLabel(f.pqcStatus ?? getPqcDesignStatus(f.keyExchange))}</div>
+                              )}
+                            </div>
+                          )}
+                          <div className="text-[10px] text-slate-500">
+                            {f.encrypted ? "Šifrovaný" : "Nešifrovaný"} · {f.authenticated ? "Autentifikovaný" : "Bez autentifikácie"}
+                          </div>
+                        </div>
+                        <div className="flex items-center">
+                          <button
+                            type="button"
+                            onClick={() => openEditFlowModal(f)}
+                            className="text-slate-400 hover:text-blue-600 p-1"
+                            title="Upraviť tok"
+                            aria-label={`Upraviť tok ${f.from} do ${f.to}`}
+                          >
+                            <Pencil size={12} />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteFlow(f.id)}
+                            className="text-slate-400 hover:text-red-600 p-1"
+                            title="Zmazať tok"
+                            aria-label={`Zmazať tok ${f.from} do ${f.to}`}
+                          >
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
 
@@ -1391,49 +1763,6 @@ export function ArchitectureModel() {
                   </Link>
                 </div>
 
-                {/* Associated Data Flows */}
-                <div className="pt-4 border-t border-slate-100">
-                  <span className="font-bold text-slate-700 block mb-2">
-                    Prepojené toky dát
-                  </span>
-                  <div className="space-y-1.5">
-                    {flows.filter(f => f.from === selectedComp.id || f.to === selectedComp.id).map(f => (
-                      <div key={f.id} className="p-2 bg-slate-50 border border-slate-200 rounded text-[11px] flex items-center justify-between">
-                        <div>
-                          <div className="font-medium text-slate-800">
-                            {f.from} → {f.to}
-                          </div>
-                          <div className="text-[10px] text-slate-500">
-                            {f.protocol} · {f.dataClassification} · {f.transferType.toLowerCase()}
-                          </div>
-                          <div className="text-[10px] text-slate-500">
-                            {f.encrypted ? "Šifrovaný" : "Nešifrovaný"} · {f.authenticated ? "Autentifikovaný" : "Bez autentifikácie"}
-                          </div>
-                        </div>
-                        <div className="flex items-center">
-                          <button
-                            type="button"
-                            onClick={() => openEditFlowModal(f)}
-                            className="text-slate-400 hover:text-blue-600 p-1"
-                            title="Upraviť tok"
-                            aria-label={`Upraviť tok ${f.from} do ${f.to}`}
-                          >
-                            <Pencil size={12} />
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteFlow(f.id)}
-                            className="text-slate-400 hover:text-red-600 p-1"
-                            title="Zmazať tok"
-                            aria-label={`Zmazať tok ${f.from} do ${f.to}`}
-                          >
-                            <Trash2 size={12} />
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
               </>
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
@@ -1449,7 +1778,62 @@ export function ArchitectureModel() {
       </div>
       </div>
 
-      {/* Modal: Add or edit component */}
+      {/* Optional DFD review */}
+      {isDfdReviewOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="dfd-review-title"
+            className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[85vh] flex flex-col p-6"
+          >
+            <div className="flex items-center justify-between mb-3">
+              <h3 id="dfd-review-title" className="font-bold text-slate-800 text-sm">Voliteľná kontrola návrhu DFD</h3>
+              <button
+                type="button"
+                aria-label="Zavrieť kontrolu návrhu"
+                onClick={() => setIsDfdReviewOpen(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-500 mb-3">
+              Kontrola je nezáväzná, nič nemení ani neblokuje uloženie. Upozornenia sú návrhy na preverenie, nie potvrdené zraniteľnosti.
+            </p>
+            <div className="overflow-y-auto space-y-2 flex-1">
+              {dfdReviewIssues.length ? dfdReviewIssues.map(issue => (
+                <div
+                  key={`${issue.flowId}-${issue.message}`}
+                  className={`rounded-lg border p-3 text-xs ${
+                    issue.severity === "warning"
+                      ? "border-amber-200 bg-amber-50 text-amber-900"
+                      : "border-blue-200 bg-blue-50 text-blue-900"
+                  }`}
+                >
+                  <div className="font-semibold">{issue.flowName}</div>
+                  <div className="mt-0.5">{issue.message}</div>
+                </div>
+              )) : (
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
+                  Nenašli sa upozornenia podľa dostupných pravidiel. To samo osebe nepotvrdzuje bezpečnosť návrhu.
+                </div>
+              )}
+            </div>
+            <div className="flex justify-end gap-2 pt-3 mt-3 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsDfdReviewOpen(false)}
+                className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium"
+              >
+                Zrušiť kontrolu
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add or edit trust zone */}
       {isZoneModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div role="dialog" aria-modal="true" aria-labelledby="zone-modal-title" className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
@@ -1558,14 +1942,29 @@ export function ArchitectureModel() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Technologický stack</label>
-                <input
-                  type="text"
+                <label htmlFor="component-tech" className="block font-semibold text-slate-700 mb-1">Technologický stack</label>
+                <select
+                  id="component-tech"
                   value={newCompTech}
                   onChange={e => setNewCompTech(e.target.value)}
-                  placeholder="napr. Python / FastAPI / PostgreSQL"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
-                />
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                >
+                  <option value="">Vyberte technológiu</option>
+                  {TECHNOLOGY_STACK_OPTIONS.map(technology => (
+                    <option key={technology} value={technology}>{technology}</option>
+                  ))}
+                  <option value={CUSTOM_TECH_STACK}>Iný / vlastný stack</option>
+                </select>
+                <p className="mt-1 text-[11px] text-slate-500">V roletke môžete písať písmená a rýchlo skočiť na zodpovedajúcu technológiu.</p>
+                {newCompTech === CUSTOM_TECH_STACK && (
+                  <input
+                    type="text"
+                    value={newCompCustomTech}
+                    onChange={e => setNewCompCustomTech(e.target.value)}
+                    placeholder="Zadajte vlastný technologický stack"
+                    className="mt-2 w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
+                  />
+                )}
               </div>
 
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
@@ -1629,16 +2028,72 @@ export function ArchitectureModel() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Protokol / spôsob komunikácie</label>
-                <input
-                  type="text"
+                <label htmlFor="flow-protocol" className="block font-semibold text-slate-700 mb-1">Protokol / spôsob komunikácie</label>
+                <select
+                  id="flow-protocol"
                   required
                   value={newFlowProtocol}
                   onChange={e => setNewFlowProtocol(e.target.value)}
-                  placeholder="napr. HTTPS / TLS 1.3 (JSON REST)"
-                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none"
-                />
+                  className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
+                >
+                  <option value="">Vyberte protokol alebo spôsob komunikácie</option>
+                  {FLOW_PROTOCOL_OPTIONS.map(protocol => (
+                    <option key={protocol} value={protocol}>{protocol}</option>
+                  ))}
+                  <option value={CUSTOM_FLOW_PROTOCOL}>Iný / vlastný protokol</option>
+                </select>
+                <p className="mt-1 text-[11px] text-slate-500">V roletke môžete písať písmená a rýchlo skočiť na zodpovedajúci protokol.</p>
+                {newFlowProtocol === CUSTOM_FLOW_PROTOCOL && (
+                  <input
+                    type="text"
+                    required
+                    value={newFlowCustomProtocol}
+                    onChange={e => setNewFlowCustomProtocol(e.target.value)}
+                    placeholder="Zadajte vlastný protokol alebo spôsob komunikácie"
+                    className="mt-2 w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none"
+                  />
+                )}
               </div>
+
+              {showTlsCryptoOptions && (
+                <>
+                  <div>
+                    <label htmlFor="flow-cipher-suite" className="block font-semibold text-slate-700 mb-1">TLS cipher suite</label>
+                    <select
+                      id="flow-cipher-suite"
+                      value={newFlowCipherSuite}
+                      onChange={e => setNewFlowCipherSuite(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
+                    >
+                      <option value="">Nezistené / neurčené</option>
+                      {NIST_CIPHER_SUITES.map(cipherSuite => (
+                        <option key={cipherSuite} value={cipherSuite}>{cipherSuite}</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label htmlFor="flow-key-exchange" className="block font-semibold text-slate-700 mb-1">Výmena kľúčov / KEM (PQC)</label>
+                    <select
+                      id="flow-key-exchange"
+                      value={newFlowKeyExchange}
+                      onChange={e => setNewFlowKeyExchange(e.target.value)}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
+                    >
+                      <option value="">Nezistené / neurčené</option>
+                      {NIST_KEY_EXCHANGE_OPTIONS.map(keyExchange => (
+                        <option key={keyExchange} value={keyExchange}>{keyExchange}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="text-[11px] text-slate-500">
+                    Cipher suite neurčuje výmenu kľúčov. ML-KEM je samostatný NIST KEM; jeho použitie v TLS závisí od podpory TLS endpointu.
+                  </p>
+                  <p className="text-[11px] text-slate-600">
+                    Stav PQC návrhu: <strong>{getPqcDesignStatusLabel(getPqcDesignStatus(newFlowKeyExchange))}</strong>
+                  </p>
+                </>
+              )}
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">Typ prenosu</label>
