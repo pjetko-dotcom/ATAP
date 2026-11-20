@@ -29,6 +29,7 @@ Keep the current project visible in navigation. Preserve entered data when movin
 ### DFD interaction and cryptography
 
 - Component technology stacks and flow protocols are alphabetized selectors that support keyboard type-to-select. Custom values and older stored values remain editable.
+- Protocol names must accurately distinguish plaintext HTTP from HTTPS over TLS. mTLS describes mutual authentication during the TLS handshake, never an HTTP header; use explicit labels such as `Internal HTTPS / mTLS` or `gRPC over mTLS (HTTP/2)`. Keep application-level mechanisms such as HMAC request signing distinct from the transport protocol. Legacy misleading labels are normalized on load without discarding other flow metadata.
 - TLS cipher suites are recorded separately from key exchange. The available cipher-suite choices are AES-GCM suites based on [NIST SP 800-52 Rev. 2](https://csrc.nist.gov/pubs/sp/800/52/r2/final); the key-exchange/KEM choices use NIST P-curves and ML-KEM parameter sets from [FIPS 203](https://csrc.nist.gov/pubs/fips/203/final).
 - An unspecified key exchange has the explicit PQC design status `unknown`. Selecting a classical or ML-KEM option changes the derived status to `classical` or `post-quantum`; this is not a deployment verification, and the TLS endpoint must support the proposed algorithm.
 - Flow connectors open their editor by mouse or keyboard (Enter/Space). The canvas supports horizontal and vertical scrolling, zoom controls, and Ctrl+mouse-wheel zooming.

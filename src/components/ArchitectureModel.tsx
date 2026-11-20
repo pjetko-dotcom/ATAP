@@ -81,6 +81,15 @@ interface DfdReviewIssue {
   message: string;
 }
 
+const LEGACY_FLOW_PROTOCOLS: Record<string, string> = {
+  "HTTPS (HMAC Signature Webhook)": "HTTPS Webhook / REST (HMAC request signing)",
+  "HTTPS / TLS 1.3 (JSON REST)": "HTTPS / TLS 1.3 (REST)",
+  "Internal HTTP (mTLS Header)": "Internal HTTPS / mTLS",
+  "mTLS": "mTLS (TLS transport)",
+  "mTLS / gRPC (Token Verify)": "gRPC over mTLS (HTTP/2)",
+  "TLS Connection (Prepared Statements)": "PostgreSQL / TLS"
+};
+
 function getPqcDesignStatus(keyExchange?: string): NonNullable<DataFlow["pqcStatus"]> {
   if (!keyExchange) return "unknown";
   return keyExchange.startsWith("ML-KEM-") ? "post-quantum" : "classical";
@@ -107,12 +116,13 @@ function normalizeStoredDataFlow(value: unknown): DataFlow | null {
   const dataClassification = ["Public", "Internal", "Confidential", "Restricted"].includes(String(flow.dataClassification))
     ? flow.dataClassification as DataFlow["dataClassification"]
     : "Internal";
+  const protocol = LEGACY_FLOW_PROTOCOLS[flow.protocol] ?? flow.protocol;
   const keyExchange = typeof flow.keyExchange === "string" ? flow.keyExchange : undefined;
   return {
     id: flow.id,
     from: flow.from,
     to: flow.to,
-    protocol: flow.protocol,
+    protocol,
     cipherSuite: typeof flow.cipherSuite === "string" ? flow.cipherSuite : undefined,
     keyExchange,
     pqcStatus: getPqcDesignStatus(keyExchange),
@@ -177,24 +187,24 @@ const FLOW_PROTOCOL_OPTIONS = [
   "AMQP",
   "DNS",
   "gRPC",
+  "gRPC over mTLS (HTTP/2)",
+  "gRPC over TLS (HTTP/2)",
   "HTTP / REST",
+  "HTTPS / mTLS (REST)",
   "HTTPS / TLS 1.2",
   "HTTPS / TLS 1.3",
-  "HTTPS / TLS 1.3 (JSON REST)",
   "HTTPS / TLS 1.3 (REST)",
-  "HTTPS (HMAC Signature Webhook)",
   "HTTPS Webhook / REST",
-  "Internal HTTP (mTLS Header)",
+  "HTTPS Webhook / REST (HMAC request signing)",
+  "Internal HTTPS / mTLS",
   "Kafka",
-  "mTLS",
-  "mTLS / gRPC (Token Verify)",
+  "mTLS (TLS transport)",
   "MQTT over TLS",
   "PostgreSQL / TLS",
   "SFTP / SSH",
   "SMTP / STARTTLS",
   "SOAP / XML over HTTPS",
   "TCP",
-  "TLS Connection (Prepared Statements)",
   "WebSocket / WSS"
 ].sort((a, b) => a.localeCompare(b, "sk", { sensitivity: "base" }));
 const NIST_CIPHER_SUITES = [
@@ -408,7 +418,7 @@ const DEFAULT_FLOWS: DataFlow[] = [
     id: "flow_2",
     from: "API Gateway",
     to: "Auth Service",
-    protocol: "mTLS / gRPC (Token Verify)",
+    protocol: "gRPC over mTLS (HTTP/2)",
     dataClassification: "Restricted",
     encrypted: true,
     authenticated: true,
@@ -419,7 +429,7 @@ const DEFAULT_FLOWS: DataFlow[] = [
     id: "flow_3",
     from: "API Gateway",
     to: "Core Backend API",
-    protocol: "Internal HTTP (mTLS Header)",
+    protocol: "Internal HTTPS / mTLS",
     dataClassification: "Confidential",
     encrypted: true,
     authenticated: true,
@@ -430,7 +440,7 @@ const DEFAULT_FLOWS: DataFlow[] = [
     id: "flow_4",
     from: "Core Backend API",
     to: "Main Database",
-    protocol: "TLS Connection (Prepared Statements)",
+    protocol: "PostgreSQL / TLS",
     dataClassification: "Restricted",
     encrypted: true,
     authenticated: true,
@@ -441,7 +451,7 @@ const DEFAULT_FLOWS: DataFlow[] = [
     id: "flow_5",
     from: "Core Backend API",
     to: "Payment Gateway",
-    protocol: "HTTPS (HMAC Signature Webhook)",
+    protocol: "HTTPS Webhook / REST (HMAC request signing)",
     dataClassification: "Restricted",
     encrypted: true,
     authenticated: true,
