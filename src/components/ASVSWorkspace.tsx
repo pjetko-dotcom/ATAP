@@ -4,7 +4,7 @@
  * 
  * @module ASVSWorkspace
  */
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { 
   Info, ChevronDown, 
@@ -42,6 +42,7 @@ import { useWorkspaceState } from "../hooks/useWorkspaceState";
 import { useAnalysisVersion } from "../context/AnalysisVersionContext";
 import { HelpTooltip } from "./HelpTooltip";
 import { VerificationHintTooltip } from "./VerificationHintTooltip";
+import { useDialogFocus } from "../hooks/useDialogFocus";
 import { getVerificationGuide } from "../utils/verificationGuide";
 import { ASVSTriageModal } from "./ASVSTriageModal";
 import { ProjectCategorizationModal } from "./ProjectCategorizationModal";
@@ -107,6 +108,10 @@ export function ASVSWorkspace() {
   const { id: analysisId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const requestedRequirement = searchParams.get("search");
+  const requestedChapterValue = searchParams.get("chapter");
+  const requestedChapter = requestedChapterValue && /^\d+$/.test(requestedChapterValue)
+    ? Number(requestedChapterValue)
+    : null;
   const {
     reqs,
     targetLevel,
@@ -158,8 +163,16 @@ export function ASVSWorkspace() {
   // Bulk actions modal states
   const [isBulkNoteModalOpen, setIsBulkNoteModalOpen] = useState(false);
   const [bulkNoteText, setBulkNoteText] = useState("");
+  const [bulkNoteError, setBulkNoteError] = useState<string | null>(null);
   const [isBulkNaModalOpen, setIsBulkNaModalOpen] = useState(false);
   const [bulkNaReason, setBulkNaReason] = useState("");
+  const [bulkNaReasonError, setBulkNaReasonError] = useState<string | null>(null);
+  const [bulkNaTargetIds, setBulkNaTargetIds] = useState<string[]>([]);
+  const asvsSearchInputRef = useRef<HTMLInputElement>(null);
+  const bulkNoteDialogRef = useRef<HTMLDivElement>(null);
+  const bulkNaDialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(isBulkNoteModalOpen, bulkNoteDialogRef, () => setIsBulkNoteModalOpen(false));
+  useDialogFocus(isBulkNaModalOpen, bulkNaDialogRef, () => setIsBulkNaModalOpen(false));
 
   useEffect(() => {
     const preferences = readASVSViewPreferences(analysisId);
@@ -167,6 +180,7 @@ export function ASVSWorkspace() {
     setActiveSectionId(preferences.activeSectionId);
     setSearchQuery(preferences.searchQuery);
     setStatusFilter(preferences.statusFilter);
+    setSelectedIds(new Set());
   }, [analysisId]);
 
   const saveViewPreferences = (updates: Partial<ASVSViewPreferences>) => {
@@ -206,13 +220,41 @@ export function ASVSWorkspace() {
   };
 
   useEffect(() => {
-    if (requestedRequirement) handleSearchChange(requestedRequirement);
-  }, [requestedRequirement, analysisId]);
+    if (!requestedRequirement) return;
+    const requirement = effectiveReqs.find(item => item.id === requestedRequirement);
+    const chapterId = requestedChapter || requirement?.chapterId;
+    if (chapterId && asvsChapters.some(chapter => chapter.id === chapterId)) {
+      setActiveChapterId(chapterId);
+      setActiveSectionId("all");
+      saveViewPreferences({ activeChapterId: chapterId, activeSectionId: "all" });
+    }
+    handleSearchChange(requestedRequirement);
+  }, [requestedRequirement, requestedChapter, analysisId, effectiveReqs]);
+
+  useEffect(() => {
+    const handleASVSShortcut = (event: KeyboardEvent) => {
+      const target = event.target;
+      const isEditing = target instanceof HTMLElement && (
+        target.isContentEditable ||
+        target.closest("input, textarea, select, [contenteditable='true'], [aria-modal='true']")
+      );
+      if (event.key === "/" && !isEditing && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        asvsSearchInputRef.current?.focus();
+      } else if (event.key === "Escape" && document.activeElement === asvsSearchInputRef.current && searchQuery) {
+        event.preventDefault();
+        handleSearchChange("");
+      }
+    };
+    window.addEventListener("keydown", handleASVSShortcut);
+    return () => window.removeEventListener("keydown", handleASVSShortcut);
+  }, [searchQuery]);
 
   const clearViewFilters = () => {
     setActiveSectionId("all");
     setSearchQuery("");
     setStatusFilter("all");
+    setTargetLevel("all");
     saveViewPreferences({ activeSectionId: "all", searchQuery: "", statusFilter: "all" });
   };
 
@@ -255,7 +297,15 @@ export function ASVSWorkspace() {
     const matchesLevel = matchesTargetLevel(req);
     return matchesChapter && matchesSection && matchesSearch && matchesLevel;
   });
-  const hasActiveViewFilters = activeSectionId !== "all" || !!searchQuery.trim() || statusFilter !== "all";
+  const hasActiveViewFilters = activeSectionId !== "all" ||
+    !!searchQuery.trim() ||
+    statusFilter !== "all" ||
+    targetLevel !== "all";
+  const selectedVisibleCount = filteredRequirements.filter(req => selectedIds.has(req.id)).length;
+  const selectedOutsideFiltersCount = selectedIds.size - selectedVisibleCount;
+  const bulkNaOutsideFiltersCount = bulkNaTargetIds.filter(
+    id => !filteredRequirements.some(requirement => requirement.id === id)
+  ).length;
 
   const activeChapter = asvsChapters.find(c => c.id === activeChapterId);
   const chapterSections = asvsSections.filter(s => s.chapterId === activeChapterId);
@@ -330,10 +380,16 @@ export function ASVSWorkspace() {
   };
 
   const toggleAll = () => {
-    if (selectedIds.size === filteredRequirements.length) {
-      setSelectedIds(new Set());
+    const allVisibleSelected = filteredRequirements.length > 0 &&
+      filteredRequirements.every(requirement => selectedIds.has(requirement.id));
+    if (allVisibleSelected) {
+      setSelectedIds(previous => {
+        const next = new Set(previous);
+        filteredRequirements.forEach(requirement => next.delete(requirement.id));
+        return next;
+      });
     } else {
-      setSelectedIds(new Set(filteredRequirements.map(r => r.id)));
+      setSelectedIds(previous => new Set([...previous, ...filteredRequirements.map(r => r.id)]));
     }
   };
 
@@ -346,13 +402,34 @@ export function ASVSWorkspace() {
     setTimeout(() => setExportNotice(null), 3500);
   };
 
+  const openBulkNaModal = (targetIds: string[]) => {
+    if (targetIds.length === 0) return;
+    setBulkNaTargetIds(targetIds);
+    setBulkNaReason("");
+    setBulkNaReasonError(null);
+    setIsBulkNaModalOpen(true);
+  };
+
+  const handleRequirementStatusChange = (reqId: string, status: string) => {
+    if (status === "N/A") {
+      openBulkNaModal([reqId]);
+      return;
+    }
+    updateRequirementStatus(reqId, status);
+  };
+
   const handleApplyBulkNote = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedIds.size === 0 || !bulkNoteText.trim()) return;
+    if (selectedIds.size === 0) return;
+    if (!bulkNoteText.trim()) {
+      setBulkNoteError("Zadajte text poznámky alebo dôkazu.");
+      return;
+    }
     const selectedArray: string[] = Array.from(selectedIds);
     batchUpdateRequirementNotes(selectedArray, bulkNoteText);
     setIsBulkNoteModalOpen(false);
     setBulkNoteText("");
+    setBulkNoteError(null);
     setSelectedIds(new Set());
     setExportNotice(`Poznámka / dôkaz bol úspešne pridaný ku ${selectedArray.length} požiadavkám.`);
     setTimeout(() => setExportNotice(null), 3500);
@@ -360,30 +437,48 @@ export function ASVSWorkspace() {
 
   const handleApplyBulkNa = (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedIds.size === 0) return;
-    const selectedArray: string[] = Array.from(selectedIds);
-    batchUpdateRequirementStatus(selectedArray, "N/A", bulkNaReason.trim() || "Vylúčené z rozsahu aplikácie");
+    if (bulkNaTargetIds.length === 0) return;
+    if (!bulkNaReason.trim()) {
+      setBulkNaReasonError("Odôvodnenie nesmie byť prázdne.");
+      return;
+    }
+    const targetIds = new Set(bulkNaTargetIds);
+    batchUpdateRequirementStatus(bulkNaTargetIds, "N/A", bulkNaReason.trim());
     setIsBulkNaModalOpen(false);
     setBulkNaReason("");
-    setSelectedIds(new Set());
-    setExportNotice(`${selectedArray.length} požiadaviek bolo označených ako N/A s odôvodnením.`);
+    setBulkNaReasonError(null);
+    setBulkNaTargetIds([]);
+    setSelectedIds(previous => new Set(Array.from(previous).filter(id => !targetIds.has(id))));
+    setExportNotice(`${targetIds.size} požiadaviek bolo označených ako N/A s odôvodnením.`);
     setTimeout(() => setExportNotice(null), 3500);
   };
 
   const handleSelectAllInChapter = () => {
-    setSelectedIds(new Set(filteredRequirements.map(r => r.id)));
+    setSelectedIds(previous => new Set([...previous, ...filteredRequirements.map(r => r.id)]));
   };
 
   const handleBulkStatus = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const status = e.target.value;
     if (!status) return;
-    handleBulkStatusDirect(status);
+    if (status === "N/A") {
+      openBulkNaModal(Array.from(selectedIds));
+    } else {
+      handleBulkStatusDirect(status);
+    }
     e.target.value = "";
   };
 
   const handleBatchMarkVisible = (status: "Implemented" | "N/A") => {
     const ids = filteredRequirements.map(r => r.id);
+    if (ids.length === 0) return;
+    if (status === "N/A") {
+      openBulkNaModal(ids);
+      return;
+    }
+    if (!window.confirm(`Označiť ${ids.length} zobrazených požiadaviek ako Implemented? Potvrďte, že ste každú požiadavku skontrolovali.`)) return;
     batchUpdateRequirementStatus(ids, status);
+    setExportNotice(`${ids.length} zobrazených požiadaviek bolo označených ako Implemented.`);
+    setTimeout(() => setExportNotice(null), 3500);
   };
 
   const handleExportExcel = async () => {
@@ -493,6 +588,21 @@ export function ASVSWorkspace() {
               <div key={chapter.id} className="py-0.5">
                 <button
                   onClick={() => handleSelectChapter(chapter.id)}
+                  data-asvs-chapter
+                  onKeyDown={event => {
+                    if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+                    const buttons = Array.from(
+                      event.currentTarget.closest("#asvs-chapter-sidebar")?.querySelectorAll<HTMLButtonElement>("[data-asvs-chapter]") || []
+                    );
+                    const currentIndex = buttons.indexOf(event.currentTarget);
+                    const nextIndex = event.key === "Home"
+                      ? 0
+                      : event.key === "End"
+                        ? buttons.length - 1
+                        : (currentIndex + (event.key === "ArrowDown" ? 1 : -1) + buttons.length) % buttons.length;
+                    event.preventDefault();
+                    buttons[nextIndex]?.focus();
+                  }}
                   aria-current={isSelected ? "page" : undefined}
                   title={`V${chapter.id}: ${chapter.name}`}
                   className={`w-full text-left px-3.5 py-2 text-xs transition-colors flex items-center justify-between min-w-full cursor-pointer ${
@@ -677,13 +787,24 @@ export function ASVSWorkspace() {
             <div className="relative flex-1 sm:w-64">
               <Search size={14} className="absolute left-3 top-2 text-slate-400 pointer-events-none" />
               <input 
+                ref={asvsSearchInputRef}
                 type="text" 
                 aria-label="Hľadať ASVS požiadavky"
-                placeholder="Hľadať požiadavku, kód, text..." 
-                className="w-full pl-9 pr-3 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-slate-50"
+                placeholder="Hľadať požiadavku, kód, text... ( / )"
+                className="w-full pl-9 pr-9 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-slate-50"
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
               />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => handleSearchChange("")}
+                  aria-label="Vymazať hľadanie ASVS"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-200"
+                >
+                  <X size={13} />
+                </button>
+              )}
             </div>
             
             {/* Export Dropdown */}
@@ -764,7 +885,7 @@ export function ASVSWorkspace() {
                 onClick={clearViewFilters}
                 className="font-semibold text-blue-700 hover:text-blue-900 underline underline-offset-2"
               >
-                Vymazať filtre sekcie, stavu a hľadania
+                Vymazať všetky filtre
               </button>
             )}
           </div>
@@ -1037,6 +1158,7 @@ export function ASVSWorkspace() {
                 </span>
                 <span className="text-xs font-bold text-white tracking-tight">
                   {selectedIds.size === 1 ? "požiadavka označená" : selectedIds.size < 5 ? "požiadavky označené" : "požiadaviek označených"}
+                  {selectedOutsideFiltersCount > 0 && ` · ${selectedOutsideFiltersCount} mimo aktuálnych filtrov`}
                 </span>
                 <span className="text-[11px] text-blue-300 hidden md:inline">• Hromadná zmena:</span>
               </div>
@@ -1065,10 +1187,7 @@ export function ASVSWorkspace() {
                   <span>Missing</span>
                 </button>
                 <button
-                  onClick={() => {
-                    setBulkNaReason("Vylúčené z rozsahu aplikácie");
-                    setIsBulkNaModalOpen(true);
-                  }}
+                  onClick={() => openBulkNaModal(Array.from(selectedIds))}
                   className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded shadow-xs transition-colors cursor-pointer"
                   title="Nastaviť vybrané ako N/A s odôvodnením"
                 >
@@ -1078,7 +1197,10 @@ export function ASVSWorkspace() {
                 <div className="h-4 w-px bg-blue-800 mx-1 hidden sm:block"></div>
 
                 <button
-                  onClick={() => setIsBulkNoteModalOpen(true)}
+                  onClick={() => {
+                    setBulkNoteError(null);
+                    setIsBulkNoteModalOpen(true);
+                  }}
                   className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded shadow-xs transition-colors cursor-pointer flex items-center gap-1"
                   title="Pripojiť spoločnú poznámku alebo dôkaz ku všetkým vybraným"
                 >
@@ -1114,7 +1236,7 @@ export function ASVSWorkspace() {
                       type="checkbox" 
                       aria-label="Označiť všetky zobrazené požiadavky"
                       className="rounded border-slate-300 text-blue-600 cursor-pointer"
-                      checked={filteredRequirements.length > 0 && selectedIds.size === filteredRequirements.length}
+                      checked={filteredRequirements.length > 0 && filteredRequirements.every(requirement => selectedIds.has(requirement.id))}
                       onChange={toggleAll}
                     />
                   </th>
@@ -1207,7 +1329,7 @@ export function ASVSWorkspace() {
                               "bg-white border-slate-200 text-slate-700 hover:border-slate-300"
                             }`}
                             value={req.status || ""}
-                            onChange={(e) => updateRequirementStatus(req.id, e.target.value)}
+                            onChange={(e) => handleRequirementStatusChange(req.id, e.target.value)}
                             disabled={!!req.triageReason}
                           >
                             <option value="" disabled>Vyberte stav...</option>
@@ -1403,7 +1525,7 @@ export function ASVSWorkspace() {
                     type="checkbox"
                     aria-label="Označiť všetky zobrazené požiadavky"
                     className="rounded border-slate-300 text-blue-600"
-                    checked={filteredRequirements.length > 0 && selectedIds.size === filteredRequirements.length}
+                    checked={filteredRequirements.length > 0 && filteredRequirements.every(requirement => selectedIds.has(requirement.id))}
                     onChange={toggleAll}
                   />
                   Označi všetky zobrazené
@@ -1453,7 +1575,7 @@ export function ASVSWorkspace() {
                             id={`mobile-status-${req.id}`}
                             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium"
                             value={req.status || ""}
-                            onChange={event => updateRequirementStatus(req.id, event.target.value)}
+                            onChange={event => handleRequirementStatusChange(req.id, event.target.value)}
                             disabled={!!req.triageReason}
                           >
                             <option value="" disabled>Vyberte stav...</option>
@@ -1539,14 +1661,23 @@ export function ASVSWorkspace() {
       {/* Modal: Bulk Note / Evidence */}
       {isBulkNoteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
+          <div
+            ref={bulkNoteDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-note-title"
+            tabIndex={-1}
+            className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <FileText size={18} className="text-blue-600" />
-                <h3 className="font-bold text-slate-800 text-sm">Hromadná poznámka / Dôkaz</h3>
+                <h3 id="bulk-note-title" className="font-bold text-slate-800 text-sm">Hromadná poznámka / Dôkaz</h3>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsBulkNoteModalOpen(false)} 
+                aria-label="Zavrieť hromadnú poznámku"
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
                 <X size={16} />
@@ -1555,6 +1686,7 @@ export function ASVSWorkspace() {
 
             <p className="text-xs text-slate-500 mb-3">
               Zadaný text bude pripojený ako implementačná poznámka ku všetkým <strong>{selectedIds.size}</strong> vybraným kontrolám.
+              {selectedOutsideFiltersCount > 0 && ` Výber zahŕňa aj ${selectedOutsideFiltersCount} kontrol mimo aktuálnych filtrov.`}
             </p>
 
             <form onSubmit={handleApplyBulkNote} className="space-y-3">
@@ -1563,11 +1695,17 @@ export function ASVSWorkspace() {
                   required
                   rows={4}
                   value={bulkNoteText}
-                  onChange={e => setBulkNoteText(e.target.value)}
+                  onChange={e => {
+                    setBulkNoteText(e.target.value);
+                    setBulkNoteError(null);
+                  }}
+                  aria-invalid={!!bulkNoteError}
+                  aria-describedby={bulkNoteError ? "bulk-note-error" : undefined}
                   placeholder="napr. Overené statickou analýzou SonarQube a penetračným testom v2.4 (Odkaz na JIRA-4291)."
                   className="w-full p-2.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                   autoFocus
                 />
+                {bulkNoteError && <p id="bulk-note-error" role="alert" className="mt-1 text-xs text-red-700">{bulkNoteError}</p>}
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -1593,14 +1731,23 @@ export function ASVSWorkspace() {
       {/* Modal: Bulk N/A Reason */}
       {isBulkNaModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
+          <div
+            ref={bulkNaDialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-na-title"
+            tabIndex={-1}
+            className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6"
+          >
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Ban size={18} className="text-slate-600" />
-                <h3 className="font-bold text-slate-800 text-sm">Hromadné označenie N/A (Nepotrebné)</h3>
+                <h3 id="bulk-na-title" className="font-bold text-slate-800 text-sm">Hromadné označenie N/A (Nepotrebné)</h3>
               </div>
               <button 
+                type="button"
                 onClick={() => setIsBulkNaModalOpen(false)} 
+                aria-label="Zavrieť hromadné označenie N/A"
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
                 <X size={16} />
@@ -1608,7 +1755,8 @@ export function ASVSWorkspace() {
             </div>
 
             <p className="text-xs text-slate-500 mb-3">
-              Všetkých <strong>{selectedIds.size}</strong> vybraných požiadaviek bude označených ako <strong>N/A</strong> (Not Applicable / Mimo rozsah). Zadajte odôvodnenie pre audit:
+              Všetkých <strong>{bulkNaTargetIds.length}</strong> vybraných požiadaviek bude označených ako <strong>N/A</strong> (Not Applicable / Mimo rozsah). Zadajte odôvodnenie pre audit:
+              {bulkNaOutsideFiltersCount > 0 && ` Výber zahŕňa aj ${bulkNaOutsideFiltersCount} kontrol mimo aktuálnych filtrov.`}
             </p>
 
             <form onSubmit={handleApplyBulkNa} className="space-y-3">
@@ -1616,12 +1764,19 @@ export function ASVSWorkspace() {
                 <input
                   type="text"
                   required
+                  aria-label="Odôvodnenie označenia N/A"
+                  aria-invalid={!!bulkNaReasonError}
+                  aria-describedby={bulkNaReasonError ? "bulk-na-reason-error" : undefined}
                   value={bulkNaReason}
-                  onChange={e => setBulkNaReason(e.target.value)}
+                  onChange={e => {
+                    setBulkNaReason(e.target.value);
+                    setBulkNaReasonError(null);
+                  }}
                   placeholder="napr. Systém nepoužíva hardvérové kryptografické moduly (HSM)"
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
                   autoFocus
                 />
+                {bulkNaReasonError && <p id="bulk-na-reason-error" role="alert" className="mt-1 text-xs text-red-700">{bulkNaReasonError}</p>}
               </div>
 
               <div className="flex justify-end gap-2 pt-2">
@@ -1636,7 +1791,7 @@ export function ASVSWorkspace() {
                   type="submit"
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs"
                 >
-                  Označiť ako N/A
+                  Označiť {bulkNaTargetIds.length} ako N/A
                 </button>
               </div>
             </form>

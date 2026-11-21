@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import {
   X,
   CheckCircle,
@@ -23,6 +23,7 @@ import {
   ASVSRequirement,
   getRequirementsForTriage
 } from "../data/asvsData";
+import { useDialogFocus } from "../hooks/useDialogFocus";
 
 interface ASVSTriageModalProps {
   isOpen: boolean;
@@ -51,6 +52,8 @@ export function ASVSTriageModal({
   const [searchQuery, setSearchQuery] = useState("");
   const [filterState, setFilterState] = useState<"all" | "unanswered" | "excluded" | "relevant">("all");
   const [expandedPreview, setExpandedPreview] = useState<string | null>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(isOpen, dialogRef, onClose);
 
   if (!isOpen) return null;
 
@@ -81,7 +84,14 @@ export function ASVSTriageModal({
 
   return (
     <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="asvs-triage-title"
+        tabIndex={-1}
+        className="bg-white rounded-xl shadow-2xl w-full max-w-5xl h-[85vh] sm:h-[90vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200 border border-slate-200"
+      >
         
         {/* Header */}
         <div className="bg-slate-900 text-white p-4 sm:p-6 flex items-start justify-between shrink-0">
@@ -90,7 +100,7 @@ export function ASVSTriageModal({
               <Shield size={22} />
             </div>
             <div>
-              <h2 className="text-base font-bold flex items-center gap-2">
+              <h2 id="asvs-triage-title" className="text-base font-bold flex items-center gap-2">
                 ASVS 5.0 Triage & Scoping Sprievodca
                 {scopedOutReqCount > 0 && (
                   <span className="text-xs font-normal px-2 py-0.5 bg-blue-500/30 text-blue-200 rounded-full border border-blue-400/30">
@@ -105,6 +115,8 @@ export function ASVSTriageModal({
           </div>
           <button 
             onClick={onClose}
+            type="button"
+            aria-label="Zavrieť ASVS triáž"
             className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
           >
             <X size={20} />
@@ -138,6 +150,7 @@ export function ASVSTriageModal({
                 <Search size={14} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
                 <input 
                   type="text"
+                  aria-label="Hľadať triáž otázky"
                   placeholder="Hľadať technológiu..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
@@ -316,6 +329,7 @@ export function ASVSTriageModal({
           </div>
           <button
             onClick={onClose}
+            type="button"
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-xs"
           >
             Hotovo, zavrieť

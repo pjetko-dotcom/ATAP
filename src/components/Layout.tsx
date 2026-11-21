@@ -26,6 +26,7 @@ interface WorkspaceSearchResult {
 interface SearchableRequirement {
   id: string;
   title: string;
+  chapterId?: number;
   description?: string;
   status?: string;
 }
@@ -68,7 +69,7 @@ function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>
       title: `${item.id} ${item.title}`,
       detail: `${analysis.name} · ${item.status || "Pending"} · ${item.description || ""}`,
       category: "ASVS",
-      path: `${basePath}/asvs?search=${encodeURIComponent(item.id)}`,
+      path: `${basePath}/asvs?${item.chapterId ? `chapter=${item.chapterId}&` : ""}search=${encodeURIComponent(item.id)}`,
     })));
     results.push(...readWorkspaceArray<SearchableThreat>(
       `atap_threats_${analysis.id}`
@@ -102,7 +103,7 @@ function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>
         title: `${item.id} ${item.title}`,
         detail: `${analysis.name} · ${item.status} · ${item.description || ""}`,
         category: "Nález / medzera",
-        path: `${basePath}/asvs?search=${encodeURIComponent(item.id)}`,
+        path: `${basePath}/asvs?${item.chapterId ? `chapter=${item.chapterId}&` : ""}search=${encodeURIComponent(item.id)}`,
       })));
     return results;
   });
@@ -178,6 +179,11 @@ export function Layout() {
   useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        const target = event.target;
+        if (target instanceof HTMLElement && (
+          target.isContentEditable ||
+          target.closest("input, textarea, select, [contenteditable='true'], [aria-modal='true']")
+        )) return;
         event.preventDefault();
         openWorkspaceSearch();
       }
@@ -188,9 +194,9 @@ export function Layout() {
 
   useEffect(() => {
     if (!isSearchOpen) return;
-    searchInputRef.current?.focus();
     setActiveSearchResult(0);
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    searchInputRef.current?.focus();
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setIsSearchOpen(false);
@@ -424,7 +430,7 @@ export function Layout() {
           <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V{appVersion}</span></span>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={openWorkspaceSearch} aria-label="Otvoriť vyhľadávanie" className="rounded-md border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:text-white">
+          <button type="button" onClick={openWorkspaceSearch} aria-label="Otvoriť vyhľadávanie (Ctrl/Cmd+K)" className="rounded-md border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:text-white">
             <Search size={19} />
           </button>
           <button
@@ -551,12 +557,12 @@ export function Layout() {
             ref={searchButtonRef}
             type="button"
             onClick={openWorkspaceSearch}
-            aria-label="Find in project"
-            title="Find (Ctrl+K)"
+            aria-label="Hľadať v pracovných priestoroch (Ctrl/Cmd+K)"
+            title="Hľadať (Ctrl/Cmd+K)"
             className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
           >
             <div className="shrink-0"><Search size={16} /></div>
-            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Find <kbd className="ml-1 rounded border border-slate-700 px-1 text-[10px]">Ctrl K</kbd></span>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Hľadať <kbd className="ml-1 rounded border border-slate-700 px-1 text-[10px]">Ctrl/Cmd+K</kbd></span>
           </button>
           <button
             type="button"
@@ -625,6 +631,9 @@ export function Layout() {
                 placeholder="Hľadať hrozby, ASVS, komponenty a nálezy…"
                 aria-label="Hľadať v projektoch"
                 aria-controls="workspace-search-results"
+                aria-activedescendant={searchResults.length > 0
+                  ? `workspace-search-option-${Math.min(activeSearchResult, searchResults.length - 1)}`
+                  : undefined}
                 className="h-14 min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
               />
               <button type="button" onClick={() => setIsSearchOpen(false)} aria-label="Zavrieť vyhľadávanie" className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">Esc</button>
@@ -633,6 +642,7 @@ export function Layout() {
               {searchResults.map((result, index) => (
                 <button
                   key={result.id}
+                  id={`workspace-search-option-${index}`}
                   type="button"
                   role="option"
                   aria-selected={activeSearchResult === index}
@@ -654,8 +664,11 @@ export function Layout() {
               {searchResults.length === 0 && (
                 <p className="px-4 py-10 text-center text-sm text-slate-500">Nenašli sa žiadne výsledky. Skúste iný výraz.</p>
               )}
+              <p role="status" aria-live="polite" className="sr-only">
+                {searchResults.length} {searchResults.length === 1 ? "výsledok" : "výsledkov"}
+              </p>
               {searchQuery.trim().length === 0 && searchResults.length > 0 && (
-                <p className="px-4 py-2 text-[11px] text-slate-400">Začnite písať. Výsledky môžete vybrať šípkami a otvoriť Enterom.</p>
+                <p className="px-4 py-2 text-[11px] text-slate-400">Začnite písať. Výsledky vyberte šípkami, otvorte Enterom alebo zatvorte Escapeom.</p>
               )}
             </div>
           </section>
@@ -709,6 +722,7 @@ export function Layout() {
                 <h3 className="font-bold text-slate-800 text-base mb-2">Local data & navigation</h3>
                 <ul className="list-disc pl-5 space-y-2">
                   <li>ASVS chapter, section, search, and status filters are remembered per analysis when you navigate away and return.</li>
+                  <li>ASVS: stlačte <kbd>/</kbd> na zameranie hľadania, šípkami vyberajte kapitoly a Escape vymaže hľadaný text.</li>
                   <li>Workspace data is stored in this device's browser storage. Use <strong>Backup & Restore</strong> in the sidebar to export or restore project data.</li>
                   <li>Changing the sidebar pin keeps your navigation preference after restarting the app.</li>
                 </ul>

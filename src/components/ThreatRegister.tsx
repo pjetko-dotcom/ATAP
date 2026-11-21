@@ -697,7 +697,12 @@ export function ThreatRegister() {
                           </Link>
                         ))}
                         {getThreatAsvsReferences(threat).map(reference => (
-                          <Link key={reference} to={`/analysis/${analysisId}/asvs`} title={`Otvoriť ASVS požiadavku ${reference}`} className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 hover:bg-indigo-100">
+                          <Link
+                            key={reference}
+                            to={`/analysis/${analysisId}/asvs?chapter=${asvsRequirements.find(requirement => requirement.id === reference)?.chapterId || 1}&search=${encodeURIComponent(reference)}`}
+                            title={`Otvoriť ASVS požiadavku ${reference}`}
+                            className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 hover:bg-indigo-100"
+                          >
                             {reference}
                           </Link>
                         ))}

@@ -1,10 +1,11 @@
-import React, { useState } from "react";
+import React, { useRef, useState } from "react";
 import { X, CheckCircle2, Shield, Info, HelpCircle, ArrowRight, RotateCcw, AlertTriangle } from "lucide-react";
 import {
   projectCategorizationQuestions,
   evaluateProjectCategorization,
   CategorizationEvaluationResult
 } from "../data/projectCategorizationData";
+import { useDialogFocus } from "../hooks/useDialogFocus";
 
 interface ProjectCategorizationModalProps {
   isOpen: boolean;
@@ -33,6 +34,8 @@ export function ProjectCategorizationModal({
   });
 
   const [activeTab, setActiveTab] = useState<"questions" | "result">("questions");
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocus(isOpen, dialogRef, onClose);
 
   if (!isOpen) return null;
 
@@ -60,7 +63,14 @@ export function ProjectCategorizationModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto">
-      <div className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="project-categorization-title"
+        tabIndex={-1}
+        className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[92vh] flex flex-col overflow-hidden my-auto animate-in fade-in zoom-in-95 duration-200"
+      >
         
         {/* Header */}
         <div className="px-6 py-4 bg-slate-900 text-white flex items-center justify-between border-b border-slate-800 shrink-0">
@@ -70,7 +80,7 @@ export function ProjectCategorizationModal({
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold">Kategorizácia projektu pre určenie ASVS Levelu</h2>
+                <h2 id="project-categorization-title" className="text-base font-bold">Kategorizácia projektu pre určenie ASVS Levelu</h2>
                 <span className="text-[11px] font-semibold px-2 py-0.5 bg-blue-500/30 text-blue-200 rounded-md border border-blue-400/30">
                   {answeredCount} z {totalQuestions} zodpovedaných
                 </span>
@@ -82,6 +92,8 @@ export function ProjectCategorizationModal({
           </div>
           <button
             onClick={onClose}
+            type="button"
+            aria-label="Zavrieť kategorizáciu projektu"
             className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
           >
             <X size={20} />
