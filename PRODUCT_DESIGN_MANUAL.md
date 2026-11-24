@@ -1,10 +1,10 @@
-# ATAP Product and Design Manual
+# AVERT Product and Design Manual
 
 ## Product identity
 
-**ATAP** means **Application Threat Analysis & Modeling Platform**. It is an offline-capable workspace for application security assessments, combining an architecture data-flow diagram (DFD), Microsoft STRIDE threat modeling, and OWASP ASVS verification.
+**AVERT** means **Application Security Assessment Platform**. Its subtitle is **Architecture · STRIDE · Risk · ASVS · Reports**. It is an offline-capable workspace for modeling architecture and data flows, analyzing STRIDE threats, assessing risk, verifying OWASP ASVS controls, managing findings, and producing reports and backups.
 
-The UI, help, exports, and release metadata should use the same product name and terminology. Treat generated threat scenarios as prompts for human review, never as confirmed vulnerabilities or proof of security.
+The UI, help, exports, and release metadata should use the same product name and terminology. Treat generated threat scenarios as prompts for human review, never as confirmed vulnerabilities or proof of security. AVERT reports are application-generated assessment outputs, not OWASP certifications or endorsements.
 
 ## Intended workflow
 
@@ -85,6 +85,15 @@ ASVS coverage is calculated for the applicable target level and evaluated requir
 `round((Implemented + 0.5 × Partial) / (Implemented + Partial + Missing) × 100)`
 
 Requirements above the target level and those marked `N/A` are excluded. If there are no evaluated requirements, coverage is 0%. Keep this formula consistent across the workspace, dashboard, report, and version metrics; gap counts include `Missing` and `Partial` items only within the same applicable scope.
+
+## Export contract
+
+- Excel can contain up to three optional sheets: audit summary, ASVS requirements, and STRIDE threat register. The STRIDE sheet is created only when the selected analysis has threats.
+- When “only gaps” is selected, the ASVS detail sheet and CSV contain only `Partial` and `Missing` controls. The Excel summary and chapter coverage continue to describe the full selected target-level scope, and the summary states this explicitly.
+- Excel summary and chapter coverage use the shared weighted formula above. The threat sheet includes the scenario description, STRIDE category, likelihood, impact, risk, status, ASVS references, component links, and whether a generated scenario was reviewed.
+- The printable report covers all 17 ASVS chapters. Its prioritized list puts `Missing` before `Partial`, then higher ASVS levels first, with requirement ID as a stable tie-breaker.
+- CSV columns remain a stable data schema; AVERT is identified in the downloaded filename. CSV cells are sanitized against spreadsheet formula injection.
+- Downloaded backup files use AVERT branding, but backup structure identifiers and local storage keys intentionally retain `atap_*` names for compatibility with existing user data and ATAP backups. The Electron `appId` and old `userData` directory are also retained to avoid breaking upgrades.
 
 ## Interaction, visual, and accessibility rules
 

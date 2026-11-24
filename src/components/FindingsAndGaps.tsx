@@ -143,7 +143,7 @@ export function FindingsAndGaps() {
       const csv = `\uFEFF${headers.map(sanitizeCsvCell).join(",")}\n${rows.join("\n")}`;
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const safeAnalysisId = (analysisId || "analysis").replace(/[^A-Za-z0-9_-]/g, "_");
-      saveAs(blob, `atap_findings_${safeAnalysisId}_${new Date().toISOString().slice(0, 10)}.csv`);
+      saveAs(blob, `avert_findings_${safeAnalysisId}_${new Date().toISOString().slice(0, 10)}.csv`);
       setExportMessage("Findings report downloaded as CSV.");
     } catch (error) {
       console.error("Findings report export failed:", error);

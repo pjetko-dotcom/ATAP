@@ -2,7 +2,7 @@
 
 ## Current usability improvements included
 
-- Help now gives the full ATAP expansion and describes the actual 4×4 risk matrix and its hover behavior.
+- Help now describes AVERT's architecture, STRIDE, risk, ASVS, findings, reporting, and backups, and clarifies that generated scenarios require human review.
 - Newly created analyses no longer inherit the seeded example threat register. The default sample analysis remains identifiable as the example.
 - Threat totals consistently distinguish open items from open High/Critical items.
 - Selecting a component in the DFD lists only threats explicitly linked to its ID; each threat is a direct link to its filtered Threat Register row.

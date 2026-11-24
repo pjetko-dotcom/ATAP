@@ -144,9 +144,9 @@ export function Export() {
             <span className="px-2 py-0.5 bg-blue-500/30 text-blue-200 text-[10px] font-bold uppercase tracking-wider rounded border border-blue-400/30">
               Manažérsky výstup pre audítorov & CISO
             </span>
-            <h2 className="text-lg font-bold">Oficiálna správa auditu OWASP ASVS (Tlač / PDF)</h2>
+            <h2 className="text-lg font-bold">Report hodnotenia OWASP ASVS (Tlač / PDF)</h2>
             <p className="text-xs text-blue-100 max-w-xl">
-              Kompletné zhrnutie súladu po jednotlivých 14 kapitolách (V1–V14), prioritné bezpečnostné medzery (Gaps), STRIDE hrozby a podpisový formulár pre formálne schválenie.
+              Súhrn pokrytia všetkých 17 kapitol (V1–V17), prioritné medzery, STRIDE hrozby a priestor na schválenie audítorom. Report je výstup aplikácie, nie certifikácia ani oficiálne potvrdenie OWASP.
             </p>
           </div>
           <button
@@ -201,7 +201,10 @@ export function Export() {
           </div>
 
           <fieldset className="border-t border-slate-100 pt-4">
-            <legend className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sekcie zošita Excel</legend>
+            <legend className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sekcie zošita Excel (najviac tri hárky)</legend>
+            <p className="mt-1 text-[11px] text-slate-500">
+              Hárok STRIDE sa vytvorí iba vtedy, ak register obsahuje hrozby. Pri exporte iba medzier zostáva súhrn vypočítaný z celého zvoleného rozsahu.
+            </p>
             <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
                 { key: "summary", label: "Súhrn auditu", description: "KPI a prehľad kapitol" },

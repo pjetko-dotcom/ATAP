@@ -1,6 +1,6 @@
-# ATAP Developer Guide
+# AVERT Developer Guide
 
-This guide is the practical reference for setting up, running, testing, and releasing ATAP from a fresh clone. For the product overview see [README.md](./README.md); for the product and UX rules see [PRODUCT_DESIGN_MANUAL.md](./PRODUCT_DESIGN_MANUAL.md) and [UX_RECOMMENDATIONS.md](./UX_RECOMMENDATIONS.md); for release security see [RELEASE_SECURITY_CHECKLIST.md](./RELEASE_SECURITY_CHECKLIST.md); for Windows Electron packaging see [BUILD_ELECTRON.md](./BUILD_ELECTRON.md).
+This guide is the practical reference for setting up, running, testing, and releasing AVERT from a fresh clone. For the product overview see [README.md](./README.md); for the product and UX rules see [PRODUCT_DESIGN_MANUAL.md](./PRODUCT_DESIGN_MANUAL.md) and [UX_RECOMMENDATIONS.md](./UX_RECOMMENDATIONS.md); for release security see [RELEASE_SECURITY_CHECKLIST.md](./RELEASE_SECURITY_CHECKLIST.md); for Windows Electron packaging see [BUILD_ELECTRON.md](./BUILD_ELECTRON.md).
 
 ## Requirements
 
@@ -58,6 +58,8 @@ Before submitting changes, run `npm run lint`, `npm test`, and `npm run build`. 
 ## Data and persistence
 
 The interactive workspace currently persists primarily in browser/Electron `localStorage`, scoped by analysis ID. Browser data is origin-specific; web and Electron data stores are not automatically synchronized.
+
+AVERT 1.0 retains the legacy `atap_*` storage keys, Electron `appId` (`com.atap.threatanalysis`), and previous ATAP `userData` directory so upgrades keep existing analysis data. Backup filenames use AVERT branding, while their internal `atap_full_backup` type remains unchanged for import compatibility. See the [migration guide](./MIGRATION_AND_DEVELOPMENT.md) before changing these identifiers.
 
 Important keys include:
 

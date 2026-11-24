@@ -1,7 +1,7 @@
 {
-  "name": "atap-threat-analysis-platform",
+  "name": "avert-security-assessment-platform",
   "private": true,
-  "version": "5.2.11",
+  "version": "1.0.0",
   "type": "module",
   "main": "electron/main.cjs",
   "engines": {
@@ -21,7 +21,7 @@
   },
   "build": {
     "appId": "com.atap.threatanalysis",
-    "productName": "ATAP - Application Threat Analysis & Modeling Platform",
+    "productName": "AVERT - Application Security Assessment Platform",
     "files": [
       "dist/**/*",
       "electron/**/*"

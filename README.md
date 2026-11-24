@@ -1,8 +1,8 @@
-# ATAP - Application Threat Analysis & Modeling Platform
+# AVERT - Application Security Assessment Platform
 
 A professional, enterprise-grade application for conducting automated threat analysis, tracking security requirements, and modeling architecture using standard industry methodologies (**OWASP ASVS 5.0** and **Microsoft STRIDE**).
 
-**ATAP** stands for **Application Threat Analysis & Modeling Platform**.
+**AVERT** stands for **Application Security Assessment Platform**. It brings architecture modeling, STRIDE threat analysis, risk assessment, OWASP ASVS verification, findings, reports, and backups into one workspace.
 
 Aplikácia je navrhnutá pre duálne nasadenie: ako **moderná webová full-stack aplikácia**, tak aj ako **100% offline desktopová aplikácia pre Windows (Electron)**.
 
@@ -71,8 +71,8 @@ npm ci
 npm run electron:build
 ```
 Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `release/`:
-* `ATAP - Application Threat Analysis & Modeling Platform Setup <verzia>.exe` (NSIS inštalátor)
-* `ATAP - Application Threat Analysis & Modeling Platform <verzia>.exe` (portable verzia)
+* `AVERT - Application Security Assessment Platform Setup <verzia>.exe` (NSIS inštalátor)
+* `AVERT - Application Security Assessment Platform <verzia>.exe` (portable verzia)
 
 Číslo verzie sa berie z `package.json`; názvy súborov sa menia podľa neho. Podrobnosti o vývoji a aktuálnych príkazoch nájdete v [DEVELOPMENT_GUIDE.md](./DEVELOPMENT_GUIDE.md).
 
@@ -86,7 +86,12 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 - **Findings & Gap Analysis:** Automatizované porovnanie implementácie voči ASVS 5.0 a detekcia chýbajúcich alebo čiastočných kontrol.
 - **Architecture Model:** Vizuálne modelovanie komponentov, trust zón a dátových tokov s abecedným výberom technológií a protokolov. TLS toky môžu evidovať NIST cipher suite, samostatnú výmenu kľúčov/KEM a odvodený PQC stav návrhu. Kliknutím na šípku sa otvorí editor toku; plátno podporuje posúvanie aj zoom. Voliteľná DFD kontrola poskytuje nezáväzné upozornenia bez blokovania práce. Paralelné spojenia sú vizuálne rozlíšené, prekrytia a prekážky označené a toky cez hranice zón vytvárajú STRIDE návrhy na kontrolu.
 - **Audit Trail & Správa Verzií:** Sledovanie histórie zmien, snapshoty stavov a bezpečný import/export dát do JSON formátu.
-- **Excel & CSV Export:** Generovanie oficiálnych audítorských reportov priamo do zošita Microsoft Excel pomocou `exceljs`.
+- **Excel & CSV Export:** Excel obsahuje voliteľný súhrn, ASVS požiadavky a STRIDE register (hárok hrozieb sa pridá, ak existujú záznamy); CSV exportuje stabilnú tabuľkovú schému. Vážené pokrytie počíta Partial ako 0,5 a ignoruje Pending/N/A.
+- **Reporty a zálohy:** Tlačiteľný PDF report sumarizuje všetkých 17 kapitol ASVS. Ide o výstup aplikácie, nie o certifikáciu ani oficiálne potvrdenie OWASP. JSON zálohy AVERT možno obnoviť aj zo starších záloh ATAP.
+
+### Produktové označenie a kompatibilita
+
+Aplikácia sa od verzie 1.0 označuje ako AVERT. Identifikátor Electron `com.atap.threatanalysis`, existujúci priečinok používateľských dát a kľúče `atap_*` v lokálnom úložisku zostávajú zámerne nezmenené, aby sa zachovala inštalácia a používateľské dáta. JSON zálohy si ponechávajú interný typ `atap_full_backup`; preto zostávajú kompatibilné so staršími exportmi a importmi.
 
 ---
 

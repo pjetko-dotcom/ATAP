@@ -78,7 +78,7 @@ export function exportSingleProjectBackup(analysisId: string): boolean {
   const sanitizedName = projectName
     .toLowerCase()
     .replace(/[^a-z0-9_-]/g, "_");
-  const fileName = `ATAP_backup_${sanitizedName}_v${backup.project.currentVersion || "1.0"}_${new Date().toISOString().split("T")[0]}.json`;
+  const fileName = `AVERT_backup_${sanitizedName}_v${backup.project.currentVersion || "1.0"}_${new Date().toISOString().split("T")[0]}.json`;
 
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
   saveAs(blob, fileName);
@@ -111,7 +111,7 @@ export function exportAllProjectsBackup(): boolean {
       projects: projectBackups
     };
 
-    const fileName = `ATAP_full_backup_${projectBackups.length}_projects_${new Date().toISOString().split("T")[0]}.json`;
+    const fileName = `AVERT_full_backup_${projectBackups.length}_projects_${new Date().toISOString().split("T")[0]}.json`;
     const blob = new Blob([JSON.stringify(archive, null, 2)], { type: "application/json;charset=utf-8" });
     saveAs(blob, fileName);
     return true;
@@ -170,7 +170,7 @@ function getBackupItems(parsed: unknown): { items: ProjectBackupData[] } | { err
   } else if (parsed.version === "1.0" && isRecord(parsed.project)) {
     candidates = [parsed];
   } else {
-    return { error: "Neplatný formát zálohy. Súbor neobsahuje platnú štruktúru ATAP projektu." };
+    return { error: "Neplatný formát zálohy. Súbor neobsahuje platnú štruktúru projektu AVERT alebo staršej verzie ATAP." };
   }
 
   if (candidates.length === 0 || candidates.length > MAX_PROJECTS_PER_BACKUP) {

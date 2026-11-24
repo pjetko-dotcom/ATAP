@@ -1,6 +1,6 @@
 # 🖥️ Návod na Build a Spustenie Electron Desktop Aplikácie (Windows 11)
 
-Tento dokument obsahuje návod na prípravu vývojového prostredia, spustenie a vytvorenie inštalačných balíčkov (`.exe`) aplikácie **ATAP (Application Threat Analysis & Modeling Platform)** pre Windows.
+Tento dokument obsahuje návod na prípravu vývojového prostredia, spustenie a vytvorenie inštalačných balíčkov (`.exe`) aplikácie **AVERT (Application Security Assessment Platform)** pre Windows.
 
 ---
 
@@ -122,9 +122,11 @@ Po úspešnom dokončení príkazu nájdete v priečinku `release/` dva typy bin
 
 | Súbor | Typ | Určenie |
 | :--- | :--- | :--- |
-| `ATAP - Application Threat Analysis & Modeling Platform Setup <verzia>.exe` | **NSIS Inštalátor** | Štandardný Windows inštalátor. Verzia v názve sa berie z `package.json`. |
-| `ATAP - Application Threat Analysis & Modeling Platform <verzia>.exe` | **Portable Verzia** | Samostatný jedno-súborový program. Názov obsahuje verziu z `package.json`. |
+| `AVERT - Application Security Assessment Platform Setup <verzia>.exe` | **NSIS Inštalátor** | Štandardný Windows inštalátor. Verzia v názve sa berie z `package.json`. |
+| `AVERT - Application Security Assessment Platform <verzia>.exe` | **Portable Verzia** | Samostatný jedno-súborový program. Názov obsahuje verziu z `package.json`. |
 | `win-unpacked/` | **Rozbalená verzia** | Rozbalený adresár aplikácie pripravený na okamžité spustenie bez inštalácie (užitočné na rýchle testovanie). |
+
+Pre zachovanie existujúcich inštalácií a používateľských dát zostáva Electron `appId` `com.atap.threatanalysis` a aplikácia zapisuje do predchádzajúceho ATAP `userData` priečinka. Ide o interné kompatibilné identifikátory; viditeľná značka a názvy nových inštalátorov sú AVERT.
 
 ---
 
@@ -151,7 +153,7 @@ Na zdieľanom alebo CI zariadení načítajte tieto hodnoty z chráneného secre
 
 ### 1. Zaseknutý proces alebo uzamknutý súbor v `release/`
 Ak build zlyhá s chybou `EBUSY: resource busy or locked`, znamená to, že predchádzajúca verzia aplikácie stále beží na pozadí:
-* Otvorte **Správcu úloh** (`Ctrl + Shift + Esc`) a ukončite procesy s názvom `ATAP Threat Analysis Platform` alebo `electron.exe`.
+* Otvorte **Správcu úloh** (`Ctrl + Shift + Esc`) a ukončite procesy s názvom `AVERT - Application Security Assessment Platform` alebo `electron.exe`.
 * Alebo v PowerShell:
   ```powershell
   Stop-Process -Name "electron" -ErrorAction SilentlyContinue
@@ -162,7 +164,7 @@ Ak build zlyhá s chybou `EBUSY: resource busy or locked`, znamená to, že pred
 ### 2. Biela obrazovka po spustení (White Screen)
 * Stlačte klávesovú skratku **Ctrl + Shift + I** priamo v bežiacej aplikácii na otvorenie DevTools.
 * Skontrolujte kartu **Console**.
-* Aplikácia ATAP obsahuje automatickú detekciu protokolu `file://` a v `App.tsx` používa `HashRouter` a vo `vite.config.ts` je nastavené `base: './'`. Ak by sa biela obrazovka objavila, uistite sa, že `dist/index.html` existuje a obsahuje relatívne cesty `<script src="./assets/index-....js">`.
+* Aplikácia AVERT obsahuje automatickú detekciu protokolu `file://` a v `App.tsx` používa `HashRouter` a vo `vite.config.ts` je nastavené `base: './'`. Ak by sa biela obrazovka objavila, uistite sa, že `dist/index.html` existuje a obsahuje relatívne cesty `<script src="./assets/index-....js">`.
 
 ### 3. Port 3000 je obsadený (pri `npm run electron:dev`)
 Ak iná služba na vašom počítači používa port 3000:

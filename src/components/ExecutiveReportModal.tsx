@@ -119,8 +119,7 @@ export function ExecutiveReportModal({
     const chPartial = chReqs.filter(r => r.status === "Partial").length;
     const chMissing = chReqs.filter(r => r.status === "Missing").length;
     const chNa = chReqs.filter(r => r.status === "N/A").length;
-    const chActive = chImplemented + chPartial + chMissing;
-    const score = chActive > 0 ? Math.round(((chImplemented + chPartial * 0.5) / chActive) * 100) : 100;
+    const score = calculateAsvsCoverage(chReqs);
 
     return {
       id: ch.id,
@@ -134,8 +133,13 @@ export function ExecutiveReportModal({
     };
   });
 
-  // Top critical gaps (Missing items prioritized)
-  const topGaps = [...missing, ...partial].slice(0, 8);
+  const topGaps = [...missing, ...partial]
+    .sort((a, b) =>
+      (a.status === b.status ? 0 : a.status === "Missing" ? -1 : 1) ||
+      b.level - a.level ||
+      a.id.localeCompare(b.id, undefined, { numeric: true })
+    )
+    .slice(0, 8);
 
   const handlePrint = () => {
     window.print();
@@ -191,6 +195,9 @@ export function ExecutiveReportModal({
           {/* Document Header */}
           <div className="border-b-2 border-slate-900 pb-6 mb-8 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div>
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-2">
+                AVERT · Application Security Assessment Platform
+              </p>
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold uppercase tracking-wider rounded">
                   Dôverné / Bezpečnostný audit
@@ -208,7 +215,7 @@ export function ExecutiveReportModal({
                 {analysisName}
               </h1>
               <p className="text-sm text-slate-500 mt-1">
-                Záverečná správa hodnotenia aplikačnej bezpečnosti a architektonických rizík
+                Architecture · STRIDE · Risk · ASVS · Reports
               </p>
             </div>
 
@@ -227,13 +234,13 @@ export function ExecutiveReportModal({
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Index súladu (ASVS)</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Vážené pokrytie ASVS</span>
                 <p className={`text-2xl font-extrabold mt-1 ${
                   complianceScore >= 80 ? "text-emerald-600" : complianceScore >= 50 ? "text-amber-600" : "text-red-600"
                 }`}>
                   {complianceScore}%
                 </p>
-                <span className="text-[10px] text-slate-400">z relevantných požiadaviek {targetLevelLabel}</span>
+                <span className="text-[10px] text-slate-400">Partial = 0,5; Pending a N/A sa nezapočítavajú</span>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
@@ -271,7 +278,7 @@ export function ExecutiveReportModal({
           {/* Section 2: Chapter Breakdown */}
           <div className="mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-              2. Súlad po kapitolách štandardu (V1 – V14)
+              2. Súlad po kapitolách štandardu (V1 – V17)
             </h2>
 
             <div className="space-y-2">

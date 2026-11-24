@@ -4,6 +4,11 @@ const { fileURLToPath } = require('url');
 
 let mainWindow;
 
+app.setPath(
+  'userData',
+  path.join(app.getPath('appData'), 'ATAP - Application Threat Analysis & Modeling Platform')
+);
+
 function createWindow() {
   const isDev = process.env.NODE_ENV === 'development' || process.env.ELECTRON_DEV === 'true';
   const appPagePath = path.resolve(__dirname, '../dist/index.html');
@@ -13,7 +18,7 @@ function createWindow() {
     height: 850,
     minWidth: 1024,
     minHeight: 700,
-    title: 'ATAP - Application Threat Analysis & Modeling Platform',
+    title: 'AVERT - Application Security Assessment Platform',
     icon: path.join(__dirname, '../public/favicon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
@@ -122,13 +127,13 @@ function createMenu(isDev) {
           }
         },
         {
-          label: 'O aplikácii ATAP',
+          label: 'O aplikácii AVERT',
           click: () => {
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'O aplikácii ATAP',
-              message: 'ATAP - Application Threat Analysis & Modeling Platform',
-              detail: `Verzia ${app.getVersion()} Desktop (Offline Ready)\nOWASP ASVS 5.0 Workspace & STRIDE Threat Modeling System.`,
+              title: 'O aplikácii AVERT',
+              message: 'AVERT - Application Security Assessment Platform',
+              detail: `Verzia ${app.getVersion()}\nArchitecture modeling · STRIDE threat analysis · risk assessment · OWASP ASVS verification · reporting.`,
               buttons: ['OK']
             });
           }

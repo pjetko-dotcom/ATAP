@@ -1,6 +1,6 @@
 {
-  "name": "ATAP - Application Threat Analysis & Modeling Platform",
-  "description": "Application Threat Analysis & Modeling Platform (ATAP), a security workspace based on OWASP ASVS and STRIDE for threat modeling, compliance tracking, and reporting.",
+  "name": "AVERT - Application Security Assessment Platform",
+  "description": "Architecture modeling, STRIDE threat analysis, risk assessment, OWASP ASVS verification, and security reporting.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

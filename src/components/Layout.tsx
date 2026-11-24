@@ -427,7 +427,7 @@ export function Layout() {
           <div className="w-6 h-6 bg-blue-600 rounded flex items-center justify-center font-bold text-white">
             <Shield size={14} />
           </div>
-          <span className="text-base font-bold tracking-tight uppercase">ATAP <span className="text-blue-500">V{appVersion}</span></span>
+          <span className="text-base font-bold tracking-tight uppercase">AVERT <span className="text-blue-500">V{appVersion}</span></span>
         </div>
         <div className="flex items-center gap-2">
           <button type="button" onClick={openWorkspaceSearch} aria-label="Otvoriť vyhľadávanie (Ctrl/Cmd+K)" className="rounded-md border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:text-white">
@@ -482,7 +482,12 @@ export function Layout() {
               <div className="w-8 h-8 bg-blue-600 rounded flex items-center justify-center font-bold text-white shrink-0">
                 <Shield size={20} />
               </div>
-              <h1 className={`text-white font-bold text-lg tracking-tight uppercase whitespace-nowrap transition-opacity duration-300 ${isExpanded ? 'opacity-100' : 'opacity-0 w-0 md:w-auto overflow-hidden'}`}>ATAP V{appVersion}</h1>
+              <div className={`min-w-0 transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"}`}>
+                <h1 className="text-white font-bold text-lg tracking-tight uppercase whitespace-nowrap">AVERT <span className="text-blue-400 text-xs">V{appVersion}</span></h1>
+                <p className="max-w-52 text-[9px] leading-tight text-slate-400">
+                  Architecture · STRIDE · Risk · ASVS · Reports
+                </p>
+              </div>
             </div>
             {isExpanded && (
               <button 
@@ -682,7 +687,7 @@ export function Layout() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2 text-blue-600">
                 <HelpCircle size={20} />
-                <h2 id="help-modal-title" className="text-lg font-bold text-slate-800">ATAP V{appVersion} Help & Documentation</h2>
+                <h2 id="help-modal-title" className="text-lg font-bold text-slate-800">AVERT V{appVersion} — Pomoc a dokumentácia</h2>
               </div>
               <button 
                 onClick={() => setIsHelpOpen(false)}
@@ -694,8 +699,12 @@ export function Layout() {
             </div>
             <div className="p-4 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600">
               <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">Welcome to Application Threat Analysis & Modeling Platform (ATAP)</h3>
-                <p>ATAP means <strong>Application Threat Analysis &amp; Modeling Platform</strong>. It supports threat modeling and security verification using OWASP ASVS 5.0 and Microsoft STRIDE.</p>
+                <h3 className="font-bold text-slate-800 text-base mb-2">AVERT — Application Security Assessment Platform</h3>
+                <p>
+                  Modelujte architektúru a dátové toky, analyzujte hrozby podľa STRIDE, vyhodnocujte riziká,
+                  overujte požiadavky OWASP ASVS 5.0 a pripravujte nálezy, reporty aj zálohy.
+                  Automaticky navrhnuté scenáre sú podnety na ľudské posúdenie, nie potvrdené zraniteľnosti.
+                </p>
               </section>
               
               <section>

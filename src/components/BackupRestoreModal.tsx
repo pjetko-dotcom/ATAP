@@ -386,7 +386,7 @@ export function BackupRestoreModal({
                   {selectedFile ? selectedFile.name : "Kliknite pre výber .json zálohy alebo presuňte súbor sem"}
                 </p>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Podporuje jednotlivé zálohy projektu aj kompletné archívy z ATAP
+                  Podporuje zálohy AVERT aj archívy zo starších verzií ATAP
                 </p>
               </div>
 
