@@ -86,7 +86,7 @@ export function FindingsAndGaps() {
       localStorage.setItem(findingsStorageKey, JSON.stringify(findingState.items));
     } catch (error) {
       console.error("Failed to save findings:", error);
-      setAnalysisError(t("Nálezy sa nepodarilo uložiť v tomto prehliadači.", "Findings could not be saved in this browser."));
+      setAnalysisError(t("Zistenia sa nepodarilo uložiť v tomto prehliadači.", "Findings could not be saved in this browser."));
     }
   }, [findingState, findingsStorageKey]);
 
@@ -117,7 +117,7 @@ export function FindingsAndGaps() {
       }
     } catch (error) {
       console.error("Failed to read ASVS requirements for gap analysis:", error);
-      setAnalysisError(t("Požiadavky ASVS sa nepodarilo načítať, preto sa nálezy nevytvorili.", "ASVS requirements could not be read, so no findings were generated."));
+      setAnalysisError(t("Požiadavky ASVS sa nepodarilo načítať, preto sa zistenia nevytvorili.", "ASVS requirements could not be read, so no findings were generated."));
       return;
     }
 
@@ -146,10 +146,10 @@ export function FindingsAndGaps() {
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const safeAnalysisId = (analysisId || "analysis").replace(/[^A-Za-z0-9_-]/g, "_");
       saveAs(blob, `avert_findings_${safeAnalysisId}_${new Date().toISOString().slice(0, 10)}.csv`);
-      setExportMessage(t("Report nálezov bol stiahnutý ako CSV.", "Findings report downloaded as CSV."));
+      setExportMessage(t("Report zistení bol stiahnutý ako CSV.", "Findings report downloaded as CSV."));
     } catch (error) {
       console.error("Findings report export failed:", error);
-      setExportError(t("Report nálezov sa nepodarilo exportovať. Skúste to znova.", "Could not export the findings report. Please try again."));
+      setExportError(t("Report zistení sa nepodarilo exportovať. Skúste to znova.", "Could not export the findings report. Please try again."));
     }
   };
 
@@ -169,8 +169,8 @@ export function FindingsAndGaps() {
       )}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">{t("Nálezy a medzery", "Findings & Gaps")}</h2>
-          <p className="text-sm text-slate-500 mt-1">{t("Sledujte nálezy odvodené z kontrol ASVS označených Missing alebo Partial.", "Track findings derived from ASVS controls marked Missing or Partial.")}</p>
+          <h2 className="text-2xl font-bold text-slate-800">{t("Zistenia a nedostatky", "Findings & Gaps")}</h2>
+          <p className="text-sm text-slate-500 mt-1">{t("Sledujte zistenia odvodené z kontrol ASVS označených Missing alebo Partial.", "Track findings derived from ASVS controls marked Missing or Partial.")}</p>
         </div>
         <div className="flex items-center gap-3">
           {lastGenerated && (
@@ -184,15 +184,15 @@ export function FindingsAndGaps() {
               className="flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md shadow-sm transition-all bg-blue-600 text-white hover:bg-blue-700"
             >
               <ShieldAlert size={16} />
-              {t("Vytvoriť analýzu medzier", "Generate Gap Analysis")}
+              {t("Vytvoriť analýzu nedostatkov", "Generate Gap Analysis")}
             </button>
-            <HelpTooltip text={t("Vytvorí nálezy z požiadaviek ASVS označených Missing alebo Partial. Nekontroluje model architektúry.", "Creates findings from ASVS requirements marked Missing or Partial. It does not scan the architecture model.")} position="bottom" />
+            <HelpTooltip text={t("Vytvorí zistenia z požiadaviek ASVS označených Missing alebo Partial. Nekontroluje model architektúry.", "Creates findings from ASVS requirements marked Missing or Partial. It does not scan the architecture model.")} position="bottom" />
           </div>
           <button 
             type="button"
             onClick={exportFindingsReport}
-            aria-label={t("Exportovať report nálezov ako CSV", "Export findings report as CSV")}
-            title={t("Stiahnuť report nálezov ako CSV", "Download findings report as CSV")}
+            aria-label={t("Exportovať report zistení ako CSV", "Export findings report as CSV")}
+            title={t("Stiahnuť report zistení ako CSV", "Download findings report as CSV")}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700 transition-colors"
           >
             <FileText size={16} />
@@ -217,7 +217,7 @@ export function FindingsAndGaps() {
           </div>
           <div>
             <p className="text-2xl font-bold text-slate-800">{findings.filter(f => f.status === 'Open').length}</p>
-            <p className="text-xs font-semibold uppercase text-slate-500">{t("Otvorené nálezy", "Open Findings")}</p>
+            <p className="text-xs font-semibold uppercase text-slate-500">{t("Otvorené zistenia", "Open Findings")}</p>
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -248,7 +248,7 @@ export function FindingsAndGaps() {
             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold sticky top-0 z-10 shadow-sm border-b border-slate-100">
               <tr>
                 <th className="px-6 py-4 w-24">ID</th>
-                <th className="px-6 py-4">{t("Nález a popis", "Finding & Description")}</th>
+                <th className="px-6 py-4">{t("Zistenie a popis", "Finding & Description")}</th>
                 <th className="px-6 py-4 w-32">
                   <div className="flex items-center">
                     {t("Závažnosť", "Severity")} <HelpTooltip text={t("Odvodená z úrovne požiadavky ASVS. L3 = High, L2 = Medium, L1 = Low.", "Derived from the ASVS requirement level. L3 = High, L2 = Medium, L1 = Low.")} position="bottom" />
@@ -300,8 +300,8 @@ export function FindingsAndGaps() {
                 <tr>
                   <td colSpan={5} className="px-6 py-12 text-center text-slate-500">
                     <CheckCircle size={32} className="mx-auto mb-3 text-green-400" />
-                    <p className="font-medium text-slate-700">{t("Pre túto analýzu nie sú uložené žiadne nálezy", "No findings saved for this analysis")}</p>
-                    <p className="text-sm mt-1">{t("Spustite analýzu medzier ASVS na vytvorenie nálezov z kontrol Missing alebo Partial.", "Run the ASVS gap analysis to create findings from Missing or Partial controls.")}</p>
+                    <p className="font-medium text-slate-700">{t("Pre túto analýzu nie sú uložené žiadne zistenia", "No findings saved for this analysis")}</p>
+                    <p className="text-sm mt-1">{t("Spustite analýzu nedostatkov ASVS na vytvorenie zistení z kontrol Missing alebo Partial.", "Run the ASVS gap analysis to create findings from Missing or Partial controls.")}</p>
                   </td>
                 </tr>
               )}

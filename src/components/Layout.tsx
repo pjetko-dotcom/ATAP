@@ -106,7 +106,7 @@ function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>
         id: `${analysis.id}-finding-${item.id}`,
         title: `${item.id} ${item.title}`,
         detail: `${analysis.name} · ${item.status} · ${item.description || ""}`,
-        category: t("Nález / medzera", "Finding / gap"),
+        category: t("Zistenie / nedostatok", "Finding / gap"),
         path: `${basePath}/asvs?${item.chapterId ? `chapter=${item.chapterId}&` : ""}search=${encodeURIComponent(item.id)}`,
       })));
     return results;
@@ -411,7 +411,7 @@ export function Layout() {
     { name: t("Analýza STRIDE", "STRIDE Analysis"), path: `/analysis/${activeAnalysisId}/stride`, icon: Shield },
     { name: t("Pracovný priestor ASVS", "ASVS Workspace"), path: `/analysis/${activeAnalysisId}/asvs`, icon: Lock },
     { name: t("Register hrozieb", "Threat Register"), path: `/analysis/${activeAnalysisId}/threats`, icon: AlertTriangle },
-    { name: t("Nálezy a medzery", "Findings & Gaps"), path: `/analysis/${activeAnalysisId}/findings`, icon: CheckCircle },
+    { name: t("Zistenia a nedostatky", "Findings & Gaps"), path: `/analysis/${activeAnalysisId}/findings`, icon: CheckCircle },
   ] : [];
 
   const reportLinks = activeAnalysisId ? [
@@ -487,7 +487,7 @@ export function Layout() {
           ${isExpanded ? 'md:w-64' : 'md:w-16'}
         `}
       >
-        <div className="p-4 overflow-y-auto overflow-x-hidden flex-1">
+        <div className={`p-4 overflow-y-auto overflow-x-hidden flex-1 sidebar-scrollbar ${isExpanded ? "" : "sidebar-scrollbar-collapsed"}`}>
 
           <div className="flex items-center justify-between mb-8 overflow-hidden">
             <div className="flex items-center gap-3">
@@ -649,7 +649,7 @@ export function Layout() {
                 ref={searchInputRef}
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
-                placeholder={t("Hľadať hrozby, ASVS, komponenty a nálezy…", "Search threats, ASVS, components and findings…")}
+                placeholder={t("Hľadať hrozby, ASVS, komponenty a zistenia…", "Search threats, ASVS, components and findings…")}
                 aria-label={t("Hľadať v projektoch", "Search projects")}
                 aria-controls="workspace-search-results"
                 aria-activedescendant={searchResults.length > 0
@@ -717,7 +717,7 @@ export function Layout() {
               <section>
                 <h3 className="font-bold text-slate-800 text-base mb-2">AVERT — Application Security Assessment Platform</h3>
                 <p>
-                  {t("Modelujte architektúru a dátové toky, analyzujte hrozby podľa STRIDE, vyhodnocujte riziká, overujte požiadavky OWASP ASVS 5.0 a pripravujte nálezy, reporty aj zálohy. Automaticky navrhnuté scenáre sú podnety na ľudské posúdenie, nie potvrdené zraniteľnosti.", "Model architecture and data flows, analyse STRIDE threats, assess risks, verify OWASP ASVS 5.0 requirements, and prepare findings, reports and backups. Automatically suggested scenarios require human review and are not confirmed vulnerabilities.")}
+                  {t("Modelujte architektúru a dátové toky, analyzujte hrozby podľa STRIDE, vyhodnocujte riziká, overujte požiadavky OWASP ASVS 5.0 a pripravujte zistenia, reporty aj zálohy. Automaticky navrhnuté scenáre sú podnety na ľudské posúdenie, nie potvrdené zraniteľnosti.", "Model architecture and data flows, analyse STRIDE threats, assess risks, verify OWASP ASVS 5.0 requirements, and prepare findings, reports and backups. Automatically suggested scenarios require human review and are not confirmed vulnerabilities.")}
                 </p>
               </section>
               
@@ -729,7 +729,7 @@ export function Layout() {
                   <li>{t("Analýza STRIDE: Na základe architektúry identifikujte hrozby podľa kategórií Spoofing, Tampering, Repudiation, Information Disclosure, DoS a EoP.", "STRIDE Analysis: Use the Microsoft STRIDE reference dashboard to systematically identify Spoofing, Tampering, Repudiation, Information Disclosure, DoS and EoP threats based on your architecture.")}</li>
                   <li>{t("Pracovný priestor ASVS: Hodnoťte aplikáciu podľa všetkých 17 kapitol a viac ako 350 požiadaviek OWASP ASVS 5.0. Filtrujte podľa cieľovej úrovne L1–L3 a sledujte stav implementácie.", "ASVS Workspace: Evaluate the application against all 17 chapters and over 350 controls of OWASP ASVS 5.0. Filter by target level (L1–L3) and track implementation status.")}</li>
                   <li>{t("Register hrozieb: Spravujte hrozby, kategórie STRIDE a priority pomocou matice rizík 4×4. Pravdepodobnosť aj dopad majú štyri úrovne.", "Threat Register: Manage identified threats and STRIDE categories and prioritize them using the 4×4 risk matrix. Likelihood and impact each have four levels.")}</li>
-                  <li>{t("Nálezy a medzery: Prepojte architektúru a ASVS a vytvárajte úlohy pre chýbajúce alebo čiastočne splnené požiadavky.", "Findings & Gaps: Cross-reference architecture and ASVS and generate actionable tasks from missing or partially implemented requirements.")}</li>
+                  <li>{t("Zistenia a nedostatky: Prepojte architektúru a ASVS a vytvárajte úlohy pre chýbajúce alebo čiastočne splnené požiadavky.", "Findings & Gaps: Cross-reference architecture and ASVS and generate actionable tasks from missing or partially implemented requirements.")}</li>
                 </ul>
               </section>
 
@@ -738,7 +738,7 @@ export function Layout() {
                 <ul className="list-disc pl-5 space-y-2">
                   <li>{t("V pracovnom priestore ASVS filtrujte požiadavky podľa cieľovej úrovne.", "In the ASVS Workspace, filter requirements using Target Level.")}</li>
                   <li>{t("V registri hrozieb zobrazíte prejdením nad bunkou matice 4×4 počet otvorených hrozieb.", "In the Threat Register, hover over a cell in the 4×4 risk matrix to see the number of open threats.")}</li>
-                  <li>{t("V časti Nálezy a medzery vytvorte analýzu medzier z kontrol označených Missing alebo Partial vrátane ich závažnosti.", "In Findings & Gaps, generate a gap analysis with severities from controls marked Missing or Partial.")}</li>
+                  <li>{t("V časti Zistenia a nedostatky vytvorte analýzu nedostatkov z kontrol označených Missing alebo Partial vrátane ich závažnosti.", "In Findings & Gaps, generate a gap analysis with severities from controls marked Missing or Partial.")}</li>
                 </ul>
               </section>
               <section>

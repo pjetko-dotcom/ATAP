@@ -276,7 +276,7 @@ export function ExecutiveReportModal({
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
               {language === "sk" ? <p>
-                Predložená správa sumarizuje bezpečnostný stav systému <strong>{reportAnalysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> v rozsahu <strong>{targetLevelLabel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako zistenie (medzera) vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
+                Predložená správa sumarizuje bezpečnostný stav systému <strong>{reportAnalysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> v rozsahu <strong>{targetLevelLabel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako nedostatky vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
               </p> : <p>
                 This report summarizes the security posture of <strong>{reportAnalysisName}</strong> against <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> at <strong>{targetLevelLabel}</strong>. Of <strong>{totalScoped}</strong> controls in scope, <strong>{implemented.length}</strong> were verified as implemented, <strong>{missing.length + partial.length}</strong> were recorded as gaps requiring remediation, and <strong>{na.length}</strong> were identified as not applicable based on the application context and triage.
               </p>}
@@ -326,7 +326,7 @@ export function ExecutiveReportModal({
           {topGaps.length > 0 && (
             <div className="mb-8 page-break-inside-avoid">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                {t("3. Prioritné bezpečnostné medzery vyžadujúce nápravu", "3. Priority security gaps requiring remediation")}
+                {t("3. Prioritné bezpečnostné nedostatky vyžadujúce nápravu", "3. Priority security gaps requiring remediation")}
               </h2>
 
               <div className="border border-slate-200 rounded-xl overflow-hidden">

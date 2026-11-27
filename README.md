@@ -80,16 +80,20 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 
 ## 🛡️ Kľúčové Funkcie Platformy
 
+### Verzia 1.2.1
+
+Zjednotený vzhľad posuvníkov a slovenská terminológia „zistenia a nedostatky“ v rozhraní, nápovede a reportoch.
+
 ### Verzia 1.2.0 — jazyk reportu
 
 Na stránke exportu možno vybrať slovenčinu alebo angličtinu pre tlačiteľný report, hlavičky Excelu a CSV. Výber nemení uložený projekt. Názvy kapitol a oficiálne požiadavky ASVS zostávajú v angličtine. Používateľské údaje (vrátane poznámok, dôvodov triáže a hrozieb) ani niektoré už uložené automaticky vytvorené texty sa neprekladajú; pri anglickom výstupe ich treba prípadne doplniť v angličtine. Jazyk rozhrania a nápovedy sa týmto výberom nemení.
 
 CSV zachováva rovnaké poradie a význam stĺpcov, ale ich názvy závisia od zvoleného jazyka; integrácie vyžadujúce pôvodné anglické hlavičky majú zvoliť English.
 
-Samostatný prepínač s vlajkou v navigácii mení jazyk rozhrania bez obnovenia stránky a ukladá voľbu v lokálnom úložisku. Prepína sa navigácia, sprievodcovia, pracovný priestor ASVS a triáž, návody na overenie, model architektúry, register hrozieb, nálezy, zálohovanie, verziové dialógy, export aj nápoveda. Názov „ASVS 5.0 Chapters“ a oficiálny obsah ASVS zostávajú v angličtine. Používateľský obsah, názvy uložených zón a historické záznamy sa automaticky neprekladajú; v pôvodnom jazyku môžu zostať aj predtým uložené automaticky vytvorené texty. Rýchly export z ASVS používa jazyk rozhrania, zatiaľ čo stránka reportov má vlastný výber.
+Samostatný prepínač s vlajkou v navigácii mení jazyk rozhrania bez obnovenia stránky a ukladá voľbu v lokálnom úložisku. Prepína sa navigácia, sprievodcovia, pracovný priestor ASVS a triáž, návody na overenie, model architektúry, register hrozieb, zistenia, zálohovanie, verziové dialógy, export aj nápoveda. Názov „ASVS 5.0 Chapters“ a oficiálny obsah ASVS zostávajú v angličtine. Používateľský obsah, názvy uložených zón a historické záznamy sa automaticky neprekladajú; v pôvodnom jazyku môžu zostať aj predtým uložené automaticky vytvorené texty. Rýchly export z ASVS používa jazyk rozhrania, zatiaľ čo stránka reportov má vlastný výber.
 
 ### Verzia 1.1
-- Pridané vyznačenie stavu pokroku analýzy a prepojené kroky Kontext / DFD / STRIDE / ASVS / Nálezy.
+- Pridané vyznačenie stavu pokroku analýzy a prepojené kroky Kontext / DFD / STRIDE / ASVS / Zistenia.
 - Pridaný stav uloženia a viditeľné chyby lokálneho úložiska.
 - Threat Register má filter neoverených architektonických návrhov a hromadné označenie review.
 - DFD obsahuje klávesové presúvanie, zoom-to-fit, zameranie prekrývajúcich sa prvkov a preskúmanie upozornení.

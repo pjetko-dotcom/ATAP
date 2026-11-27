@@ -28,7 +28,7 @@ interface ProgressStep {
 }
 
 function progressLabel(label: string, language: "sk" | "en"): string {
-  const englishLabels: Record<string, string> = { Kontext: "Context", Architektúra: "Architecture", Nálezy: "Findings" };
+  const englishLabels: Record<string, string> = { Kontext: "Context", Architektúra: "Architecture", Zistenia: "Findings" };
   return language === "en" ? englishLabels[label] || label : label;
 }
 
@@ -95,7 +95,7 @@ function getAnalysisProgress(analysisId: string, asvsLevel: string): ProgressSte
         ["Implemented", "Partial", "Missing", "N/A"].includes(requirement.status || "")
       ),
     },
-    { label: "Nálezy", path: "findings", complete: !!requirements && !gaps },
+    { label: "Zistenia", path: "findings", complete: !!requirements && !gaps },
   ];
 }
 
@@ -216,7 +216,7 @@ export function Dashboard() {
 
           <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase text-slate-400 tracking-wider">{t("Otvorené medzery ASVS", "Open ASVS Compliance Gaps")}</p>
+              <p className="text-xs font-semibold uppercase text-slate-400 tracking-wider">{t("Otvorené nedostatky ASVS", "Open ASVS Compliance Gaps")}</p>
               <p className="text-3xl font-extrabold text-orange-600 mt-2">{totalOpenFindings || "-"}</p>
             </div>
             <div className="w-12 h-12 bg-orange-50 text-orange-600 rounded-xl flex items-center justify-center shrink-0">

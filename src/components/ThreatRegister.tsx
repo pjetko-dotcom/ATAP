@@ -950,7 +950,7 @@ export function ThreatRegister() {
                 <div>
                   <label htmlFor="threat-asvs-references" className="mb-1 flex items-center text-sm font-semibold text-slate-700">
                     {t("Prepojené ASVS požiadavky", "Linked ASVS requirements")}
-                    <HelpTooltip text={t("Pre novú hrozbu sa navrhne až päť ASVS kontrol podľa kategórie STRIDE, názvu a popisu. Ide o heuristické návrhy, nie overené nálezy. ID skontrolujte a upravte ručne; úpravou sa zastaví automatická náhrada. Použite „Pridať návrhy“ na doplnenie bez odstránenia existujúcich prepojení.", "For a new threat, up to five ASVS controls are suggested from its STRIDE category, title and description. These are heuristic suggestions, not verified findings. Review and edit the IDs manually; editing existing links stops automatic replacement. Use “Add suggestions” to append suggestions without removing your links.")} position="top" />
+                    <HelpTooltip text={t("Pre novú hrozbu sa navrhne až päť ASVS kontrol podľa kategórie STRIDE, názvu a popisu. Ide o heuristické návrhy, nie overené zistenia. ID skontrolujte a upravte ručne; úpravou sa zastaví automatická náhrada. Použite „Pridať návrhy“ na doplnenie bez odstránenia existujúcich prepojení.", "For a new threat, up to five ASVS controls are suggested from its STRIDE category, title and description. These are heuristic suggestions, not verified findings. Review and edit the IDs manually; editing existing links stops automatic replacement. Use “Add suggestions” to append suggestions without removing your links.")} position="top" />
                   </label>
                   <input
                     id="threat-asvs-references"

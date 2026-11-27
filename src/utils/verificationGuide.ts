@@ -30,7 +30,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
         t("Skontrolujte použitie predkompilovaných XPath výrazov alebo bezpečné mapovanie premenných.", "Check for precompiled XPath expressions or safe variable binding.")
       ],
       exampleTest: t("Vložte do vstupného poľa reťazec ' OR '1'='1 alebo ']#xpath. Ak aplikácia vráti neosvetlené dáta alebo XML chybu, ovládací prvok nie je implementovaný.", "Enter ' OR '1'='1 or ']#xpath. Unexpected data or an XML error may indicate that the control is missing."),
-      expectedEvidence: t("Ukážka zdrojového kódu s parametrizovaným XPath alebo výstup statického analyzátora (SAST) bez XPath injection nálezov.", "Source code with parameterized XPath or a SAST result without XPath injection findings."),
+      expectedEvidence: t("Ukážka zdrojového kódu s parametrizovaným XPath alebo výstup statického analyzátora (SAST) bez zistení XPath injection.", "Source code with parameterized XPath or a SAST result without XPath injection findings."),
       owaspReference: "OWASP XPath Injection Prevention Cheat Sheet"
     };
   }

@@ -915,7 +915,7 @@ export function ASVSWorkspace() {
           </div>
           
           <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs">
-            <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">{t("Otvorené nálezy (Gaps)", "Open findings (Gaps)")}</p>
+            <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">{t("Otvorené zistenia (Gaps)", "Open findings (Gaps)")}</p>
             <p className="text-2xl font-bold text-red-600">{findingsCount}</p>
             <p className="text-[10px] text-slate-400 mt-1 uppercase">Partial {t("alebo", "or")} Missing</p>
           </div>

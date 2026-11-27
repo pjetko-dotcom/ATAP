@@ -181,7 +181,7 @@ export async function exportASVSToExcel(
   const kpiData = [
     [t("Kontroly v rozsahu", "Controls in scope"), total, "100%", t("Požiadavky vo vybranom rozsahu ASVS", "Requirements in the selected ASVS scope")],
     [t("Splnené kontroly (Implemented)", "Implemented controls"), implemented, total > 0 ? `${Math.round((implemented / total) * 100)}%` : "0%", t("Plne implementované a overené riadiace prvky", "Fully implemented and verified controls")],
-    [t("Identifikované bezpečnostné medzery (Gaps)", "Identified security gaps"), gaps, total > 0 ? `${Math.round((gaps / total) * 100)}%` : "0%", t(`Chýbajúce: ${missing}, Čiastočné: ${partial}`, `Missing: ${missing}, Partial: ${partial}`)],
+    [t("Identifikované bezpečnostné nedostatky (Gaps)", "Identified security gaps"), gaps, total > 0 ? `${Math.round((gaps / total) * 100)}%` : "0%", t(`Chýbajúce: ${missing}, Čiastočné: ${partial}`, `Missing: ${missing}, Partial: ${partial}`)],
     [t("Vylúčené z rozsahu (N/A)", "Out of scope (N/A)"), na, total > 0 ? `${Math.round((na / total) * 100)}%` : "0%", t("Nerelevantné technológie alebo funkcie", "Irrelevant technologies or features")],
     [t("Čakajúce na posúdenie (Pending)", "Pending assessment"), pending, total > 0 ? `${Math.round((pending / total) * 100)}%` : "0%", t("Zatiaľ neoverené požiadavky", "Requirements not yet verified")],
     [t("Pokrytie ASVS (vážené)", "Weighted ASVS coverage"), t(`${implemented} splnené · ${partial} čiastočné`, `${implemented} implemented · ${partial} partial`), `${coveragePct}%`, t("Implemented + 0,5 × Partial; Pending a N/A sa nezapočítavajú", "Implemented + 0.5 × Partial; Pending and N/A are excluded")]
@@ -216,7 +216,7 @@ export async function exportASVSToExcel(
     t("Názov bezpečnostnej domény", "Security domain"),
     t("Celkom", "Total"),
     t("Splnené", "Implemented"),
-    t("Medzery (Gaps)", "Gaps"),
+    t("Nedostatky (Gaps)", "Gaps"),
     "N/A",
     t("Čakajúce", "Pending"),
     t("Pokrytie (%)", "Coverage (%)")

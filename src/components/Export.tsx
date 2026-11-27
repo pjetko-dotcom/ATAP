@@ -153,7 +153,7 @@ export function Export() {
             </span>
             <h2 className="text-lg font-bold">{t("Report hodnotenia OWASP ASVS (Tlač / PDF)", "OWASP ASVS assessment report (Print / PDF)")}</h2>
             <p className="text-xs text-blue-100 max-w-xl">
-              {t("Súhrn pokrytia všetkých 17 kapitol (V1–V17), prioritné medzery, STRIDE hrozby a priestor na schválenie audítorom. Report je výstup aplikácie, nie certifikácia ani oficiálne potvrdenie OWASP.", "Coverage summary for all 17 chapters (V1–V17), priority gaps, STRIDE threats, and auditor sign-off. This report is an application output, not an OWASP certification or official attestation.")}
+              {t("Súhrn pokrytia všetkých 17 kapitol (V1–V17), prioritné nedostatky, STRIDE hrozby a priestor na schválenie audítorom. Report je výstup aplikácie, nie certifikácia ani oficiálne potvrdenie OWASP.", "Coverage summary for all 17 chapters (V1–V17), priority gaps, STRIDE threats, and auditor sign-off. This report is an application output, not an OWASP certification or official attestation.")}
             </p>
           </div>
           <button
@@ -212,7 +212,7 @@ export function Export() {
                     onChange={(e) => setOnlyGaps(e.target.checked)}
                     className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
                   />
-                  <span>{t("Exportovať iba otvorené bezpečnostné medzery", "Export only open security gaps")} (Partial / Missing)</span>
+                  <span>{t("Exportovať iba otvorené bezpečnostné nedostatky", "Export only open security gaps")} (Partial / Missing)</span>
                 </label>
               </div>
             </div>
@@ -221,7 +221,7 @@ export function Export() {
           <fieldset className="border-t border-slate-100 pt-4">
             <legend className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t("Sekcie zošita Excel (najviac tri hárky)", "Excel workbook sections (up to three sheets)")}</legend>
             <p className="mt-1 text-[11px] text-slate-500">
-              {t("Hárok STRIDE sa vytvorí iba vtedy, ak register obsahuje hrozby. Pri exporte iba medzier zostáva súhrn vypočítaný z celého zvoleného rozsahu.", "The STRIDE sheet is created only when the register contains threats. When exporting gaps only, the summary still covers the entire selected scope.")}
+              {t("Hárok STRIDE sa vytvorí iba vtedy, ak register obsahuje hrozby. Pri exporte iba nedostatkov zostáva súhrn vypočítaný z celého zvoleného rozsahu.", "The STRIDE sheet is created only when the register contains threats. When exporting gaps only, the summary still covers the entire selected scope.")}
             </p>
             <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
@@ -268,7 +268,7 @@ export function Export() {
               </div>
               <div className="bg-red-50/70 p-2.5 rounded-lg border border-red-100">
                 <div className="text-base font-bold text-red-700">{gapsCount}</div>
-                <div className="text-[10px] text-red-600">{t("Medzery (Gaps)", "Gaps")}</div>
+                <div className="text-[10px] text-red-600">{t("Nedostatky (Gaps)", "Gaps")}</div>
               </div>
               <div className="bg-slate-100/70 p-2.5 rounded-lg border border-slate-200">
                 <div className="text-base font-bold text-slate-600">{naCount}</div>

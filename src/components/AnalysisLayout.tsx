@@ -234,7 +234,7 @@ function AnalysisLayoutInner() {
       state: implementedCount > 0 ? (progressPercentage === 100 ? "Complete" : "In progress") : "Not started",
     },
     {
-      label: t("Nálezy", "Findings"),
+      label: t("Zistenia", "Findings"),
       path: "findings",
       state: evaluatedRequirements.some(requirement => requirement.status === "Missing" || requirement.status === "Partial") ? "Needs review" : "Not started",
     },

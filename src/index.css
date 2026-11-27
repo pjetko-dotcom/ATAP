@@ -16,33 +16,52 @@
   --color-blue-950: #001b32;
 }
 
-/* Custom Scrollbar Utility for both horizontal (bottom) and vertical (side) scrollbars */
-.custom-scrollbar {
+* {
   scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f8fafc;
+  scrollbar-color: #cbd5e1 transparent;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
+*::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f8fafc;
+*::-webkit-scrollbar-button {
+  display: none;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
   border-radius: 4px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
+*::-webkit-scrollbar-thumb {
   background: #cbd5e1;
   border-radius: 4px;
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
 
-.custom-scrollbar::-webkit-scrollbar-corner {
+*::-webkit-scrollbar-corner {
   background: transparent;
+}
+
+.sidebar-scrollbar {
+  scrollbar-color: #64748b transparent;
+}
+
+.sidebar-scrollbar::-webkit-scrollbar-thumb {
+  background: #64748b;
+}
+
+.sidebar-scrollbar-collapsed {
+  scrollbar-width: none;
+}
+
+.sidebar-scrollbar-collapsed::-webkit-scrollbar {
+  display: none;
 }
 
 :where(a, button, input, select, textarea, [tabindex]):focus-visible {

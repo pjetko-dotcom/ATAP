@@ -238,6 +238,9 @@ test("exports localized report labels without changing chapter names or project 
       assert.ok(summary);
       assert.ok(details);
       assert.equal(summary.getCell("A3").value, language === "sk" ? "Názov projektu / analýzy:" : "Project / analysis name:");
+      assert.equal(summary.getCell("A12").value, language === "sk" ? "Identifikované bezpečnostné nedostatky (Gaps)" : "Identified security gaps");
+      const chapterHeader = summary.getRows(1, summary.rowCount)?.find(row => row.getCell(1).value === (language === "sk" ? "Kapitola" : "Chapter"));
+      assert.equal(chapterHeader?.getCell(5).value, language === "sk" ? "Nedostatky (Gaps)" : "Gaps");
       assert.match(String(details.getCell("B2").value), /Encoding and Sanitization/);
       assert.equal(details.getCell("J2").value, requirement.notes);
       assert.equal(details.getCell("I2").value, getVerificationGuide(requirement, language).keyQuestion);
