@@ -7,6 +7,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { X, Pencil, Check, AlertCircle } from "lucide-react";
 import { useAnalyses } from "../hooks/useAnalyses";
+import { useLanguage } from "../context/LanguageContext";
 
 interface RenameProjectModalProps {
   isOpen: boolean;
@@ -23,6 +24,7 @@ export function RenameProjectModal({
   currentName,
   onRenamed
 }: RenameProjectModalProps) {
+  const { t } = useLanguage();
   const { renameAnalysis } = useAnalyses();
   const [name, setName] = useState(currentName);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +52,7 @@ export function RenameProjectModal({
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
-      setError("Názov projektu nemôže byť prázdny.");
+      setError(t("Názov projektu nemôže byť prázdny.", "Project name cannot be empty."));
       return;
     }
 
@@ -59,7 +61,7 @@ export function RenameProjectModal({
       if (onRenamed) onRenamed(trimmed);
       onClose();
     } else {
-      setError("Nepodarilo sa premenovať projekt.");
+      setError(t("Nepodarilo sa premenovať projekt.", "Could not rename the project."));
     }
   };
 
@@ -86,14 +88,14 @@ export function RenameProjectModal({
               <Pencil size={16} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-800 tracking-tight">Premenovať projekt</h3>
-              <p className="text-xs text-slate-500">Zmeňte názov analýzy / workspace</p>
+              <h3 className="text-base font-bold text-slate-800 tracking-tight">{t("Premenovať projekt", "Rename project")}</h3>
+              <p className="text-xs text-slate-500">{t("Zmeňte názov analýzy / workspace", "Change the analysis / workspace name")}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-200/60 rounded-md transition-colors cursor-pointer"
-            title="Zavrieť (Esc)"
+            title={t("Zavrieť (Esc)", "Close (Esc)")}
           >
             <X size={18} />
           </button>
@@ -104,7 +106,7 @@ export function RenameProjectModal({
           <div className="p-6 space-y-4">
             <div>
               <label htmlFor="rename-project-input" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                Názov Workspace / Projektu <span className="text-red-500">*</span>
+                {t("Názov Workspace / Projektu", "Workspace / Project name")} <span className="text-red-500">*</span>
               </label>
               <input
                 id="rename-project-input"
@@ -115,7 +117,7 @@ export function RenameProjectModal({
                   setName(e.target.value);
                   if (error) setError(null);
                 }}
-                placeholder="napr. Retail Banking API v2.4"
+                placeholder={t("napr. Retail Banking API v2.4", "e.g. Retail Banking API v2.4")}
                 className="w-full px-3.5 py-2.5 text-sm bg-white border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 text-slate-800 font-medium transition-all shadow-2xs"
                 maxLength={120}
               />
@@ -128,9 +130,9 @@ export function RenameProjectModal({
             </div>
 
             <div className="p-3 bg-slate-50 rounded-lg border border-slate-200/80 text-xs text-slate-600 space-y-1">
-              <p className="font-semibold text-slate-700">Pôvodný názov:</p>
+              <p className="font-semibold text-slate-700">{t("Pôvodný názov:", "Original name:")}</p>
               <p className="font-mono text-slate-500 text-[11px] truncate">{currentName}</p>
-              <p className="text-[11px] text-slate-400 pt-0.5">Zmena názvu sa okamžite premietne do všetkých modulov analýzy, reportov aj exportov.</p>
+              <p className="text-[11px] text-slate-400 pt-0.5">{t("Zmena názvu sa okamžite premietne do všetkých modulov analýzy, reportov aj exportov.", "The name change immediately appears throughout the analysis, reports and exports.")}</p>
             </div>
           </div>
 
@@ -141,7 +143,7 @@ export function RenameProjectModal({
               onClick={onClose}
               className="px-3.5 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 hover:bg-slate-200/60 rounded-lg transition-colors cursor-pointer"
             >
-              Zrušiť
+              {t("Zrušiť", "Cancel")}
             </button>
             <button
               type="submit"
@@ -149,7 +151,7 @@ export function RenameProjectModal({
               className="flex items-center gap-1.5 px-4 py-2 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:hover:bg-blue-600 rounded-lg shadow-sm transition-all cursor-pointer"
             >
               <Check size={14} />
-              <span>Uložiť názov</span>
+              <span>{t("Uložiť názov", "Save name")}</span>
             </button>
           </div>
         </form>

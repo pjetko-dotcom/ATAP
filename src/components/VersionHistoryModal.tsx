@@ -1,8 +1,10 @@
 import React from "react";
 import { X, History, Lock, CheckCircle2, GitBranch, ArrowRight, Eye, Sparkles, Scale } from "lucide-react";
 import { useAnalysisVersion } from "../context/AnalysisVersionContext";
+import { useLanguage } from "../context/LanguageContext";
 
 export function VersionHistoryModal() {
+  const { t, language } = useLanguage();
   const { 
     analysis, 
     currentWorkingVersion, 
@@ -27,8 +29,8 @@ export function VersionHistoryModal() {
               <History size={22} />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white tracking-tight">História verzií a kontrolné body</h3>
-              <p className="text-xs text-slate-300">Prehľad všetkých publikovaných stavov a aktívnych verzií projektu</p>
+              <h3 className="text-base font-bold text-white tracking-tight">{t("História verzií a kontrolné body", "Version history and checkpoints")}</h3>
+              <p className="text-xs text-slate-300">{t("Prehľad všetkých publikovaných stavov a aktívnych verzií projektu", "Overview of published snapshots and active project versions")}</p>
             </div>
           </div>
           <button 
@@ -59,12 +61,12 @@ export function VersionHistoryModal() {
                       ? "bg-emerald-100 text-emerald-800 border border-emerald-200" 
                       : "bg-amber-100 text-amber-800 border border-amber-200"
                   }`}>
-                    {analysis.status === "Final" ? "FINAL (UZAMKNUTÉ)" : "DRAFT (AKTÍVNE ROZPRACOVANÉ)"}
+                    {analysis.status === "Final" ? t("FINAL (UZAMKNUTÉ)", "FINAL (LOCKED)") : t("DRAFT (AKTÍVNE ROZPRACOVANÉ)", "DRAFT (ACTIVE)")}
                   </span>
                   {viewingVersion === currentWorkingVersion && (
                     <span className="text-xs text-blue-700 font-semibold flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
-                      Aktuálne zobrazená
+                      {t("Aktuálne zobrazená", "Currently displayed")}
                     </span>
                   )}
                 </div>
@@ -72,7 +74,7 @@ export function VersionHistoryModal() {
                   {analysis.name}
                 </h4>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Posledná úprava: {new Date(analysis.createdAt).toLocaleDateString()} • Cieľový ASVS Level: <strong>L{analysis.asvsLevel}</strong>
+                  {t("Posledná úprava:", "Last modified:")} {new Date(analysis.createdAt).toLocaleDateString(language)} • {t("Cieľový ASVS Level:", "Target ASVS level:")} <strong>L{analysis.asvsLevel}</strong>
                 </p>
               </div>
 
@@ -84,7 +86,7 @@ export function VersionHistoryModal() {
                       openDiffWithVersions(allVersions[0].version, currentWorkingVersion);
                     }}
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-                    title="Porovnať s prvou verziou"
+                    title={t("Porovnať s prvou verziou", "Compare with first version")}
                   >
                     <Scale size={14} className="text-blue-600" />
                     <span>Diff</span>
@@ -99,7 +101,7 @@ export function VersionHistoryModal() {
                     className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
                   >
                     <Eye size={14} />
-                    <span>Zobraziť</span>
+                    <span>{t("Zobraziť", "View")}</span>
                   </button>
                 )}
               </div>
@@ -109,7 +111,7 @@ export function VersionHistoryModal() {
           {/* Historical finalized snapshots */}
           <div className="space-y-3 pt-2">
             <h5 className="text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Uložené a archivované verzie ({allVersions.length})
+              {t("Uložené a archivované verzie", "Saved and archived versions")} ({allVersions.length})
             </h5>
 
             {allVersions.map((snap) => {
@@ -134,13 +136,13 @@ export function VersionHistoryModal() {
                           Final Snapshot
                         </span>
                         <span className="text-xs text-slate-500 font-medium">
-                          {new Date(snap.createdAt).toLocaleDateString()} {new Date(snap.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          {new Date(snap.createdAt).toLocaleDateString(language)} {new Date(snap.createdAt).toLocaleTimeString(language, { hour: '2-digit', minute: '2-digit' })}
                         </span>
-                        <span className="text-xs text-slate-400">• Autor: {snap.createdBy}</span>
+                        <span className="text-xs text-slate-400">• {t("Autor:", "Author:")} {snap.createdBy}</span>
                       </div>
 
                       <h4 className="text-sm font-bold text-slate-800">
-                        {snap.label || `Verzia v${snap.version}`}
+                        {snap.label || t(`Verzia v${snap.version}`, `Version v${snap.version}`)}
                       </h4>
                       {snap.changeSummary && (
                         <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded-lg border border-slate-100 leading-relaxed">
@@ -152,9 +154,9 @@ export function VersionHistoryModal() {
                       <div className="flex items-center gap-3 text-xs text-slate-500 pt-1">
                         <span>ASVS Coverage: <strong className="text-slate-800">{snap.metrics?.asvsCoverage ?? 0}%</strong></span>
                         <span>•</span>
-                        <span>Otvorené hrozby: <strong className="text-slate-800">{snap.metrics?.totalOpenThreats ?? 0}</strong></span>
+                        <span>{t("Otvorené hrozby:", "Open threats:")} <strong className="text-slate-800">{snap.metrics?.totalOpenThreats ?? 0}</strong></span>
                         <span>•</span>
-                        <span>Otvorené High/Critical: <strong className="text-red-600">{snap.metrics?.criticalRisks ?? 0}</strong></span>
+                        <span>{t("Otvorené High/Critical:", "Open High/Critical:")} <strong className="text-red-600">{snap.metrics?.criticalRisks ?? 0}</strong></span>
                       </div>
                     </div>
 
@@ -166,7 +168,7 @@ export function VersionHistoryModal() {
                           openDiffWithVersions(snap.version, currentWorkingVersion);
                         }}
                         className="flex items-center gap-1 px-3 py-1.5 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors cursor-pointer shadow-xs"
-                        title="Porovnať s aktuálnou verziou"
+                        title={t("Porovnať s aktuálnou verziou", "Compare with current version")}
                       >
                         <Scale size={13} className="text-blue-600" />
                         <span>Diff</span>
@@ -182,10 +184,10 @@ export function VersionHistoryModal() {
                             ? "bg-amber-600 text-white"
                             : "bg-slate-800 hover:bg-slate-900 text-white"
                         }`}
-                        title="Prepnúť do stavu tejto verzie (iba na čítanie)"
+                        title={t("Prepnúť do stavu tejto verzie (iba na čítanie)", "View this version (read-only)")}
                       >
                         <Eye size={13} />
-                        <span>{isSelected ? "Zobrazená" : "Zobraziť stav"}</span>
+                        <span>{isSelected ? t("Zobrazená", "Displayed") : t("Zobraziť stav", "View snapshot")}</span>
                       </button>
                     </div>
                   </div>
@@ -196,9 +198,9 @@ export function VersionHistoryModal() {
             {allVersions.length === 0 && (
               <div className="p-8 text-center bg-slate-50 border border-slate-200 rounded-xl text-slate-500">
                 <Lock size={32} className="mx-auto text-slate-300 mb-2" />
-                <p className="font-semibold text-slate-700">Zatiaľ žiadna verzia nebola uložená ako Final</p>
+                <p className="font-semibold text-slate-700">{t("Zatiaľ žiadna verzia nebola uložená ako Final", "No version has been saved as Final yet")}</p>
                 <p className="text-xs text-slate-400 mt-1">
-                  Použite tlačidlo &quot;Uložiť ako Final&quot; na vytvorenie nemenného kontrolného bodu.
+                  {t('Použite tlačidlo "Uložiť ako Final" na vytvorenie nemenného kontrolného bodu.', 'Use "Save as Final" to create an immutable checkpoint.')}
                 </p>
               </div>
             )}
@@ -212,7 +214,7 @@ export function VersionHistoryModal() {
             onClick={() => setIsHistoryModalOpen(false)}
             className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 transition-colors cursor-pointer"
           >
-            Zavrieť
+            {t("Zavrieť", "Close")}
           </button>
           
           <button
@@ -223,7 +225,7 @@ export function VersionHistoryModal() {
             className="flex items-center gap-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg shadow-sm transition-colors cursor-pointer"
           >
             <GitBranch size={15} />
-            <span>Vytvoriť novú verziu...</span>
+            <span>{t("Vytvoriť novú verziu...", "Create new version...")}</span>
           </button>
         </div>
       </div>

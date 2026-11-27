@@ -29,6 +29,8 @@ import { getVerificationGuide } from "./verificationGuide";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LanguageProvider, useLanguage } from "../context/LanguageContext";
+import { evaluateProjectCategorization, projectCategorizationQuestions } from "../data/projectCategorizationData";
+import { englishCategorizationQuestions } from "../data/projectCategorizationEnglish";
 
 class MemoryStorage {
   private readonly data = new Map<string, string>();
@@ -143,6 +145,27 @@ test("loads the selected interface language without modifying project data", () 
   storage.setItem("atap_ui_language", "en");
   assert.equal(render(), '<span lang="en">Dashboard</span>');
   assert.equal(storage.getItem("atap_analyses"), '[{"id":"test","name":"Projekt"}]');
+});
+
+test("categorization translations preserve question IDs and recommendations", () => {
+  assert.deepEqual(englishCategorizationQuestions.map(question => [question.id, question.options.map(option => option.id)]),
+    projectCategorizationQuestions.map(question => [question.id, question.options.map(option => option.id)]));
+  const combinations = projectCategorizationQuestions.reduce<Record<string, string>[]>(
+    (answers, question) => answers.flatMap(answer =>
+      [undefined, ...question.options.map(option => option.id)].map(option =>
+        option === undefined ? answer : { ...answer, [question.id]: option }
+      )
+    ),
+    [{}]
+  );
+  for (const answers of combinations) {
+    const sk = evaluateProjectCategorization(answers, "sk");
+    const en = evaluateProjectCategorization(answers, "en");
+    assert.equal(en.recommendedLevel, sk.recommendedLevel);
+    assert.equal(en.rationale.length, sk.rationale.length);
+    if (sk.rationale.length) assert.notEqual(en.rationale[0], sk.rationale[0]);
+    assert.notEqual(en.guidanceText, sk.guidanceText);
+  }
 });
 
 test("exports localized report labels without changing chapter names or project text", async () => {

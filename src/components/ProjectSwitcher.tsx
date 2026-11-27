@@ -20,6 +20,7 @@ import {
   Layers
 } from "lucide-react";
 import { useAnalyses, Analysis } from "../hooks/useAnalyses";
+import { useLanguage } from "../context/LanguageContext";
 
 interface ProjectSwitcherProps {
   currentAnalysis: Analysis;
@@ -35,6 +36,7 @@ export function ProjectSwitcher({
   const navigate = useNavigate();
   const location = useLocation();
   const { analyses } = useAnalyses();
+  const { t } = useLanguage();
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -104,7 +106,7 @@ export function ProjectSwitcher({
         {/* ASVS Level Badge */}
         <span 
           className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[11px] font-bold rounded uppercase border border-blue-200 shrink-0"
-          title={`Cieľový OWASP ASVS Level: L${currentAnalysis.asvsLevel}`}
+          title={t(`Cieľový OWASP ASVS Level: L${currentAnalysis.asvsLevel}`, `Target OWASP ASVS level: L${currentAnalysis.asvsLevel}`)}
         >
           L{currentAnalysis.asvsLevel}
         </span>
@@ -113,7 +115,7 @@ export function ProjectSwitcher({
         <button
           onClick={() => setIsOpen(!isOpen)}
           className="flex items-center gap-2 px-1.5 py-0.5 text-left rounded cursor-pointer group min-w-0 flex-1"
-          title="Prepnúť na iný projekt alebo spravovať projekty"
+          title={t("Prepnúť na iný projekt alebo spravovať projekty", "Switch or manage projects")}
           aria-expanded={isOpen}
           aria-haspopup="true"
         >
@@ -138,7 +140,7 @@ export function ProjectSwitcher({
             onOpenRenameModal(currentAnalysis.id, currentAnalysis.name);
           }}
           className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50/80 rounded transition-colors cursor-pointer shrink-0"
-          title="Premenovať aktuálny projekt"
+          title={t("Premenovať aktuálny projekt", "Rename current project")}
         >
           <Pencil size={13} />
         </button>
@@ -153,11 +155,11 @@ export function ProjectSwitcher({
             <div className="flex items-center gap-2">
               <Layers size={15} className="text-blue-600" />
               <span className="text-xs font-bold uppercase tracking-wider text-slate-700">
-                Projekty / Workspaces
+                {t("Projekty / Workspaces", "Projects / Workspaces")}
               </span>
             </div>
             <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded-full border border-blue-200">
-              {analyses.length} {analyses.length === 1 ? 'projekt' : analyses.length < 5 ? 'projekty' : 'projektov'}
+              {analyses.length} {t(analyses.length === 1 ? "projekt" : analyses.length < 5 ? "projekty" : "projektov", analyses.length === 1 ? "project" : "projects")}
             </span>
           </div>
 
@@ -171,7 +173,7 @@ export function ProjectSwitcher({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Filtrovať projekty..."
+                  placeholder={t("Filtrovať projekty...", "Filter projects...")}
                   className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white text-slate-800 transition-colors"
                 />
                 {searchQuery && (
@@ -208,7 +210,7 @@ export function ProjectSwitcher({
                       </span>
                       {isCurrent && (
                         <span className="px-1.5 py-0.2 bg-blue-600 text-white text-[9px] font-bold rounded uppercase tracking-wider shrink-0">
-                          Aktívny
+                          {t("Aktívny", "Active")}
                         </span>
                       )}
                     </div>
@@ -244,7 +246,7 @@ export function ProjectSwitcher({
                         onOpenRenameModal(project.id, project.name);
                       }}
                       className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-slate-200/60 rounded-md transition-colors opacity-80 group-hover:opacity-100 cursor-pointer"
-                      title={`Premenovať "${project.name}"`}
+                      title={t(`Premenovať "${project.name}"`, `Rename "${project.name}"`)}
                     >
                       <Pencil size={13} />
                     </button>
@@ -261,7 +263,7 @@ export function ProjectSwitcher({
 
             {filteredProjects.length === 0 && (
               <div className="p-6 text-center text-slate-400 text-xs">
-                Nenašli sa žiadne projekty zodpovedajúce filtru "{searchQuery}".
+                {t(`Nenašli sa žiadne projekty zodpovedajúce filtru "${searchQuery}".`, `No projects match "${searchQuery}".`)}
               </div>
             )}
           </div>
@@ -276,7 +278,7 @@ export function ProjectSwitcher({
               className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-700 hover:text-blue-600 hover:bg-white rounded-lg font-semibold transition-colors cursor-pointer"
             >
               <Pencil size={13} className="text-slate-400" />
-              <span>Premenovať aktuálny projekt</span>
+              <span>{t("Premenovať aktuálny projekt", "Rename current project")}</span>
             </button>
 
             <button
@@ -287,7 +289,7 @@ export function ProjectSwitcher({
               className="w-full flex items-center gap-2 px-3 py-1.5 text-blue-600 hover:bg-blue-50/80 rounded-lg font-semibold transition-colors cursor-pointer"
             >
               <Plus size={14} />
-              <span>Vytvoriť nový projekt...</span>
+              <span>{t("Vytvoriť nový projekt...", "Create new project...")}</span>
             </button>
 
             <button
@@ -298,7 +300,7 @@ export function ProjectSwitcher({
               className="w-full flex items-center gap-2 px-3 py-1.5 text-slate-600 hover:text-slate-800 hover:bg-white rounded-lg font-medium transition-colors cursor-pointer"
             >
               <LayoutTemplate size={13} className="text-slate-400" />
-              <span>Prejsť na prehľad všetkých projektov</span>
+              <span>{t("Prejsť na prehľad všetkých projektov", "Go to all projects")}</span>
             </button>
           </div>
         </div>

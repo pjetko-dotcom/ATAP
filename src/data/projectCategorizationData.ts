@@ -1,3 +1,5 @@
+import { reportText, type ReportLanguage } from "../utils/reportLanguage";
+
 export interface CategorizationQuestionOption {
   id: string;
   label: string;
@@ -192,8 +194,10 @@ export interface CategorizationEvaluationResult {
 }
 
 export function evaluateProjectCategorization(
-  answers: Record<string, string>
+  answers: Record<string, string>,
+  language: ReportLanguage = "sk"
 ): CategorizationEvaluationResult {
+  const t = (sk: string, en: string) => reportText(language, sk, en);
   const chosenOptions: CategorizationQuestionOption[] = [];
 
   projectCategorizationQuestions.forEach((q) => {
@@ -225,40 +229,40 @@ export function evaluateProjectCategorization(
     if (isBlackBoxOnly) {
       recommendedLevel = "1";
       rationale.push(
-        "Aplikácia má charakteristiky L3, avšak kvôli obmedzeniu iba na black-box overenie (otázka 5) nie je možné overiť požiadavky L2/L3 vyžadujúce kontrolu kódu. Odporúča sa zabezpečiť prístup ku kódu pre L3."
+        t("Aplikácia má charakteristiky L3, avšak kvôli obmedzeniu iba na black-box overenie (otázka 5) nie je možné overiť požiadavky L2/L3 vyžadujúce kontrolu kódu. Odporúča sa zabezpečiť prístup ku kódu pre L3.", "The application has L3 characteristics, but black-box-only testing (question 5) cannot verify L2/L3 requirements that require code review. Obtain code access for L3.")
       );
     } else {
       recommendedLevel = "3";
-      if (hasL3Criticality) rationale.push("Kritická infraštruktúra alebo transakcie mimoriadnej hodnoty vyžadujú najvyššiu záruku (L3).");
-      if (hasL3Data) rationale.push("Spracovanie prísne chránených bankových, zdravotných alebo štátnych tajomstiev vyžaduje L3.");
-      if (hasL3Regulation) rationale.push("Sektorové regulácie a vojensko-bankové audity vyžadujú úroveň L3.");
-      if (hasL3Trust) rationale.push("Požadovaná defense-in-depth architektúra a viacnásobná verifikácia zodpovedá L3.");
+      if (hasL3Criticality) rationale.push(t("Kritická infraštruktúra alebo transakcie mimoriadnej hodnoty vyžadujú najvyššiu záruku (L3).", "Critical infrastructure or exceptionally high-value transactions require the highest assurance (L3)."));
+      if (hasL3Data) rationale.push(t("Spracovanie prísne chránených bankových, zdravotných alebo štátnych tajomstiev vyžaduje L3.", "Processing highly protected banking, health or state secrets requires L3."));
+      if (hasL3Regulation) rationale.push(t("Sektorové regulácie a vojensko-bankové audity vyžadujú úroveň L3.", "Sector regulations and military or banking audits require L3."));
+      if (hasL3Trust) rationale.push(t("Požadovaná defense-in-depth architektúra a viacnásobná verifikácia zodpovedá L3.", "Required defence-in-depth architecture and multiple verifications correspond to L3."));
     }
   } else if (hasL2Data || hasL2Criticality || hasL2Regulation || hasL2Trust) {
     if (isBlackBoxOnly) {
       recommendedLevel = "1";
       rationale.push(
-        "Aplikácia spracúva citlivé dáta (L2), ale overenie je obmedzené iba na black-box bez kódu. Pre dosiahnutie L2 je potrebný hybridný audit."
+        t("Aplikácia spracúva citlivé dáta (L2), ale overenie je obmedzené iba na black-box bez kódu. Pre dosiahnutie L2 je potrebný hybridný audit.", "The application processes sensitive data (L2), but verification is limited to black-box testing without code. A hybrid audit is needed for L2.")
       );
     } else {
       recommendedLevel = "2";
-      if (hasL2Data) rationale.push("Spracovanie osobných údajov (PII) a interných dát je štandardom pre úroveň L2.");
-      if (hasL2Regulation) rationale.push("Súlad s GDPR, PCI DSS, DORA alebo NIS2 je priamo naviazaný na úroveň L2.");
-      if (hasL2Criticality) rationale.push("Dôveryhodný identitný systém / dôležité transakcie vyžadujú L2.");
+      if (hasL2Data) rationale.push(t("Spracovanie osobných údajov (PII) a interných dát je štandardom pre úroveň L2.", "Processing personal information (PII) and internal data is typical for L2."));
+      if (hasL2Regulation) rationale.push(t("Súlad s GDPR, PCI DSS, DORA alebo NIS2 je priamo naviazaný na úroveň L2.", "GDPR, PCI DSS, DORA or NIS2 compliance is directly linked to L2."));
+      if (hasL2Criticality) rationale.push(t("Dôveryhodný identitný systém / dôležité transakcie vyžadujú L2.", "A trusted identity system or important transactions require L2."));
     }
   } else {
     recommendedLevel = "1";
-    rationale.push("Aplikácia pracuje výhradne s verejnými alebo nekritickými dátami bez prísnych regulácií, preto je L1 plne postačujúca a nákladovo najefektívnejšia.");
+    rationale.push(t("Aplikácia pracuje výhradne s verejnými alebo nekritickými dátami bez prísnych regulácií, preto je L1 plne postačujúca a nákladovo najefektívnejšia.", "The application uses only public or non-critical data without strict regulations, so L1 is sufficient and most cost-effective."));
   }
 
   const levelNames: Record<"1" | "2" | "3", string> = {
-    "1": "ASVS Level 1 (Základná bezpečnosť / Automatizovateľná)",
-    "2": "ASVS Level 2 (Odporúčané pre väčšinu aplikácií s PII / B2B / E-commerce)",
-    "3": "ASVS Level 3 (Kritické systémy / Banky / Zdravotníctvo / Infraštruktúra)"
+    "1": t("ASVS Level 1 (Základná bezpečnosť / Automatizovateľná)", "ASVS Level 1 (Basic security / Automatable)"),
+    "2": t("ASVS Level 2 (Odporúčané pre väčšinu aplikácií s PII / B2B / E-commerce)", "ASVS Level 2 (Recommended for most PII / B2B / e-commerce applications)"),
+    "3": t("ASVS Level 3 (Kritické systémy / Banky / Zdravotníctvo / Infraštruktúra)", "ASVS Level 3 (Critical systems / Banking / Healthcare / Infrastructure)")
   };
 
   const guidanceText =
-    "Pozitívne odpovede na otázky v prvých troch blokoch (citlivé dáta, vysoká kritickosť, regulácia) posúvajú projekt smerom k L2 alebo L3. Ak projekt spracúva len verejné dáta a nemá špeciálne regulačné nároky, L1 je takmer vždy postačujúca a nákladovo efektívna voľba. L3 by malo byť vyhradené len pre aplikácie, kde by zlyhanie malo katastrofálne následky, a jeho zavedenie si vyžaduje explicitné obchodné zdôvodnenie.";
+    t("Pozitívne odpovede na otázky v prvých troch blokoch (citlivé dáta, vysoká kritickosť, regulácia) posúvajú projekt smerom k L2 alebo L3. Ak projekt spracúva len verejné dáta a nemá špeciálne regulačné nároky, L1 je takmer vždy postačujúca a nákladovo efektívna voľba. L3 by malo byť vyhradené len pre aplikácie, kde by zlyhanie malo katastrofálne následky, a jeho zavedenie si vyžaduje explicitné obchodné zdôvodnenie.", "Positive answers in the first three areas (sensitive data, high criticality, regulation) move the project toward L2 or L3. For public data without special regulatory requirements, L1 is almost always sufficient and cost-effective. L3 should be reserved for applications whose failure would have catastrophic consequences and requires explicit business justification.");
 
   return {
     recommendedLevel,
