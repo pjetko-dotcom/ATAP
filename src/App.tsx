@@ -14,6 +14,7 @@ import { Suspense, lazy } from "react";
 import { HashRouter, BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { Layout } from "./components/Layout.tsx";
 import { ErrorBoundary } from "./components/ErrorBoundary.tsx";
+import { useLanguage } from "./context/LanguageContext";
 
 const Dashboard = lazy(() => import("./components/Dashboard.tsx").then(module => ({ default: module.Dashboard })));
 const AnalysisLayout = lazy(() => import("./components/AnalysisLayout.tsx").then(module => ({ default: module.AnalysisLayout })));
@@ -32,13 +33,14 @@ const AuditTrail = lazy(() => import("./components/AuditTrail.tsx").then(module 
  * Supports both web HTTP server and Electron file:// offline desktop mode.
  */
 export default function App() {
+  const { t } = useLanguage();
   const isFileProtocol = typeof window !== 'undefined' && (window.location.protocol === 'file:' || navigator.userAgent.includes('Electron'));
   const RouterComponent = isFileProtocol ? HashRouter : BrowserRouter;
 
   return (
     <ErrorBoundary>
       <RouterComponent>
-        <Suspense fallback={<div role="status" className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">Načítavam stránku...</div>}>
+        <Suspense fallback={<div role="status" className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">{t("Načítavam stránku...", "Loading page...")}</div>}>
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />

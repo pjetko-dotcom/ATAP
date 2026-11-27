@@ -23,6 +23,7 @@ import { ProjectSwitcher } from "./ProjectSwitcher";
 import { RenameProjectModal } from "./RenameProjectModal";
 import { getCurrentUserName } from "../utils/activityLog";
 import { calculateAsvsCoverage } from "../utils/asvsMetrics";
+import { useLanguage } from "../context/LanguageContext";
 
 const COMPONENT_ICONS: Record<string, React.ComponentType<any>> = {
   "Frontend App": LayoutTemplate,
@@ -49,6 +50,7 @@ export function AnalysisLayout() {
 }
 
 function AnalysisLayoutInner() {
+  const { t } = useLanguage();
   const { id } = useParams<{id: string}>();
   const { updateAnalysis } = useAnalyses();
   const {
@@ -212,7 +214,7 @@ function AnalysisLayoutInner() {
   })();
   const progressSteps = [
     {
-      label: "Kontext",
+      label: t("Kontext", "Context"),
       path: "context",
       state: contextData?.businessPurpose ? "In progress" : "Not started",
     },
@@ -232,7 +234,7 @@ function AnalysisLayoutInner() {
       state: implementedCount > 0 ? (progressPercentage === 100 ? "Complete" : "In progress") : "Not started",
     },
     {
-      label: "Nálezy",
+      label: t("Nálezy", "Findings"),
       path: "findings",
       state: evaluatedRequirements.some(requirement => requirement.status === "Missing" || requirement.status === "Partial") ? "Needs review" : "Not started",
     },
@@ -299,7 +301,7 @@ function AnalysisLayoutInner() {
       setIsSaved(true);
       setSaveStatus("saved");
       setSaveToastType("success");
-      setSaveToast(`Analýza "${currentAnalysis.name}" (v${currentWorkingVersion}) bola uložená v tomto zariadení.`);
+      setSaveToast(t(`Analýza "${currentAnalysis.name}" (v${currentWorkingVersion}) bola uložená v tomto zariadení.`, `Analysis "${currentAnalysis.name}" (v${currentWorkingVersion}) was saved on this device.`));
       window.dispatchEvent(new Event("storage"));
       setTimeout(() => setIsSaved(false), 2500);
       setTimeout(() => setSaveToast(null), 4000);
@@ -308,7 +310,7 @@ function AnalysisLayoutInner() {
       setIsSaved(false);
       setSaveStatus("error");
       setSaveToastType("error");
-      setSaveToast("Uloženie zlyhalo. Skontrolujte úložisko zariadenia a skúste to znova.");
+      setSaveToast(t("Uloženie zlyhalo. Skontrolujte úložisko zariadenia a skúste to znova.", "Saving failed. Check device storage and try again."));
       setTimeout(() => setSaveToast(null), 6000);
     }
   };
@@ -333,7 +335,7 @@ function AnalysisLayoutInner() {
           <button 
             onClick={() => setIsHistoryModalOpen(true)}
             className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-100 hover:bg-slate-200/80 rounded-lg border border-slate-200 text-slate-800 transition-colors cursor-pointer"
-            title="Kliknite pre zobrazenie histórie verzií alebo vytvorenie novej"
+            title={t("Kliknite pre zobrazenie histórie verzií alebo vytvorenie novej", "View version history or create a new version")}
           >
             <GitBranch size={13} className="text-blue-600" />
             <span className="text-xs font-extrabold">v{viewingVersion}</span>
@@ -344,7 +346,7 @@ function AnalysisLayoutInner() {
                 ? "bg-emerald-100 text-emerald-800" 
                 : "bg-amber-100 text-amber-800"
             }`}>
-              {isHistorical ? "Archív" : currentAnalysis.status || "Draft"}
+              {isHistorical ? t("Archív", "Archive") : currentAnalysis.status || "Draft"}
             </span>
             <ChevronDown size={12} className="text-slate-400 ml-0.5" />
           </button>
@@ -356,7 +358,7 @@ function AnalysisLayoutInner() {
               saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
             }`}
           >
-            {saveStatus === "saved" ? "Uložené" : saveStatus === "error" ? "Chyba úložiska" : "Neuložené"}
+            {saveStatus === "saved" ? t("Uložené", "Saved") : saveStatus === "error" ? t("Chyba úložiska", "Storage error") : t("Neuložené", "Unsaved")}
           </span>
 
           {/* Project Switcher & Inline Rename */}
@@ -377,20 +379,20 @@ function AnalysisLayoutInner() {
               openDiffWithVersions(baselineVer, currentWorkingVersion);
             }}
             className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 text-xs font-bold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 hover:border-slate-300 rounded-lg transition-colors shadow-2xs cursor-pointer"
-            title="Porovnať rozdiely medzi verziami (ASVS požiadavky, hrozby, kontext)"
+            title={t("Porovnať rozdiely medzi verziami (ASVS požiadavky, hrozby, kontext)", "Compare versions (ASVS requirements, threats, context)")}
           >
             <Scale size={14} className="text-blue-600" />
-            <span className="hidden sm:inline">Diff verzií</span>
+            <span className="hidden sm:inline">{t("Diff verzií", "Version diff")}</span>
           </button>
 
           {/* History Button */}
           <button 
             onClick={() => setIsHistoryModalOpen(true)}
             className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 hover:bg-slate-50 rounded-lg transition-colors shadow-2xs cursor-pointer"
-            title="Zobraziť časovú os verzií a kontrolných bodov"
+            title={t("Zobraziť časovú os verzií a kontrolných bodov", "View version and checkpoint timeline")}
           >
             <History size={14} className="text-slate-500" />
-            <span className="hidden md:inline">História</span>
+            <span className="hidden md:inline">{t("História", "History")}</span>
           </button>
 
           {/* Finalize Button (If currently in Draft) */}
@@ -398,10 +400,10 @@ function AnalysisLayoutInner() {
             <button 
               onClick={() => setIsFinalizeModalOpen(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg transition-colors shadow-2xs cursor-pointer"
-              title="Uložiť a uzamknúť aktuálny stav ako finálnu verziu"
+              title={t("Uložiť a uzamknúť aktuálny stav ako finálnu verziu", "Save and lock the current state as a final version")}
             >
               <Lock size={14} className="text-emerald-600" />
-              <span>Uložiť ako Final</span>
+              <span>{t("Uložiť ako Final", "Save as Final")}</span>
             </button>
           )}
 
@@ -410,10 +412,10 @@ function AnalysisLayoutInner() {
             <button 
               onClick={() => setIsNewVersionModalOpen(true)}
               className="flex items-center gap-1.5 px-2.5 py-1.5 md:px-3 md:py-2 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-300 rounded-lg transition-colors shadow-2xs cursor-pointer"
-              title="Vytvoriť novú verziu analýzy a pokračovať v práci"
+              title={t("Vytvoriť novú verziu analýzy a pokračovať v práci", "Create a new analysis version and continue working")}
             >
               <Sparkles size={14} className="text-blue-600" />
-              <span>Nová verzia...</span>
+              <span>{t("Nová verzia...", "New version...")}</span>
             </button>
           )}
 
@@ -427,11 +429,11 @@ function AnalysisLayoutInner() {
                   ? "bg-emerald-600 text-white shadow-emerald-200" 
                   : "bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200"
               }`}
-              aria-label="Uložiť aktuálnu analýzu"
-              title="Uložiť analýzu a aktuálny stav ASVS požiadaviek"
+              aria-label={t("Uložiť aktuálnu analýzu", "Save current analysis")}
+              title={t("Uložiť analýzu a aktuálny stav ASVS požiadaviek", "Save analysis and current ASVS requirements")}
             >
               {isSaved ? <Check size={16} /> : <Save size={16} />}
-              <span>{isSaved ? "Uložené" : "Uložiť teraz"}</span>
+              <span>{isSaved ? t("Uložené", "Saved") : t("Uložiť teraz", "Save now")}</span>
             </button>
           )}
 
@@ -446,13 +448,13 @@ function AnalysisLayoutInner() {
               className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg"
             >
               <MoreHorizontal size={16} />
-              <span>Viac</span>
+              <span>{t("Viac", "More")}</span>
             </button>
             {isHeaderActionsOpen && (
               <>
                 <button
                   type="button"
-                  aria-label="Zavrieť ponuku akcií"
+                  aria-label={t("Zavrieť ponuku akcií", "Close actions menu")}
                   className="fixed inset-0 z-40 cursor-default"
                   onClick={() => setIsHeaderActionsOpen(false)}
                 />
@@ -462,14 +464,14 @@ function AnalysisLayoutInner() {
                     className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-50"
                     role="menuitem"
                   >
-                    Porovnať verzie
+                    {t("Porovnať verzie", "Compare versions")}
                   </button>
                   <button
                     onClick={() => { setIsHistoryModalOpen(true); setIsHeaderActionsOpen(false); }}
                     className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-50"
                     role="menuitem"
                   >
-                    História verzií
+                    {t("História verzií", "Version history")}
                   </button>
                   {currentAnalysis.status !== "Final" && !isHistorical ? (
                     <button
@@ -477,7 +479,7 @@ function AnalysisLayoutInner() {
                       className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-50"
                       role="menuitem"
                     >
-                      Uložiť ako Final
+                      {t("Uložiť ako Final", "Save as Final")}
                     </button>
                   ) : (
                     <button
@@ -485,7 +487,7 @@ function AnalysisLayoutInner() {
                       className="w-full rounded-md px-3 py-2 text-left text-sm hover:bg-slate-50"
                       role="menuitem"
                     >
-                      Vytvoriť novú verziu
+                      {t("Vytvoriť novú verziu", "Create new version")}
                     </button>
                   )}
                 </div>
@@ -496,18 +498,18 @@ function AnalysisLayoutInner() {
             {!isReadOnly && (
               <button
                 onClick={handleSave}
-                aria-label="Uložiť aktuálnu analýzu"
+                aria-label={t("Uložiť aktuálnu analýzu", "Save current analysis")}
                 className={`flex items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-semibold ${
                   isSaved ? "bg-emerald-600 text-white" : "bg-blue-600 text-white"
                 }`}
               >
                 {isSaved ? <Check size={16} /> : <Save size={16} />}
-                <span>{isSaved ? "Uložené" : "Uložiť"}</span>
+                <span>{isSaved ? t("Uložené", "Saved") : t("Uložiť", "Save")}</span>
               </button>
             )}
             <button
               onClick={() => setIsInfoPanelOpen(!isInfoPanelOpen)}
-              aria-label="Otvoriť kontextový panel"
+              aria-label={t("Otvoriť kontextový panel", "Open context panel")}
               aria-expanded={isInfoPanelOpen}
               aria-controls="analysis-context-panel"
               className="p-2 text-slate-600 hover:bg-slate-100 rounded-md"
@@ -524,8 +526,8 @@ function AnalysisLayoutInner() {
           <div className="flex items-center gap-2">
             <Lock size={15} className="text-amber-600 shrink-0" />
             <span>
-              Prezeráte si archivovaný stav <strong>v{viewingVersion}</strong> ({activeSnapshot?.label || "Final"}) zo dňa{" "}
-              <strong>{activeSnapshot ? new Date(activeSnapshot.createdAt).toLocaleDateString() : ""}</strong>. Tento stav je iba na čítanie.
+              {t("Prezeráte si archivovaný stav", "Viewing archived version")} <strong>v{viewingVersion}</strong> ({activeSnapshot?.label || "Final"}) {t("zo dňa", "dated")}{" "}
+              <strong>{activeSnapshot ? new Date(activeSnapshot.createdAt).toLocaleDateString() : ""}</strong>. {t("Tento stav je iba na čítanie.", "This state is read-only.")}
             </span>
           </div>
           <div className="flex items-center gap-2">
@@ -533,13 +535,13 @@ function AnalysisLayoutInner() {
               onClick={() => openDiffWithVersions(viewingVersion, currentWorkingVersion)}
               className="px-2.5 py-1 bg-white border border-amber-300 text-amber-900 rounded-md font-bold hover:bg-amber-100/50 flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
             >
-              <Scale size={13} className="text-blue-600" /> Porovnať s aktívnou (Diff)
+              <Scale size={13} className="text-blue-600" /> {t("Porovnať s aktívnou (Diff)", "Compare with active version")}
             </button>
             <button 
               onClick={resetToActiveVersion}
               className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-md font-bold flex items-center gap-1 cursor-pointer transition-colors shadow-2xs"
             >
-              Návrat na aktívnu verziu (v{currentWorkingVersion})
+              {t("Návrat na aktívnu verziu", "Return to active version")} (v{currentWorkingVersion})
             </button>
           </div>
         </div>
@@ -549,7 +551,7 @@ function AnalysisLayoutInner() {
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Workspace */}
         <section className="flex-1 p-3 sm:p-4 md:p-6 flex flex-col overflow-y-auto min-h-0 z-0 custom-scrollbar">
-          <nav aria-label="Pokrok analýzy" className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5 shrink-0">
+          <nav aria-label={t("Pokrok analýzy", "Analysis progress")} className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5 shrink-0">
             {progressSteps.map(step => (
               <Link
                 key={step.path}
@@ -562,7 +564,7 @@ function AnalysisLayoutInner() {
                   step.state === "Needs review" ? "text-amber-700" :
                   step.state === "In progress" ? "text-blue-700" : "text-slate-500"
                 }`}>
-                  {step.state}
+                  {step.state === "Complete" ? t("Dokončené", "Complete") : step.state === "Needs review" ? t("Vyžaduje kontrolu", "Needs review") : step.state === "In progress" ? t("Prebieha", "In progress") : t("Nezačaté", "Not started")}
                 </span>
               </Link>
             ))}
@@ -598,7 +600,7 @@ function AnalysisLayoutInner() {
             {/* Right Panel Header */}
             <div className="p-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/50">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">Context &amp; Trace</span>
+                <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">{t("Kontext a prepojenia", "Context & Trace")}</span>
                 <span className="px-1.5 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded">
                   {isHistorical ? `v${viewingVersion}` : `v${currentWorkingVersion}`}
                 </span>

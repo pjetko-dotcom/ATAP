@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import { Save, Info, ChevronDown, Check, X, SlidersHorizontal } from "lucide-react";
 import { ProjectCategorizationModal } from "./ProjectCategorizationModal";
+import { useLanguage } from "../context/LanguageContext";
 
 /**
  * Compliance Standards list / codebook (Číselník)
@@ -32,6 +33,17 @@ const USER_ROLES = [
 ];
 
 export function ApplicationContext() {
+  const { language, t } = useLanguage();
+  const slovakRoles: Record<string, { label: string; desc: string }> = {
+    Unauthenticated: { label: "Neoverený / anonymný používateľ", desc: "Verejný návštevník bez overenej relácie" },
+    Customer: { label: "Zákazník / registrovaný používateľ", desc: "Bežný registrovaný používateľ aplikácie" },
+    Admin: { label: "Administrátor", desc: "Úplný prístup k nastaveniam, databázam a konfigurácii" },
+    Moderator: { label: "Moderátor", desc: "Kontrola a moderovanie verejného obsahu a hlásení" },
+    Developer: { label: "Vývojár / používateľ API", desc: "Prístup k vývojárskym zdrojom, API kľúčom a webhookom" },
+    Support: { label: "Pracovník podpory", desc: "Zákaznícka podpora s obmedzeným prístupom k používateľom" },
+    Auditor: { label: "Bezpečnostný audítor / pracovník súladu", desc: "Prístup iba na čítanie k auditom, reportom a záznamom" },
+  };
+  const userRoles = USER_ROLES.map(role => language === "sk" ? { ...role, ...slovakRoles[role.id] } : role);
   const { id: analysisId } = useParams<{ id: string }>();
   const contextStorageKey = `atap_context_${analysisId || "default"}`;
   const [isCategorizationModalOpen, setIsCategorizationModalOpen] = useState(false);
@@ -122,7 +134,7 @@ export function ApplicationContext() {
     std.desc.toLowerCase().includes(complianceSearch.toLowerCase())
   );
 
-  const filteredUserRoles = USER_ROLES.filter(role =>
+  const filteredUserRoles = userRoles.filter(role =>
     role.label.toLowerCase().includes(userTypesSearch.toLowerCase()) ||
     role.desc.toLowerCase().includes(userTypesSearch.toLowerCase())
   );
@@ -131,8 +143,8 @@ export function ApplicationContext() {
     <div className="flex flex-col h-full bg-slate-50 p-6 overflow-auto">
       <div className="flex items-center justify-between mb-6 border-b border-slate-200 pb-4 flex-wrap gap-3">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Application Context</h2>
-          <p className="text-sm text-slate-500 mt-1">Define the business and security context of the application.</p>
+          <h2 className="text-2xl font-bold text-slate-800">{t("Kontext aplikácie", "Application Context")}</h2>
+          <p className="text-sm text-slate-500 mt-1">{t("Definujte obchodný a bezpečnostný kontext aplikácie.", "Define the business and security context of the application.")}</p>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -141,7 +153,7 @@ export function ApplicationContext() {
             className="flex items-center gap-1.5 px-3.5 py-2 bg-white text-blue-700 border border-blue-200 rounded-md text-sm font-semibold hover:bg-blue-50 transition-colors cursor-pointer shadow-xs"
           >
             <SlidersHorizontal size={15} className="text-blue-600" />
-            <span>Kategorizácia projektu (ASVS)</span>
+            <span>{t("Kategorizácia projektu (ASVS)", "Project categorization (ASVS)")}</span>
           </button>
           <button 
             type="button"
@@ -154,7 +166,7 @@ export function ApplicationContext() {
             }`}
           >
             {isSaved ? <Check size={16} /> : <Save size={16} />}
-            <span>{isSaved ? "Saved Context" : "Save Context"}</span>
+            <span>{isSaved ? t("Kontext uložený", "Saved Context") : t("Uložiť kontext", "Save Context")}</span>
           </button>
         </div>
       </div>
@@ -162,35 +174,35 @@ export function ApplicationContext() {
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 max-w-3xl">
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">Business Purpose</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Obchodný účel", "Business Purpose")}</label>
             <textarea 
               name="businessPurpose"
               value={formData.businessPurpose}
               onChange={handleChange}
               className="w-full h-24 px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
-              placeholder="Describe the main purpose of the application..."
+              placeholder={t("Opíšte hlavný účel aplikácie...", "Describe the main purpose of the application...")}
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Data Classification</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Klasifikácia údajov", "Data Classification")}</label>
               <select 
                 name="dataClassification"
                 value={formData.dataClassification}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
               >
-                <option value="Public">Public</option>
-                <option value="Internal">Internal</option>
-                <option value="Confidential">Confidential</option>
-                <option value="Restricted">Restricted</option>
+                <option value="Public">{t("Verejné", "Public")}</option>
+                <option value="Internal">{t("Interné", "Internal")}</option>
+                <option value="Confidential">{t("Dôverné", "Confidential")}</option>
+                <option value="Restricted">{t("Prísne obmedzené", "Restricted")}</option>
               </select>
             </div>
             
             {/* Standardized Compliance Requirements Multi-Select Dropdown with Checkboxes */}
             <div className="relative" ref={complianceRef}>
-              <label className="block text-sm font-semibold text-slate-700 mb-1">Compliance Requirements</label>
+              <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Požiadavky na súlad", "Compliance Requirements")}</label>
               <button
                 type="button"
                 onClick={() => setIsComplianceOpen(!isComplianceOpen)}
@@ -219,7 +231,7 @@ export function ApplicationContext() {
                       );
                     })
                   ) : (
-                    <span className="text-slate-400 text-sm">Select compliance standards...</span>
+                    <span className="text-slate-400 text-sm">{t("Vyberte štandardy súladu...", "Select compliance standards...")}</span>
                   )}
                 </div>
                 <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform ${isComplianceOpen ? 'rotate-180' : ''}`} />
@@ -231,7 +243,7 @@ export function ApplicationContext() {
                   <div className="px-2 py-1 border-b border-slate-100 mb-1.5">
                     <input
                       type="text"
-                      placeholder="Filter compliance standards..."
+                      placeholder={t("Filtrovať štandardy súladu...", "Filter compliance standards...")}
                       value={complianceSearch}
                       onChange={(e) => setComplianceSearch(e.target.value)}
                       onClick={(e) => e.stopPropagation()}
@@ -265,7 +277,7 @@ export function ApplicationContext() {
                       );
                     })}
                     {filteredCompliance.length === 0 && (
-                      <div className="text-center text-xs text-slate-400 py-4">No standards matched.</div>
+                      <div className="text-center text-xs text-slate-400 py-4">{t("Nenašiel sa žiadny štandard.", "No standards matched.")}</div>
                     )}
                   </div>
                 </div>
@@ -275,7 +287,7 @@ export function ApplicationContext() {
 
           {/* Standardized User Types / Roles Multi-Select Dropdown with Checkboxes */}
           <div className="relative" ref={userTypesRef}>
-            <label className="block text-sm font-semibold text-slate-700 mb-1">User Types / Roles</label>
+            <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Typy používateľov / roly", "User Types / Roles")}</label>
             <button
               type="button"
               onClick={() => setIsUserTypesOpen(!isUserTypesOpen)}
@@ -284,7 +296,7 @@ export function ApplicationContext() {
               <div className="flex flex-wrap gap-1.5 py-0.5">
                 {formData.userTypes.length > 0 ? (
                   formData.userTypes.map((roleId) => {
-                    const role = USER_ROLES.find((r) => r.id === roleId);
+                    const role = userRoles.find((r) => r.id === roleId);
                     return (
                       <span
                         key={roleId}
@@ -304,7 +316,7 @@ export function ApplicationContext() {
                     );
                   })
                 ) : (
-                  <span className="text-slate-400 text-sm">Select user types / roles...</span>
+                  <span className="text-slate-400 text-sm">{t("Vyberte typy používateľov / roly...", "Select user types / roles...")}</span>
                 )}
               </div>
               <ChevronDown size={16} className={`text-slate-400 shrink-0 transition-transform ${isUserTypesOpen ? 'rotate-180' : ''}`} />
@@ -316,7 +328,7 @@ export function ApplicationContext() {
                 <div className="px-2 py-1 border-b border-slate-100 mb-1.5">
                   <input
                     type="text"
-                    placeholder="Filter user types / roles..."
+                    placeholder={t("Filtrovať typy používateľov / roly...", "Filter user types / roles...")}
                     value={userTypesSearch}
                     onChange={(e) => setUserTypesSearch(e.target.value)}
                     onClick={(e) => e.stopPropagation()}
@@ -350,7 +362,7 @@ export function ApplicationContext() {
                     );
                   })}
                   {filteredUserRoles.length === 0 && (
-                    <div className="text-center text-xs text-slate-400 py-4">No user types/roles matched.</div>
+                    <div className="text-center text-xs text-slate-400 py-4">{t("Nenašiel sa žiadny typ používateľa ani rola.", "No user types/roles matched.")}</div>
                   )}
                 </div>
               </div>
@@ -367,8 +379,8 @@ export function ApplicationContext() {
               className="h-4 w-4 text-blue-600 rounded border-slate-300 cursor-pointer"
             />
             <div>
-              <label htmlFor="internetFacing" className="text-sm font-semibold text-slate-700 block cursor-pointer">Internet Facing</label>
-              <span className="text-xs text-slate-500">Check if the application is accessible from the public internet.</span>
+              <label htmlFor="internetFacing" className="text-sm font-semibold text-slate-700 block cursor-pointer">{t("Prístupné z internetu", "Internet Facing")}</label>
+              <span className="text-xs text-slate-500">{t("Označte, ak je aplikácia prístupná z verejného internetu.", "Check if the application is accessible from the public internet.")}</span>
             </div>
           </div>
         </form>

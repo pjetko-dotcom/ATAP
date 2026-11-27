@@ -9,13 +9,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, ArrowRight, Shield, SlidersHorizontal, Sparkles } from "lucide-react";
 import { useAnalyses } from "../hooks/useAnalyses";
 import { ProjectCategorizationModal } from "./ProjectCategorizationModal";
-
-const STARTER_TEMPLATES = [
-  { id: "web", title: "Webová aplikácia", description: "Internetová aplikácia so zákazníckymi účtami.", systemType: "web", asvsLevel: "2", suggestedName: "Nová webová aplikácia" },
-  { id: "api", title: "API / služba", description: "Backend alebo mikroslužba s citlivými dátami.", systemType: "api", asvsLevel: "2", suggestedName: "Nová API služba" },
-  { id: "critical", title: "Kritický systém", description: "Vysoká úroveň záruky pre kritickú infraštruktúru.", systemType: "api", asvsLevel: "3", suggestedName: "Kritický systém" },
-  { id: "blank", title: "Začať od začiatku", description: "Zvoľte typ systému a úroveň manuálne.", systemType: "web", asvsLevel: "2", suggestedName: "" },
-];
+import { useLanguage } from "../context/LanguageContext";
 
 /**
  * New Analysis Component.
@@ -26,6 +20,13 @@ const STARTER_TEMPLATES = [
  * @returns {JSX.Element} The rendered wizard component.
  */
 export function NewAnalysis() {
+  const { t } = useLanguage();
+  const starterTemplates = [
+    { id: "web", title: t("Webová aplikácia", "Web application"), description: t("Internetová aplikácia so zákazníckymi účtami.", "Internet application with customer accounts."), systemType: "web", asvsLevel: "2", suggestedName: t("Nová webová aplikácia", "New web application") },
+    { id: "api", title: t("API / služba", "API / service"), description: t("Backend alebo mikroslužba s citlivými dátami.", "Backend or microservice with sensitive data."), systemType: "api", asvsLevel: "2", suggestedName: t("Nová API služba", "New API service") },
+    { id: "critical", title: t("Kritický systém", "Critical system"), description: t("Vysoká úroveň záruky pre kritickú infraštruktúru.", "High assurance for critical infrastructure."), systemType: "api", asvsLevel: "3", suggestedName: t("Kritický systém", "Critical system") },
+    { id: "blank", title: t("Začať od začiatku", "Start from scratch"), description: t("Zvoľte typ systému a úroveň manuálne.", "Choose the system type and level manually."), systemType: "web", asvsLevel: "2", suggestedName: "" },
+  ];
   const navigate = useNavigate();
   const { saveAnalysis } = useAnalyses();
   // Tracks the current step in the wizard (1 or 2)
@@ -62,7 +63,7 @@ export function NewAnalysis() {
       <header className="h-16 bg-white border-b border-slate-200 flex items-center px-8 shrink-0">
         <Link to="/" className="text-slate-500 hover:text-slate-800 flex items-center gap-2 text-sm font-medium">
           <ArrowLeft size={16} />
-          Back to Dashboard
+          {t("Späť na prehľad", "Back to Dashboard")}
         </Link>
       </header>
 
@@ -73,8 +74,8 @@ export function NewAnalysis() {
             <div className="w-12 h-12 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4">
               <Shield size={24} />
             </div>
-            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">Create New Analysis</h2>
-            <p className="text-sm text-slate-500 mt-1">Configure the parameters for your application threat model and ASVS assessment.</p>
+            <h2 className="text-2xl font-bold text-slate-800 tracking-tight">{t("Vytvoriť novú analýzu", "Create New Analysis")}</h2>
+            <p className="text-sm text-slate-500 mt-1">{t("Nastavte parametre modelu hrozieb a hodnotenia ASVS aplikácie.", "Configure the parameters for your application threat model and ASVS assessment.")}</p>
           </div>
 
           {/* Form */}
@@ -82,9 +83,9 @@ export function NewAnalysis() {
             {step === 1 && (
               <div className="space-y-6">
                 <fieldset>
-                  <legend className="mb-2 text-sm font-semibold text-slate-700">Ako chcete začať?</legend>
+                  <legend className="mb-2 text-sm font-semibold text-slate-700">{t("Ako chcete začať?", "How would you like to start?")}</legend>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    {STARTER_TEMPLATES.map(template => (
+                    {starterTemplates.map(template => (
                       <button
                         key={template.id}
                         type="button"
@@ -107,28 +108,28 @@ export function NewAnalysis() {
                       </button>
                     ))}
                   </div>
-                  <p className="mt-2 text-xs text-slate-500">Šablóny predvyplnia typ a cieľovú úroveň; názov môžete upraviť. Vaše hodnotenie zostane prázdne.</p>
+                  <p className="mt-2 text-xs text-slate-500">{t("Šablóny predvyplnia typ a cieľovú úroveň; názov môžete upraviť. Vaše hodnotenie zostane prázdne.", "Templates prefill the system type and target level; you can edit the name. Your assessment remains empty.")}</p>
                 </fieldset>
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Application Name</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Názov aplikácie", "Application Name")}</label>
                   <input 
                     type="text" 
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    placeholder="e.g. Retail Banking API v2.4" 
+                    placeholder={t("napr. Retail Banking API v2.4", "e.g. Retail Banking API v2.4")}
                     className="w-full px-4 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">System Type</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Typ systému", "System Type")}</label>
                   <div className="grid grid-cols-2 gap-4">
                     {[
-                      { id: "web", label: "Web Application" },
+                      { id: "web", label: t("Webová aplikácia", "Web Application") },
                       { id: "api", label: "API / Microservice" },
-                      { id: "mobile", label: "Mobile App" },
-                      { id: "iot", label: "IoT Device / Firmware" }
+                      { id: "mobile", label: t("Mobilná aplikácia", "Mobile App") },
+                      { id: "iot", label: t("IoT zariadenie / firmvér", "IoT Device / Firmware") }
                     ].map(type => (
                       <label key={type.id} className={`flex items-center p-4 border rounded-md cursor-pointer transition-colors ${formData.systemType === type.id ? 'border-blue-500 bg-blue-50/30' : 'border-slate-200 hover:border-slate-300'}`}>
                         <input 
@@ -146,15 +147,15 @@ export function NewAnalysis() {
                 </div>
 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Business Owners</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Vlastníci systému", "Business Owners")}</label>
                   <input 
                     type="text" 
                     value={formData.businessOwners}
                     onChange={(e) => setFormData({...formData, businessOwners: e.target.value})}
-                    placeholder="Email addresses (comma separated)" 
+                    placeholder={t("E-mailové adresy oddelené čiarkou", "Email addresses (comma separated)")}
                     className="w-full px-4 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors"
                   />
-                  <p className="text-xs text-slate-500 mt-1">Users will be invited as stakeholders.</p>
+                  <p className="text-xs text-slate-500 mt-1">{t("Používatelia budú pozvaní ako zainteresované osoby.", "Users will be invited as stakeholders.")}</p>
                 </div>
               </div>
             )}
@@ -163,21 +164,21 @@ export function NewAnalysis() {
               <div className="space-y-6">
                 <div>
                   <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
-                    <label className="block text-sm font-semibold text-slate-700">Target ASVS Level</label>
+                    <label className="block text-sm font-semibold text-slate-700">{t("Cieľová úroveň ASVS", "Target ASVS Level")}</label>
                     <button
                       type="button"
                       onClick={() => setIsCategorizationOpen(true)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
                     >
                       <Sparkles size={14} className="text-blue-600" />
-                      <span>Pomôcka: Triážové otázky pre kategorizáciu projektu</span>
+                      <span>{t("Pomôcka: Triážové otázky pre kategorizáciu projektu", "Helper: Triage questions for project categorization")}</span>
                     </button>
                   </div>
                   <div className="space-y-3">
                     {[
-                      { level: "1", title: "Level 1: First steps, automated", desc: "For low assurance levels, completely automated testable." },
-                      { level: "2", title: "Level 2: Most applications", desc: "For applications that contain sensitive data, which requires protection. Defends against most of the risks associated with software today." },
-                      { level: "3", title: "Level 3: High assurance", desc: "For the most critical applications. Applications that perform high value transactions, contain sensitive medical data, etc." }
+                      { level: "1", title: t("Úroveň 1: Základné automatizované overenie", "Level 1: First steps, automated"), desc: t("Pre nízku úroveň záruky, plne automatizovateľné testovanie.", "For low assurance levels, completely automated testable.") },
+                      { level: "2", title: t("Úroveň 2: Väčšina aplikácií", "Level 2: Most applications"), desc: t("Pre aplikácie s citlivými údajmi vyžadujúcimi ochranu. Chráni pred väčšinou súčasných softvérových rizík.", "For applications that contain sensitive data, which requires protection. Defends against most of the risks associated with software today.") },
+                      { level: "3", title: t("Úroveň 3: Vysoká úroveň záruky", "Level 3: High assurance"), desc: t("Pre najkritickejšie aplikácie, napríklad s hodnotnými transakciami alebo citlivými zdravotnými údajmi.", "For the most critical applications. Applications that perform high value transactions, contain sensitive medical data, etc.") }
                     ].map(l => (
                       <label key={l.level} className={`flex items-start p-4 border rounded-lg cursor-pointer transition-colors ${formData.asvsLevel === l.level ? 'border-blue-500 bg-blue-50/30' : 'border-slate-200 hover:border-slate-300'}`}>
                         <input 
@@ -209,7 +210,7 @@ export function NewAnalysis() {
                   onClick={() => setStep(1)}
                   className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 border border-transparent hover:bg-slate-50 rounded"
                 >
-                  Previous
+                  {t("Späť", "Previous")}
                 </button>
               )}
               
@@ -218,9 +219,9 @@ export function NewAnalysis() {
                 className="px-6 py-2.5 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm shadow-blue-200 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-2 transition-colors"
               >
                 {step === 1 ? (
-                  <>Continue <ArrowRight size={16} /></>
+                  <>{t("Pokračovať", "Continue")} <ArrowRight size={16} /></>
                 ) : (
-                  "Create Analysis Workspace"
+                  t("Vytvoriť pracovný priestor", "Create Analysis Workspace")
                 )}
               </button>
             </div>

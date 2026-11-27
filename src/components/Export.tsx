@@ -21,8 +21,11 @@ import { exportASVSToExcel, exportASVSToCSV } from "../utils/exportToExcel";
 import { ExecutiveReportModal } from "./ExecutiveReportModal";
 import { BackupRestoreModal } from "./BackupRestoreModal";
 import type { ReportLanguage } from "../utils/reportLanguage";
+import { LanguageFlag } from "./LanguageFlag";
+import { useLanguage } from "../context/LanguageContext";
 
 export function Export() {
+  const { t } = useLanguage();
   const { id: analysisId } = useParams<{ id: string }>();
   const { reqs } = useWorkspaceState(analysisId);
   const { analyses } = useAnalyses();
@@ -76,11 +79,11 @@ export function Export() {
         density: excelDensity,
         language: reportLanguage,
       });
-      setDownloadSuccess("Súbor .xlsx bol úspešne vygenerovaný a stiahnutý.");
+      setDownloadSuccess(t("Súbor .xlsx bol úspešne vygenerovaný a stiahnutý.", "The .xlsx file was generated and downloaded."));
       setTimeout(() => setDownloadSuccess(null), 5000);
     } catch (err) {
       console.error("Export to Excel failed:", err);
-      setExportError("Excel súbor sa nepodarilo vytvoriť. Skontrolujte rozsah a skúste to znova.");
+      setExportError(t("Excel súbor sa nepodarilo vytvoriť. Skontrolujte rozsah a skúste to znova.", "Could not create the Excel file. Check the scope and try again."));
     } finally {
       setIsExportingExcel(false);
     }
@@ -97,11 +100,11 @@ export function Export() {
         onlyGaps,
         language: reportLanguage
       });
-      setDownloadSuccess("Súbor .csv bol úspešne vygenerovaný a stiahnutý.");
+      setDownloadSuccess(t("Súbor .csv bol úspešne vygenerovaný a stiahnutý.", "The .csv file was generated and downloaded."));
       setTimeout(() => setDownloadSuccess(null), 5000);
     } catch (err) {
       console.error("Export to CSV failed:", err);
-      setExportError("CSV súbor sa nepodarilo vytvoriť. Skúste to znova.");
+      setExportError(t("CSV súbor sa nepodarilo vytvoriť. Skúste to znova.", "Could not create the CSV file. Try again."));
     }
   };
 
@@ -116,9 +119,9 @@ export function Export() {
               <Printer size={26} />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-slate-800">Export & Bezpečnostné reporty</h1>
+              <h1 className="text-xl font-bold text-slate-800">{t("Export a bezpečnostné reporty", "Export & Security reports")}</h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                Generujte exekutívne PDF reporty, podrobné audítorské Excel hárky alebo kompletné JSON zálohy pre {analysisName}.
+                {t("Generujte exekutívne PDF reporty, podrobné audítorské Excel hárky alebo kompletné JSON zálohy pre", "Generate executive PDF reports, detailed audit Excel sheets, or complete JSON backups for")} {analysisName}.
               </p>
             </div>
           </div>
@@ -129,7 +132,7 @@ export function Export() {
               className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs flex items-center gap-2 transition-colors cursor-pointer"
             >
               <Printer size={15} />
-              <span>Exekutívny PDF Report</span>
+              <span>{t("Exekutívny PDF Report", "Executive PDF Report")}</span>
             </button>
           </div>
         </div>
@@ -146,11 +149,11 @@ export function Export() {
         <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-6 rounded-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <span className="px-2 py-0.5 bg-blue-500/30 text-blue-200 text-[10px] font-bold uppercase tracking-wider rounded border border-blue-400/30">
-              Manažérsky výstup pre audítorov & CISO
+              {t("Manažérsky výstup pre audítorov a CISO", "Executive output for auditors and CISOs")}
             </span>
-            <h2 className="text-lg font-bold">Report hodnotenia OWASP ASVS (Tlač / PDF)</h2>
+            <h2 className="text-lg font-bold">{t("Report hodnotenia OWASP ASVS (Tlač / PDF)", "OWASP ASVS assessment report (Print / PDF)")}</h2>
             <p className="text-xs text-blue-100 max-w-xl">
-              Súhrn pokrytia všetkých 17 kapitol (V1–V17), prioritné medzery, STRIDE hrozby a priestor na schválenie audítorom. Report je výstup aplikácie, nie certifikácia ani oficiálne potvrdenie OWASP.
+              {t("Súhrn pokrytia všetkých 17 kapitol (V1–V17), prioritné medzery, STRIDE hrozby a priestor na schválenie audítorom. Report je výstup aplikácie, nie certifikácia ani oficiálne potvrdenie OWASP.", "Coverage summary for all 17 chapters (V1–V17), priority gaps, STRIDE threats, and auditor sign-off. This report is an application output, not an OWASP certification or official attestation.")}
             </p>
           </div>
           <button
@@ -158,63 +161,48 @@ export function Export() {
             className="px-4 py-2.5 bg-white hover:bg-blue-50 text-slate-900 rounded-lg text-xs font-bold shadow-sm flex items-center gap-2 shrink-0 transition-colors cursor-pointer"
           >
             <Printer size={16} className="text-blue-600" />
-            <span>Zobraziť & Vytlačiť PDF</span>
+            <span>{t("Zobraziť a vytlačiť PDF", "View & print PDF")}</span>
           </button>
         </div>
 
         {/* Scope Filters */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
           <div>
-            <label htmlFor="report-language" className="block text-xs font-semibold text-slate-600 mb-1.5">Jazyk reportu / Report language</label>
+            <label htmlFor="report-language" className="block text-xs font-semibold text-slate-600 mb-1.5">{t("Jazyk reportu", "Report language")}</label>
             <div className="flex items-center gap-2">
-              {reportLanguage === "sk" ? (
-                <svg aria-hidden="true" width="28" height="19" viewBox="0 0 30 20">
-                  <path fill="#fff" d="M0 0h30v20H0z"/><path fill="#0b4ea2" d="M0 6.67h30v6.66H0z"/><path fill="#ee1c25" d="M0 13.33h30V20H0z"/>
-                  <path d="M6 4h7v7c0 3-3.5 4.5-3.5 4.5S6 14 6 11z" fill="#ee1c25" stroke="#fff" strokeWidth=".7"/>
-                  <path d="M9.5 6v6M7.5 8h4M8 10h3" stroke="#fff" strokeWidth=".8"/>
-                  <path d="M6.5 12.5c1-1 2-1 3-.1 1-1 2-1 3 .1v.5c-1 1.2-3 2-3 2s-2-.8-3-2z" fill="#0b4ea2"/>
-                </svg>
-              ) : (
-                <svg aria-hidden="true" width="28" height="19" viewBox="0 0 60 40">
-                  <path fill="#012169" d="M0 0h60v40H0z"/>
-                  <path d="M0 0l60 40M60 0 0 40" stroke="#fff" strokeWidth="8"/>
-                  <path d="M0 0l60 40M60 0 0 40" stroke="#c8102e" strokeWidth="3"/>
-                  <path d="M30 0v40M0 20h60" stroke="#fff" strokeWidth="12"/>
-                  <path d="M30 0v40M0 20h60" stroke="#c8102e" strokeWidth="7"/>
-                </svg>
-              )}
+              <LanguageFlag language={reportLanguage} />
               <select id="report-language" value={reportLanguage} onChange={event => setReportLanguage(event.target.value === "en" ? "en" : "sk")} className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-700">
                 <option value="sk">Slovenčina</option>
                 <option value="en">English</option>
               </select>
             </div>
-            <p className="mt-1 text-xs text-slate-500">Údaje projektu a niektoré generované texty sa automaticky neprekladajú. / Project data and some generated text are not translated automatically.</p>
+            <p className="mt-1 text-xs text-slate-500">{t("Údaje projektu a niektoré generované texty sa automaticky neprekladajú.", "Project data and some generated text are not translated automatically.")}</p>
           </div>
           <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
             <Layers size={16} className="text-blue-600" />
-            Nastavenie rozsahu tabuľkového exportu
+            {t("Nastavenie rozsahu tabuľkového exportu", "Spreadsheet export scope")}
           </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                Cieľová úroveň ASVS (Level)
+                {t("Cieľová úroveň ASVS", "Target ASVS level")}
               </label>
               <select
                 value={targetLevel}
                 onChange={(e) => setTargetLevel(e.target.value === "all" ? "all" : parseInt(e.target.value, 10))}
                 className="w-full text-xs border border-slate-200 rounded-lg p-2.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
               >
-                <option value="all">Všetky úrovne (Level 1, 2 a 3)</option>
-                <option value={1}>Level 1 Only (Základná bezpečnostná hygiena)</option>
-                <option value={2}>Level 2 (Štandard pre citlivé B2B/B2C aplikácie)</option>
-                <option value={3}>Level 3 (Kritická infraštruktúra a bankovníctvo)</option>
+                <option value="all">{t("Všetky úrovne (Level 1, 2 a 3)", "All levels (Level 1, 2 and 3)")}</option>
+                <option value={1}>{t("Level 1 (Základná bezpečnostná hygiena)", "Level 1 (Basic security hygiene)")}</option>
+                <option value={2}>{t("Level 2 (Štandard pre citlivé B2B/B2C aplikácie)", "Level 2 (Standard for sensitive B2B/B2C applications)")}</option>
+                <option value={3}>{t("Level 3 (Kritická infraštruktúra a bankovníctvo)", "Level 3 (Critical infrastructure and banking)")}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                Filtrovanie podľa stavu
+                {t("Filtrovanie podľa stavu", "Filter by status")}
               </label>
               <div className="flex items-center h-10">
                 <label className="inline-flex items-center gap-2 text-xs text-slate-700 cursor-pointer select-none">
@@ -224,22 +212,22 @@ export function Export() {
                     onChange={(e) => setOnlyGaps(e.target.checked)}
                     className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
                   />
-                  <span>Exportovať <strong>iba otvorené bezpečnostné medzery</strong> (Partial / Missing)</span>
+                  <span>{t("Exportovať iba otvorené bezpečnostné medzery", "Export only open security gaps")} (Partial / Missing)</span>
                 </label>
               </div>
             </div>
           </div>
 
           <fieldset className="border-t border-slate-100 pt-4">
-            <legend className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sekcie zošita Excel (najviac tri hárky)</legend>
+            <legend className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t("Sekcie zošita Excel (najviac tri hárky)", "Excel workbook sections (up to three sheets)")}</legend>
             <p className="mt-1 text-[11px] text-slate-500">
-              Hárok STRIDE sa vytvorí iba vtedy, ak register obsahuje hrozby. Pri exporte iba medzier zostáva súhrn vypočítaný z celého zvoleného rozsahu.
+              {t("Hárok STRIDE sa vytvorí iba vtedy, ak register obsahuje hrozby. Pri exporte iba medzier zostáva súhrn vypočítaný z celého zvoleného rozsahu.", "The STRIDE sheet is created only when the register contains threats. When exporting gaps only, the summary still covers the entire selected scope.")}
             </p>
             <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
-                { key: "summary", label: "Súhrn auditu", description: "KPI a prehľad kapitol" },
-                { key: "requirements", label: "ASVS požiadavky", description: "Detailný zoznam kontrol" },
-                { key: "threats", label: "STRIDE hrozby", description: "Register hrozieb, ak je k dispozícii" },
+                { key: "summary", label: t("Súhrn auditu", "Audit summary"), description: t("KPI a prehľad kapitol", "KPIs and chapter overview") },
+                { key: "requirements", label: t("ASVS požiadavky", "ASVS requirements"), description: t("Detailný zoznam kontrol", "Detailed list of controls") },
+                { key: "threats", label: t("STRIDE hrozby", "STRIDE threats"), description: t("Register hrozieb, ak je k dispozícii", "Threat register, if available") },
               ].map(section => (
                 <label key={section.key} className="flex items-start gap-2 rounded-lg border border-slate-200 p-3 text-xs">
                   <input
@@ -253,13 +241,13 @@ export function Export() {
               ))}
             </div>
             {!excelSections.summary && !excelSections.requirements && !excelSections.threats && (
-              <p role="alert" className="mt-2 text-xs font-medium text-red-700">Vyberte aspoň jednu sekciu zošita.</p>
+              <p role="alert" className="mt-2 text-xs font-medium text-red-700">{t("Vyberte aspoň jednu sekciu zošita.", "Select at least one workbook section.")}</p>
             )}
             <div className="mt-3 flex flex-wrap items-center gap-3">
-              <label htmlFor="excel-density" className="text-xs font-semibold text-slate-600">Hustota riadkov</label>
+              <label htmlFor="excel-density" className="text-xs font-semibold text-slate-600">{t("Hustota riadkov", "Row density")}</label>
               <select id="excel-density" value={excelDensity} onChange={event => setExcelDensity(event.target.value as "comfortable" | "compact")} className="rounded-md border border-slate-200 bg-white px-2.5 py-1.5 text-xs text-slate-700">
-                <option value="comfortable">Čitateľná (vyššie riadky)</option>
-                <option value="compact">Kompaktná (viac údajov na stránke)</option>
+                <option value="comfortable">{t("Čitateľná (vyššie riadky)", "Comfortable (taller rows)")}</option>
+                <option value="compact">{t("Kompaktná (viac údajov na stránke)", "Compact (more data per page)")}</option>
               </select>
             </div>
           </fieldset>
@@ -267,38 +255,38 @@ export function Export() {
           {/* Quick Metrics of the export */}
           <div className="pt-2 border-t border-slate-100">
             <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              Náhľad obsahu vygenerovaného súboru:
+              {t("Náhľad obsahu vygenerovaného súboru:", "Preview of generated file contents:")}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
                 <div className="text-base font-bold text-slate-800">{totalCount}</div>
-                <div className="text-[10px] text-slate-500">Položiek spolu</div>
+                <div className="text-[10px] text-slate-500">{t("Položiek spolu", "Total items")}</div>
               </div>
               <div className="bg-emerald-50/70 p-2.5 rounded-lg border border-emerald-100">
                 <div className="text-base font-bold text-emerald-700">{implementedCount}</div>
-                <div className="text-[10px] text-emerald-600">Splnené (Implemented)</div>
+                <div className="text-[10px] text-emerald-600">{t("Splnené (Implemented)", "Implemented")}</div>
               </div>
               <div className="bg-red-50/70 p-2.5 rounded-lg border border-red-100">
                 <div className="text-base font-bold text-red-700">{gapsCount}</div>
-                <div className="text-[10px] text-red-600">Medzery (Gaps)</div>
+                <div className="text-[10px] text-red-600">{t("Medzery (Gaps)", "Gaps")}</div>
               </div>
               <div className="bg-slate-100/70 p-2.5 rounded-lg border border-slate-200">
                 <div className="text-base font-bold text-slate-600">{naCount}</div>
-                <div className="text-[10px] text-slate-500">Vylúčené (N/A)</div>
+                <div className="text-[10px] text-slate-500">{t("Vylúčené (N/A)", "Excluded (N/A)")}</div>
               </div>
               <div className="bg-blue-50/70 p-2.5 rounded-lg border border-blue-100">
                 <div className="text-base font-bold text-blue-700">{pendingCount}</div>
-                <div className="text-[10px] text-blue-600">Čakajúce (Pending)</div>
+                <div className="text-[10px] text-blue-600">{t("Čakajúce (Pending)", "Pending")}</div>
               </div>
 
               <div className="overflow-hidden rounded-lg border border-slate-200">
                 <div className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-600">
-                  Ukážka riadkov podľa zvoleného rozsahu{previewList.length > 4 ? " · prvé 4 položky" : ""}
+                  {t("Ukážka riadkov podľa zvoleného rozsahu", "Preview of rows in the selected scope")}{previewList.length > 4 ? t(" · prvé 4 položky", " · first 4 items") : ""}
                 </div>
                 <div className="overflow-x-auto">
                   <table className="w-full min-w-[540px] text-left text-xs">
                     <thead className="text-[10px] uppercase text-slate-500">
-                      <tr><th className="px-3 py-2">ID</th><th className="px-3 py-2">Požiadavka</th><th className="px-3 py-2">Level</th><th className="px-3 py-2">Stav</th></tr>
+                      <tr><th className="px-3 py-2">ID</th><th className="px-3 py-2">{t("Požiadavka", "Requirement")}</th><th className="px-3 py-2">Level</th><th className="px-3 py-2">{t("Stav", "Status")}</th></tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100">
                       {previewList.slice(0, 4).map(requirement => (
@@ -309,7 +297,7 @@ export function Export() {
                           <td className="px-3 py-2 text-slate-600">{requirement.status || "Pending"}</td>
                         </tr>
                       ))}
-                      {previewList.length === 0 && <tr><td colSpan={4} className="px-3 py-5 text-center text-slate-500">Pre tento filter nie sú žiadne riadky.</td></tr>}
+                      {previewList.length === 0 && <tr><td colSpan={4} className="px-3 py-5 text-center text-slate-500">{t("Pre tento filter nie sú žiadne riadky.", "No rows match this filter.")}</td></tr>}
                     </tbody>
                   </table>
                 </div>
@@ -333,21 +321,21 @@ export function Export() {
               </div>
               <h3 className="text-base font-bold text-slate-800 mb-1">Microsoft Excel (.xlsx)</h3>
               <p className="text-xs text-slate-500 mb-4">
-                Viac-hárkový zošit: Prehľad auditu, požiadavky s filtrami, metodika overenia a STRIDE hrozby.
+                {t("Viac-hárkový zošit: Prehľad auditu, požiadavky s filtrami, metodika overenia a STRIDE hrozby.", "Multi-sheet workbook: audit overview, filterable requirements, verification guidance and STRIDE threats.")}
               </p>
 
               <div className="space-y-1.5 mb-6 text-xs text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                  <span>3 hárky vrátane KPI súhrnu</span>
+                  <span>{t("3 hárky vrátane KPI súhrnu", "3 sheets including KPI summary")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                  <span>Farebné formátovanie stavov</span>
+                  <span>{t("Farebné formátovanie stavov", "Colour-coded statuses")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                  <span>Overovacie otázky SAST/DAST</span>
+                  <span>{t("Overovacie otázky SAST/DAST", "SAST/DAST verification questions")}</span>
                 </div>
               </div>
             </div>
@@ -360,12 +348,12 @@ export function Export() {
               {isExportingExcel ? (
                 <>
                   <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                  <span>Generujem Excel...</span>
+                  <span>{t("Generujem Excel...", "Generating Excel...")}</span>
                 </>
               ) : (
                 <>
                   <Download size={15} />
-                  <span>Stiahnuť Excel (.xlsx)</span>
+                  <span>{t("Stiahnuť Excel (.xlsx)", "Download Excel (.xlsx)")}</span>
                 </>
               )}
             </button>
@@ -377,23 +365,23 @@ export function Export() {
               <div className="w-12 h-12 bg-slate-100 text-slate-700 rounded-xl flex items-center justify-center mb-4">
                 <FileText size={24} />
               </div>
-              <h3 className="text-base font-bold text-slate-800 mb-1">CSV formát (.csv)</h3>
+              <h3 className="text-base font-bold text-slate-800 mb-1">{t("CSV formát (.csv)", "CSV format (.csv)")}</h3>
               <p className="text-xs text-slate-500 mb-4">
-                Štandardný tabuľkový súbor vhodný pre strojové spracovanie, CI/CD skripty a Jira import.
+                {t("Štandardný tabuľkový súbor vhodný pre strojové spracovanie, CI/CD skripty a Jira import.", "Standard tabular file suitable for machine processing, CI/CD scripts and Jira import.")}
               </p>
 
               <div className="space-y-1.5 mb-6 text-xs text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-slate-500 shrink-0" />
-                  <span>UTF-8 s BOM (SK diakritika)</span>
+                  <span>{t("UTF-8 s BOM (SK diakritika)", "UTF-8 with BOM")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-slate-500 shrink-0" />
-                  <span>RFC 4180 kompatibilita</span>
+                  <span>{t("RFC 4180 kompatibilita", "RFC 4180 compatibility")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-slate-500 shrink-0" />
-                  <span>Okamžité stiahnutie</span>
+                  <span>{t("Okamžité stiahnutie", "Instant download")}</span>
                 </div>
               </div>
             </div>
@@ -403,7 +391,7 @@ export function Export() {
               className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-blue-600 text-white text-xs font-semibold rounded-lg shadow-xs hover:bg-blue-700 transition-colors cursor-pointer"
             >
               <Download size={15} />
-              <span>Stiahnuť CSV (.csv)</span>
+              <span>{t("Stiahnuť CSV (.csv)", "Download CSV (.csv)")}</span>
             </button>
           </div>
 
@@ -417,23 +405,23 @@ export function Export() {
               <div className="w-12 h-12 bg-blue-50 text-blue-700 rounded-xl flex items-center justify-center mb-4">
                 <Database size={24} />
               </div>
-              <h3 className="text-base font-bold text-slate-800 mb-1">JSON Záloha & Obnova</h3>
+              <h3 className="text-base font-bold text-slate-800 mb-1">{t("JSON záloha a obnova", "JSON Backup & Restore")}</h3>
               <p className="text-xs text-slate-500 mb-4">
-                Kompletná nezávislá záloha stavu projektu vrátane architektúry, audit logu a verzií.
+                {t("Kompletná nezávislá záloha stavu projektu vrátane architektúry, audit logu a verzií.", "Complete independent project backup including architecture, audit log and versions.")}
               </p>
 
               <div className="space-y-1.5 mb-6 text-xs text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-blue-600 shrink-0" />
-                  <span>Obsahuje architektúru aj DFD toky</span>
+                  <span>{t("Obsahuje architektúru aj DFD toky", "Includes architecture and DFD flows")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-blue-600 shrink-0" />
-                  <span>Úplný auditný log a verzie</span>
+                  <span>{t("Úplný auditný log a verzie", "Complete audit log and versions")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-blue-600 shrink-0" />
-                  <span>Možnosť spätnej obnovy dát</span>
+                  <span>{t("Možnosť spätnej obnovy dát", "Data can be restored")}</span>
                 </div>
               </div>
             </div>
@@ -443,7 +431,7 @@ export function Export() {
               className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-blue-600 text-white text-xs font-semibold rounded-lg shadow-xs hover:bg-blue-700 transition-colors cursor-pointer"
             >
               <Database size={15} />
-              <span>Spravovať zálohy (JSON)</span>
+              <span>{t("Spravovať zálohy (JSON)", "Manage backups (JSON)")}</span>
             </button>
           </div>
 

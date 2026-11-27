@@ -2,8 +2,10 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Clock, User, FileEdit } from "lucide-react";
 import { useParams } from "react-router-dom";
 import { parseActivityLogs, type ActivityLogEntry } from "../utils/activityLog";
+import { useLanguage } from "../context/LanguageContext";
 
 export function AuditTrail() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const [activityLogs, setActivityLogs] = useState<ActivityLogEntry[]>([]);
 
@@ -29,9 +31,9 @@ export function AuditTrail() {
   return (
     <div className="flex flex-col h-full bg-slate-50 p-6">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Activity log</h2>
+        <h2 className="text-2xl font-bold text-slate-800">{t("Záznam aktivít", "Activity log")}</h2>
         <p className="text-sm text-amber-800 mt-1" role="note">
-          Stored locally and editable; this is not an authenticated or tamper-proof audit record.
+          {t("Záznam je uložený lokálne a možno ho upraviť; nejde o autentifikovanú ani nezmeniteľnú auditnú stopu.", "Stored locally and editable; this is not an authenticated or tamper-proof audit record.")}
         </p>
       </div>
 
@@ -54,7 +56,7 @@ export function AuditTrail() {
             </div>
           ))}
           {activityLogs.length === 0 && (
-            <p className="text-sm text-slate-500">No activity has been recorded for this workspace.</p>
+            <p className="text-sm text-slate-500">{t("V tomto pracovnom priestore nebola zaznamenaná žiadna aktivita.", "No activity has been recorded for this workspace.")}</p>
           )}
         </div>
       </div>

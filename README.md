@@ -86,6 +86,8 @@ Na stránke exportu možno vybrať slovenčinu alebo angličtinu pre tlačiteľn
 
 CSV zachováva rovnaké poradie a význam stĺpcov, ale ich názvy závisia od zvoleného jazyka; integrácie vyžadujúce pôvodné anglické hlavičky majú zvoliť English.
 
+Samostatný prepínač s vlajkou v navigácii mení jazyk rozhrania bez obnovenia stránky a ukladá voľbu v lokálnom úložisku. Zatiaľ sú preložené navigácia, prehľad projektov, sprievodca novou analýzou, kontext aplikácie, STRIDE, auditná stopa, export, nápoveda a časti pracovného priestoru ASVS; ostatné obrazovky a dialógy ešte môžu obsahovať texty v pôvodnom jazyku. Rýchly export z ASVS používa jazyk rozhrania, zatiaľ čo stránka reportov má vlastný výber.
+
 ### Verzia 1.1
 - Pridané vyznačenie stavu pokroku analýzy a prepojené kroky Kontext / DFD / STRIDE / ASVS / Nálezy.
 - Pridaný stav uloženia a viditeľné chyby lokálneho úložiska.

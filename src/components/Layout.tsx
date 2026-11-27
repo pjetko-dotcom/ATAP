@@ -11,6 +11,8 @@ import { getCurrentUserName, setCurrentUserName } from "../utils/activityLog";
 import { BackupRestoreModal } from "./BackupRestoreModal";
 import { useAnalyses } from "../hooks/useAnalyses";
 import packageInfo from "../../package.json";
+import { useLanguage } from "../context/LanguageContext";
+import { LanguageFlag } from "./LanguageFlag";
 
 const SIDEBAR_LOCK_KEY = "atap_sidebar_locked";
 const appVersion = packageInfo.version;
@@ -125,6 +127,7 @@ function readSidebarLockState(): boolean {
  * @returns {JSX.Element} The rendered layout component.
  */
 export function Layout() {
+  const { language, setLanguage, persistenceError, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const { analyses } = useAnalyses();
@@ -374,7 +377,7 @@ export function Layout() {
     event.preventDefault();
     const trimmedName = userNameDraft.trim();
     if (!trimmedName) {
-      setProfileError("Meno nemôže byť prázdne.");
+      setProfileError(t("Meno nemôže byť prázdne.", "The name cannot be empty."));
       return;
     }
 
@@ -385,7 +388,7 @@ export function Layout() {
       window.dispatchEvent(new Event("local_profile_update"));
     } catch (error) {
       console.error("Failed to save local profile name", error);
-      setProfileError("Meno sa nepodarilo uložiť. Skontrolujte dostupné úložisko prehliadača.");
+      setProfileError(t("Meno sa nepodarilo uložiť. Skontrolujte dostupné úložisko prehliadača.", "Could not save the name. Check browser storage."));
     }
   };
 
@@ -395,21 +398,21 @@ export function Layout() {
   const activeAnalysisId = pathId && pathId !== "new" ? pathId : null;
 
   const navLinks = [
-    { name: "Dashboard", path: "/", icon: LayoutDashboard },
+    { name: t("Prehľad", "Dashboard"), path: "/", icon: LayoutDashboard },
   ];
 
   const analysisLinks = activeAnalysisId ? [
-    { name: "Application Context", path: `/analysis/${activeAnalysisId}/context`, icon: FileText },
-    { name: "Architecture Model", path: `/analysis/${activeAnalysisId}/architecture`, icon: Component },
-    { name: "STRIDE Analysis", path: `/analysis/${activeAnalysisId}/stride`, icon: Shield },
-    { name: "ASVS Workspace", path: `/analysis/${activeAnalysisId}/asvs`, icon: Lock },
-    { name: "Threat Register", path: `/analysis/${activeAnalysisId}/threats`, icon: AlertTriangle },
-    { name: "Findings & Gaps", path: `/analysis/${activeAnalysisId}/findings`, icon: CheckCircle },
+    { name: t("Kontext aplikácie", "Application Context"), path: `/analysis/${activeAnalysisId}/context`, icon: FileText },
+    { name: t("Model architektúry", "Architecture Model"), path: `/analysis/${activeAnalysisId}/architecture`, icon: Component },
+    { name: t("Analýza STRIDE", "STRIDE Analysis"), path: `/analysis/${activeAnalysisId}/stride`, icon: Shield },
+    { name: t("Pracovný priestor ASVS", "ASVS Workspace"), path: `/analysis/${activeAnalysisId}/asvs`, icon: Lock },
+    { name: t("Register hrozieb", "Threat Register"), path: `/analysis/${activeAnalysisId}/threats`, icon: AlertTriangle },
+    { name: t("Nálezy a medzery", "Findings & Gaps"), path: `/analysis/${activeAnalysisId}/findings`, icon: CheckCircle },
   ] : [];
 
   const reportLinks = activeAnalysisId ? [
-    { name: "XLSX Export", path: `/analysis/${activeAnalysisId}/export`, icon: FileDown },
-    { name: "Audit Trail", path: `/analysis/${activeAnalysisId}/audit`, icon: History },
+    { name: t("Export reportov", "Report export"), path: `/analysis/${activeAnalysisId}/export`, icon: FileDown },
+    { name: t("Auditná stopa", "Audit Trail"), path: `/analysis/${activeAnalysisId}/audit`, icon: History },
   ] : [];
 
   return (
@@ -418,7 +421,7 @@ export function Layout() {
         href="#main-content"
         className="absolute left-2 top-2 z-[100] -translate-y-20 rounded bg-white px-3 py-2 text-sm font-semibold text-blue-700 shadow focus:translate-y-0"
       >
-        Preskočiť na obsah
+        {t("Preskočiť na obsah", "Skip to content")}
       </a>
       
       {/* Mobile Top Bar */}
@@ -430,13 +433,16 @@ export function Layout() {
           <span className="text-base font-bold tracking-tight uppercase">AVERT <span className="text-blue-500">V{appVersion}</span></span>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" onClick={openWorkspaceSearch} aria-label="Otvoriť vyhľadávanie (Ctrl/Cmd+K)" className="rounded-md border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:text-white">
+          <button type="button" onClick={() => setLanguage(language === "sk" ? "en" : "sk")} aria-label={t("Prepnúť rozhranie do angličtiny", "Switch interface to Slovak")} className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800 p-1.5 text-xs font-bold">
+            <LanguageFlag language={language} /> {language.toUpperCase()}
+          </button>
+          <button type="button" onClick={openWorkspaceSearch} aria-label={t("Otvoriť vyhľadávanie (Ctrl/Cmd+K)", "Open search (Ctrl/Cmd+K)")} className="rounded-md border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:text-white">
             <Search size={19} />
           </button>
           <button
             ref={mobileMenuButtonRef}
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            aria-label={isMobileMenuOpen ? "Zavrieť navigáciu" : "Otvoriť navigáciu"}
+            aria-label={isMobileMenuOpen ? t("Zavrieť navigáciu", "Close navigation") : t("Otvoriť navigáciu", "Open navigation")}
             aria-expanded={isMobileMenuOpen}
             aria-controls="app-navigation"
             className="p-1.5 text-slate-300 hover:text-white transition-colors cursor-pointer rounded-md bg-slate-800 border border-slate-700"
@@ -445,12 +451,13 @@ export function Layout() {
           </button>
         </div>
       </div>
+      {persistenceError && <p role="alert" className="md:hidden bg-red-50 px-4 py-2 text-xs text-red-700">{t("Jazyk sa nepodarilo uložiť.", "Could not save the language preference.")}</p>}
 
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <button
           type="button"
-          aria-label="Zavrieť menu kliknutím mimo"
+          aria-label={t("Zavrieť menu kliknutím mimo", "Close menu")}
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setIsMobileMenuOpen(false)}
         />
@@ -463,7 +470,7 @@ export function Layout() {
       {/* Sidebar Navigation */}
       <aside 
         id="app-navigation"
-        aria-label="Hlavná navigácia"
+        aria-label={t("Hlavná navigácia", "Main navigation")}
         aria-hidden={isMobileViewport && !isMobileMenuOpen}
         inert={isMobileViewport && !isMobileMenuOpen}
         onMouseEnter={() => setIsSidebarHovered(true)}
@@ -492,7 +499,7 @@ export function Layout() {
             {isExpanded && (
               <button 
                 onClick={toggleSidebarLock}
-                aria-label={isSidebarLocked ? "Odomknúť navigačný panel" : "Pripnúť navigačný panel"}
+                aria-label={isSidebarLocked ? t("Odomknúť navigačný panel", "Unpin navigation") : t("Pripnúť navigačný panel", "Pin navigation")}
                 aria-pressed={isSidebarLocked}
                 className="hidden md:flex text-slate-400 hover:text-white p-1 rounded transition-colors"
                 title={isSidebarLocked ? "Unlock Sidebar" : "Lock Sidebar"}
@@ -501,7 +508,7 @@ export function Layout() {
               </button>
             )}
           </div>
-          <nav aria-label="Sekcie aplikácie" className="space-y-1">
+          <nav aria-label={t("Sekcie aplikácie", "Application sections")} className="space-y-1">
             {navLinks.map((link) => (
               <Link
                 key={link.name}
@@ -520,7 +527,7 @@ export function Layout() {
             
             {activeAnalysisId && (
               <>
-                <div className={`pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap overflow-hidden transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Analysis Lifecycle</div>
+                <div className={`pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap overflow-hidden transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{t("Priebeh analýzy", "Analysis Lifecycle")}</div>
                 {analysisLinks.map((link) => (
                   <Link
                     key={link.name}
@@ -537,7 +544,7 @@ export function Layout() {
                   </Link>
                 ))}
 
-                <div className={`pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap overflow-hidden transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Reporting</div>
+                <div className={`pt-4 pb-2 text-xs font-semibold text-slate-500 uppercase whitespace-nowrap overflow-hidden transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{t("Reporty", "Reporting")}</div>
                 {reportLinks.map((link) => (
                   <Link
                     key={link.name}
@@ -558,53 +565,57 @@ export function Layout() {
           </nav>
         </div>
         <div className="mt-auto border-t border-slate-800">
+          <button type="button" onClick={() => setLanguage(language === "sk" ? "en" : "sk")} aria-label={t("Prepnúť rozhranie do angličtiny", "Switch interface to Slovak")} title={t("Prepnúť jazyk rozhrania", "Switch interface language")} className="hidden md:flex w-full items-center gap-3 px-5 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white">
+            <LanguageFlag language={language} /><span>{language.toUpperCase()}</span>
+          </button>
+          {persistenceError && <p role="alert" className="px-3 text-xs text-red-300">{t("Jazyk sa nepodarilo uložiť.", "Could not save the language preference.")}</p>}
           <button
             ref={searchButtonRef}
             type="button"
             onClick={openWorkspaceSearch}
-            aria-label="Hľadať v pracovných priestoroch (Ctrl/Cmd+K)"
-            title="Hľadať (Ctrl/Cmd+K)"
+            aria-label={t("Hľadať v pracovných priestoroch (Ctrl/Cmd+K)", "Search workspaces (Ctrl/Cmd+K)")}
+            title={t("Hľadať (Ctrl/Cmd+K)", "Search (Ctrl/Cmd+K)")}
             className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
           >
             <div className="shrink-0"><Search size={16} /></div>
-            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Hľadať <kbd className="ml-1 rounded border border-slate-700 px-1 text-[10px]">Ctrl/Cmd+K</kbd></span>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{t("Hľadať", "Search")} <kbd className="ml-1 rounded border border-slate-700 px-1 text-[10px]">Ctrl/Cmd+K</kbd></span>
           </button>
           <button
             type="button"
             onClick={() => setIsBackupModalOpen(true)}
-            aria-label="Backup and restore projects"
-            title="Backup & Restore"
+            aria-label={t("Zálohovať a obnoviť projekty", "Backup and restore projects")}
+            title={t("Záloha a obnova", "Backup & Restore")}
             className="w-full flex items-center gap-3 px-6 py-3 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
           >
             <div className="shrink-0"><Database size={16} /></div>
-            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Backup &amp; Restore</span>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{t("Záloha a obnova", "Backup & Restore")}</span>
           </button>
           <button 
             onClick={() => setIsHelpOpen(true)}
             className="w-full flex items-center gap-3 px-6 py-4 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
           >
             <div className="shrink-0"><HelpCircle size={16} /></div>
-            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>Help & Documentation</span>
+            <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{t("Pomoc a dokumentácia", "Help & Documentation")}</span>
           </button>
           <div className="p-4 pt-2 flex items-center gap-2">
             <button
               type="button"
               onClick={openProfileEditor}
-              aria-label={`Upraviť profil: ${userName}`}
-              title="Upraviť profil"
+              aria-label={`${t("Upraviť profil", "Edit profile")}: ${userName}`}
+              title={t("Upraviť profil", "Edit profile")}
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-700 text-slate-200 hover:bg-slate-600"
             >
               <UserRound size={15} />
             </button>
             <div className={`min-w-0 flex-1 text-xs transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"}`}>
               <p className="truncate text-white font-medium">{userName}</p>
-              <p className="opacity-50 uppercase tracking-widest">Lokálny profil</p>
+              <p className="opacity-50 uppercase tracking-widest">{t("Lokálny profil", "Local profile")}</p>
             </div>
             <button
               type="button"
               onClick={openProfileEditor}
-              aria-label="Premenovať profil"
-              title="Premenovať profil"
+              aria-label={t("Premenovať profil", "Rename profile")}
+              title={t("Premenovať profil", "Rename profile")}
               className={`shrink-0 rounded p-1.5 text-slate-400 hover:bg-slate-800 hover:text-white transition-colors ${isExpanded ? "" : "hidden"}`}
             >
               <Pencil size={14} />
@@ -628,22 +639,22 @@ export function Layout() {
           <section ref={searchModalRef} role="dialog" aria-modal="true" aria-labelledby="workspace-search-title" className="w-full max-w-2xl overflow-hidden rounded-xl border border-slate-200 bg-white shadow-2xl">
             <div className="flex items-center gap-3 border-b border-slate-200 px-4">
               <Search size={19} className="shrink-0 text-slate-400" />
-              <h2 id="workspace-search-title" className="sr-only">Hľadať v pracovných priestoroch</h2>
+              <h2 id="workspace-search-title" className="sr-only">{t("Hľadať v pracovných priestoroch", "Search workspaces")}</h2>
               <input
                 ref={searchInputRef}
                 value={searchQuery}
                 onChange={event => setSearchQuery(event.target.value)}
-                placeholder="Hľadať hrozby, ASVS, komponenty a nálezy…"
-                aria-label="Hľadať v projektoch"
+                placeholder={t("Hľadať hrozby, ASVS, komponenty a nálezy…", "Search threats, ASVS, components and findings…")}
+                aria-label={t("Hľadať v projektoch", "Search projects")}
                 aria-controls="workspace-search-results"
                 aria-activedescendant={searchResults.length > 0
                   ? `workspace-search-option-${Math.min(activeSearchResult, searchResults.length - 1)}`
                   : undefined}
                 className="h-14 min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
               />
-              <button type="button" onClick={() => setIsSearchOpen(false)} aria-label="Zavrieť vyhľadávanie" className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">Esc</button>
+              <button type="button" onClick={() => setIsSearchOpen(false)} aria-label={t("Zavrieť vyhľadávanie", "Close search")} className="rounded border border-slate-200 px-2 py-1 text-xs text-slate-500 hover:bg-slate-50">Esc</button>
             </div>
-            <div id="workspace-search-results" role="listbox" aria-label="Výsledky vyhľadávania" className="max-h-[55vh] overflow-y-auto p-2">
+            <div id="workspace-search-results" role="listbox" aria-label={t("Výsledky vyhľadávania", "Search results")} className="max-h-[55vh] overflow-y-auto p-2">
               {searchResults.map((result, index) => (
                 <button
                   key={result.id}
@@ -667,13 +678,13 @@ export function Layout() {
                 </button>
               ))}
               {searchResults.length === 0 && (
-                <p className="px-4 py-10 text-center text-sm text-slate-500">Nenašli sa žiadne výsledky. Skúste iný výraz.</p>
+                <p className="px-4 py-10 text-center text-sm text-slate-500">{t("Nenašli sa žiadne výsledky. Skúste iný výraz.", "No results found. Try another search.")}</p>
               )}
               <p role="status" aria-live="polite" className="sr-only">
-                {searchResults.length} {searchResults.length === 1 ? "výsledok" : "výsledkov"}
+                {searchResults.length} {t(searchResults.length === 1 ? "výsledok" : "výsledkov", searchResults.length === 1 ? "result" : "results")}
               </p>
               {searchQuery.trim().length === 0 && searchResults.length > 0 && (
-                <p className="px-4 py-2 text-[11px] text-slate-400">Začnite písať. Výsledky vyberte šípkami, otvorte Enterom alebo zatvorte Escapeom.</p>
+                <p className="px-4 py-2 text-[11px] text-slate-400">{t("Začnite písať. Výsledky vyberte šípkami, otvorte Enterom alebo zatvorte Escapeom.", "Start typing. Select results with arrow keys, open with Enter or close with Escape.")}</p>
               )}
             </div>
           </section>
@@ -687,11 +698,11 @@ export function Layout() {
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div className="flex items-center gap-2 text-blue-600">
                 <HelpCircle size={20} />
-                <h2 id="help-modal-title" className="text-lg font-bold text-slate-800">AVERT V{appVersion} — Pomoc a dokumentácia</h2>
+                <h2 id="help-modal-title" className="text-lg font-bold text-slate-800">AVERT V{appVersion} — {t("Pomoc a dokumentácia", "Help and documentation")}</h2>
               </div>
               <button 
                 onClick={() => setIsHelpOpen(false)}
-                aria-label="Zavrieť pomoc"
+                aria-label={t("Zavrieť pomoc", "Close help")}
                 className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
               >
                 <X size={20} />
@@ -701,39 +712,37 @@ export function Layout() {
               <section>
                 <h3 className="font-bold text-slate-800 text-base mb-2">AVERT — Application Security Assessment Platform</h3>
                 <p>
-                  Modelujte architektúru a dátové toky, analyzujte hrozby podľa STRIDE, vyhodnocujte riziká,
-                  overujte požiadavky OWASP ASVS 5.0 a pripravujte nálezy, reporty aj zálohy.
-                  Automaticky navrhnuté scenáre sú podnety na ľudské posúdenie, nie potvrdené zraniteľnosti.
+                  {t("Modelujte architektúru a dátové toky, analyzujte hrozby podľa STRIDE, vyhodnocujte riziká, overujte požiadavky OWASP ASVS 5.0 a pripravujte nálezy, reporty aj zálohy. Automaticky navrhnuté scenáre sú podnety na ľudské posúdenie, nie potvrdené zraniteľnosti.", "Model architecture and data flows, analyse STRIDE threats, assess risks, verify OWASP ASVS 5.0 requirements, and prepare findings, reports and backups. Automatically suggested scenarios require human review and are not confirmed vulnerabilities.")}
                 </p>
               </section>
               
               <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">Analysis Lifecycle</h3>
+                <h3 className="font-bold text-slate-800 text-base mb-2">{t("Priebeh analýzy", "Analysis Lifecycle")}</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li><strong>Application Context:</strong> Define the business purpose, data classification, and regulatory requirements of the target system.</li>
-                  <li><strong>Architecture Model:</strong> Detail the system components, data flows, and trust boundaries that form your attack surface.</li>
-                  <li><strong>STRIDE Analysis:</strong> Utilize the Microsoft STRIDE reference dashboard to systematically identify Spoofing, Tampering, Repudiation, Information Disclosure, DoS, and EoP threats based on your architecture.</li>
-                  <li><strong>ASVS Workspace:</strong> Evaluate the application against the full OWASP ASVS 5.0 standard. Features all 17 chapters and 350+ controls. Use the sidebar to navigate chapters, filter by target level (L1-L3), and track implementation status.</li>
-                  <li><strong>Threat Register:</strong> Manage identified threats, apply STRIDE categories, and prioritize them using the 4×4 risk matrix based on Likelihood and Impact. The likelihood scale has four levels; the impact scale has four levels.</li>
-                  <li><strong>Findings & Gaps:</strong> Automatically cross-reference your architecture and ASVS workspace to auto-generate security gap tickets. This turns missing/partial compliance requirements into actionable development tasks.</li>
+                  <li>{t("Kontext aplikácie: Definujte účel, klasifikáciu údajov a regulačné požiadavky systému.", "Application Context: Define the business purpose, data classification, and regulatory requirements of the target system.")}</li>
+                  <li>{t("Model architektúry: Zaznamenajte komponenty, dátové toky a hranice dôvery tvoriace útočnú plochu.", "Architecture Model: Detail the system components, data flows, and trust boundaries that form your attack surface.")}</li>
+                  <li>{t("Analýza STRIDE: Na základe architektúry identifikujte hrozby podľa kategórií Spoofing, Tampering, Repudiation, Information Disclosure, DoS a EoP.", "STRIDE Analysis: Use the Microsoft STRIDE reference dashboard to systematically identify Spoofing, Tampering, Repudiation, Information Disclosure, DoS and EoP threats based on your architecture.")}</li>
+                  <li>{t("Pracovný priestor ASVS: Hodnoťte aplikáciu podľa všetkých 17 kapitol a viac ako 350 požiadaviek OWASP ASVS 5.0. Filtrujte podľa cieľovej úrovne L1–L3 a sledujte stav implementácie.", "ASVS Workspace: Evaluate the application against all 17 chapters and over 350 controls of OWASP ASVS 5.0. Filter by target level (L1–L3) and track implementation status.")}</li>
+                  <li>{t("Register hrozieb: Spravujte hrozby, kategórie STRIDE a priority pomocou matice rizík 4×4. Pravdepodobnosť aj dopad majú štyri úrovne.", "Threat Register: Manage identified threats and STRIDE categories and prioritize them using the 4×4 risk matrix. Likelihood and impact each have four levels.")}</li>
+                  <li>{t("Nálezy a medzery: Prepojte architektúru a ASVS a vytvárajte úlohy pre chýbajúce alebo čiastočne splnené požiadavky.", "Findings & Gaps: Cross-reference architecture and ASVS and generate actionable tasks from missing or partially implemented requirements.")}</li>
                 </ul>
               </section>
 
               <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">Tips for Analysis & Reporting</h3>
+                <h3 className="font-bold text-slate-800 text-base mb-2">{t("Tipy pre analýzu a reporty", "Tips for Analysis & Reporting")}</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li>In the <strong>ASVS Workspace</strong>, use the <em>Target Level</em> dropdown to automatically filter out requirements that exceed the application's required risk profile.</li>
-                  <li>In the <strong>Threat Register</strong>, hover over a cell in the 4×4 Risk Matrix to see the number of open threats at that likelihood/impact combination.</li>
-                  <li>Clicking <strong>Generate Gap Analysis</strong> under Findings & Gaps will instantly poll your ASVS workspace for any controls marked as "Missing" or "Partial", translating them into formal gaps with severities.</li>
+                  <li>{t("V pracovnom priestore ASVS filtrujte požiadavky podľa cieľovej úrovne.", "In the ASVS Workspace, filter requirements using Target Level.")}</li>
+                  <li>{t("V registri hrozieb zobrazíte prejdením nad bunkou matice 4×4 počet otvorených hrozieb.", "In the Threat Register, hover over a cell in the 4×4 risk matrix to see the number of open threats.")}</li>
+                  <li>{t("V časti Nálezy a medzery vytvorte analýzu medzier z kontrol označených Missing alebo Partial vrátane ich závažnosti.", "In Findings & Gaps, generate a gap analysis with severities from controls marked Missing or Partial.")}</li>
                 </ul>
               </section>
               <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">Local data & navigation</h3>
+                <h3 className="font-bold text-slate-800 text-base mb-2">{t("Lokálne údaje a navigácia", "Local data & navigation")}</h3>
                 <ul className="list-disc pl-5 space-y-2">
-                  <li>ASVS chapter, section, search, and status filters are remembered per analysis when you navigate away and return.</li>
-                  <li>ASVS: stlačte <kbd>/</kbd> na zameranie hľadania, šípkami vyberajte kapitoly a Escape vymaže hľadaný text.</li>
-                  <li>Workspace data is stored in this device's browser storage. Use <strong>Backup & Restore</strong> in the sidebar to export or restore project data.</li>
-                  <li>Changing the sidebar pin keeps your navigation preference after restarting the app.</li>
+                  <li>{t("Filtre kapitol, sekcií, hľadania a stavov ASVS sa ukladajú pre každú analýzu.", "ASVS chapter, section, search, and status filters are remembered per analysis.")}</li>
+                  <li>{t("ASVS: kláves / zameria hľadanie, šípky vyberajú kapitoly a Escape vymaže hľadaný text.", "ASVS: press / to focus search, use arrows to select chapters, and Escape to clear the search.")}</li>
+                  <li>{t("Údaje sú uložené v prehliadači tohto zariadenia. Na export alebo obnovu použite Zálohu a obnovu.", "Workspace data is stored in this device's browser storage. Use Backup & Restore to export or restore project data.")}</li>
+                  <li>{t("Nastavenie pripnutia navigácie sa zachová po reštarte.", "The sidebar pin preference persists after restarting the app.")}</li>
                 </ul>
               </section>
             </div>
@@ -742,7 +751,7 @@ export function Layout() {
                 onClick={() => setIsHelpOpen(false)}
                 className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded shadow-sm hover:bg-blue-700"
               >
-                Close
+                {t("Zavrieť", "Close")}
               </button>
             </div>
           </div>
@@ -760,19 +769,19 @@ export function Layout() {
             <div className="mb-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <UserRound size={18} className="text-blue-600" />
-                <h2 id="local-profile-title" className="text-base font-bold text-slate-800">Meno profilu</h2>
+                <h2 id="local-profile-title" className="text-base font-bold text-slate-800">{t("Meno profilu", "Profile name")}</h2>
               </div>
               <button
                 type="button"
                 onClick={() => setIsProfileEditorOpen(false)}
-                aria-label="Zavrieť"
+                aria-label={t("Zavrieť", "Close")}
                 className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
               >
                 <X size={18} />
               </button>
             </div>
             <label htmlFor="local-profile-name" className="mb-1 block text-xs font-semibold text-slate-700">
-              Zobrazované meno
+              {t("Zobrazované meno", "Display name")}
             </label>
             <input
               id="local-profile-name"
@@ -783,7 +792,7 @@ export function Layout() {
               className="w-full rounded-md border border-slate-300 px-3 py-2 text-sm text-slate-800 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
             />
             <p className="mt-2 text-xs text-slate-500">
-              Meno sa uloží lokálne v tomto prehliadači a použije sa v nových záznamoch.
+              {t("Meno sa uloží lokálne v tomto prehliadači a použije sa v nových záznamoch.", "The name is stored locally in this browser and used for new records.")}
             </p>
             {profileError && <p role="alert" className="mt-2 text-xs text-red-600">{profileError}</p>}
             <div className="mt-5 flex justify-end gap-2">
@@ -792,13 +801,13 @@ export function Layout() {
                 onClick={() => setIsProfileEditorOpen(false)}
                 className="rounded-md border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
               >
-                Zrušiť
+                {t("Zrušiť", "Cancel")}
               </button>
               <button
                 type="submit"
                 className="rounded-md bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
               >
-                Uložiť
+                {t("Uložiť", "Save")}
               </button>
             </div>
           </form>

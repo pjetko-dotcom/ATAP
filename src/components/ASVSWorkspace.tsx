@@ -48,6 +48,7 @@ import { ASVSTriageModal } from "./ASVSTriageModal";
 import { ProjectCategorizationModal } from "./ProjectCategorizationModal";
 import { exportASVSToExcel, exportASVSToCSV } from "../utils/exportToExcel";
 import { GitBranch, Scale, Lock as LockIcon } from "lucide-react";
+import { useLanguage } from "../context/LanguageContext";
 
 const statusStyles: Record<string, string> = {
   "Implemented": "bg-green-100 text-green-700",
@@ -105,6 +106,7 @@ function readASVSViewPreferences(analysisId: string | undefined): ASVSViewPrefer
  * Features built-in Scoping Triage questionnaire to automatically mark non-applicable controls as N/A.
  */
 export function ASVSWorkspace() {
+  const { language, t } = useLanguage();
   const { id: analysisId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const requestedRequirement = searchParams.get("search");
@@ -495,9 +497,10 @@ export function ASVSWorkspace() {
     try {
       await exportASVSToExcel(reqs, {
         analysisId,
-        targetLevel
+        targetLevel,
+        language
       });
-      setExportNotice("Excel (.xlsx) bol úspešne stiahnutý.");
+      setExportNotice(t("Excel (.xlsx) bol úspešne stiahnutý.", "Excel (.xlsx) was downloaded."));
       setTimeout(() => setExportNotice(null), 4000);
     } catch (err) {
       console.error("Export to Excel failed:", err);
@@ -512,9 +515,10 @@ export function ASVSWorkspace() {
     try {
       exportASVSToCSV(reqs, {
         analysisId,
-        targetLevel
+        targetLevel,
+        language
       });
-      setExportNotice("CSV (.csv) bol úspešne stiahnutý.");
+      setExportNotice(t("CSV (.csv) bol úspešne stiahnutý.", "CSV (.csv) was downloaded."));
       setTimeout(() => setExportNotice(null), 4000);
     } catch (err) {
       console.error("Export to CSV failed:", err);
@@ -568,13 +572,13 @@ export function ASVSWorkspace() {
             <BookOpen size={18} className="text-blue-600 shrink-0" />
             <div>
               <h3 className="font-bold text-slate-800 text-sm">ASVS 5.0 Chapters</h3>
-              <p className="text-[10px] text-slate-400">17 Chapters • 345 Requirements</p>
+              <p className="text-[10px] text-slate-400">{t("17 kapitol • 345 požiadaviek", "17 Chapters • 345 Requirements")}</p>
             </div>
           </div>
           <button 
             onClick={() => setIsChaptersOpen(false)} 
             className="xl:hidden p-1 text-slate-400 hover:text-slate-600 rounded-md hover:bg-slate-100 cursor-pointer"
-            title="Zavrieť kapitoly"
+            title={t("Zavrieť kapitoly", "Close chapters")}
           >
             <X size={16} />
           </button>
@@ -626,7 +630,7 @@ export function ASVSWorkspace() {
 
                   <div className="flex items-center gap-1 shrink-0 ml-auto pl-2">
                     {isFullyScopedOut ? (
-                      <span className="text-[10px] px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded font-semibold" title="Všetky kontroly označené ako N/A">
+                      <span className="text-[10px] px-1.5 py-0.2 bg-slate-100 text-slate-600 rounded font-semibold" title={t("Všetky kontroly označené ako N/A", "All controls marked N/A")}>
                         N/A
                       </span>
                     ) : (
@@ -647,7 +651,7 @@ export function ASVSWorkspace() {
                         activeSectionId === "all" ? "bg-blue-100/70 text-blue-800 font-bold" : "text-slate-600 hover:bg-slate-100"
                       }`}
                     >
-                      <span className="whitespace-nowrap pr-2">Všetky sekcie ({chapterSections.length})</span>
+                      <span className="whitespace-nowrap pr-2">{t("Všetky sekcie", "All sections")} ({chapterSections.length})</span>
                       <span className="text-[10px] text-slate-400 shrink-0 ml-auto">{chapterReqs.length}</span>
                     </button>
                     {chapterSections.map(sec => {
@@ -685,14 +689,14 @@ export function ASVSWorkspace() {
             className="flex items-center gap-1.5 px-2.5 py-1 text-xs border border-slate-200 rounded-md text-slate-700 bg-white"
           >
             <BookOpen size={14} className="text-blue-600" />
-            <span>Kapitoly (V{activeChapter?.id})</span>
+            <span>{t("Kapitoly", "Chapters")} (V{activeChapter?.id})</span>
           </button>
           
           <button 
             onClick={() => setIsSummaryOpen(!isSummaryOpen)}
             className="flex items-center gap-1 text-xs text-blue-600 font-medium hover:text-blue-800"
           >
-            {isSummaryOpen ? <><ChevronUp size={14} /> Skryť prehľad</> : <><ChevronDown size={14} /> Zobraziť prehľad</>}
+            {isSummaryOpen ? <><ChevronUp size={14} /> {t("Skryť prehľad", "Hide summary")}</> : <><ChevronDown size={14} /> {t("Zobraziť prehľad", "Show summary")}</>}
           </button>
         </div>
 
@@ -704,10 +708,10 @@ export function ASVSWorkspace() {
             <button
               onClick={() => setIsCategorizationModalOpen(true)}
               className="px-3 py-1.5 flex items-center gap-1.5 text-xs bg-white hover:bg-slate-100 text-slate-700 border border-slate-300 rounded-md font-semibold transition-colors cursor-pointer shadow-xs"
-              title="Kategorizácia projektu pre určenie ASVS Levelu (L1-L3)"
+              title={t("Kategorizácia projektu pre určenie ASVS Levelu (L1-L3)", "Categorize the project to determine its ASVS level (L1-L3)")}
             >
               <SlidersHorizontal size={14} className="text-blue-600" />
-              <span>Kategorizácia projektu</span>
+              <span>{t("Kategorizácia projektu", "Project categorization")}</span>
             </button>
             
             {/* Target Level Selector */}
@@ -715,15 +719,15 @@ export function ASVSWorkspace() {
               <span className="text-[10px] font-bold text-slate-400 uppercase">ASVS Level:</span>
               <select 
                 id="workspace-asvs-level-select"
-                aria-label="Filtrovať podľa cieľovej úrovne ASVS"
+                aria-label={t("Filtrovať podľa cieľovej úrovne ASVS", "Filter by target ASVS level")}
                 className="px-2 py-1 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-md focus:outline-none cursor-pointer"
                 value={targetLevel}
                 onChange={(e) => setTargetLevel(e.target.value === "all" ? "all" : parseInt(e.target.value, 10))}
               >
-                <option value="all">Všetky (L1-L3)</option>
-                <option value={1}>L1 (Základ)</option>
-                <option value={2}>L2 (Štandard)</option>
-                <option value={3}>L3 (Vysoká ochrana)</option>
+                <option value="all">{t("Všetky (L1-L3)", "All (L1-L3)")}</option>
+                <option value={1}>{t("L1 (Základ)", "L1 (Basic)")}</option>
+                <option value={2}>{t("L2 (Štandard)", "L2 (Standard)")}</option>
+                <option value={3}>{t("L3 (Vysoká ochrana)", "L3 (High assurance)")}</option>
               </select>
             </div>
 
@@ -731,10 +735,10 @@ export function ASVSWorkspace() {
             {isReadOnly ? (
               <div 
                 className="px-2.5 py-1.5 flex items-center gap-1.5 text-xs font-semibold rounded-md bg-amber-50 text-amber-800 border border-amber-200"
-                title={`Verzia v${versionCtx?.viewingVersion || "1.0"} je archivovaná a uzamknutá iba na čítanie.`}
+                title={t(`Verzia v${versionCtx?.viewingVersion || "1.0"} je archivovaná a uzamknutá iba na čítanie.`, `Version v${versionCtx?.viewingVersion || "1.0"} is archived and read-only.`)}
               >
                 <LockIcon size={13} className="text-amber-600" />
-                <span>Iba na čítanie (v{versionCtx?.viewingVersion})</span>
+                <span>{t("Iba na čítanie", "Read-only")} (v{versionCtx?.viewingVersion})</span>
               </div>
             ) : (
               <button
@@ -744,16 +748,16 @@ export function ASVSWorkspace() {
                   setSaveResult(succeeded ? "success" : "error");
                   if (succeeded) setTimeout(() => setSaveResult(null), 3000);
                 }}
-                aria-label="Uložiť aktuálny stav analýzy"
+                aria-label={t("Uložiť aktuálny stav analýzy", "Save current analysis state")}
                 className={`px-3 py-1.5 flex items-center gap-1.5 text-xs font-semibold rounded-md transition-all shadow-xs cursor-pointer focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 ${
                   saveResult === "success"
                     ? "bg-emerald-600 text-white"
                     : "bg-white hover:bg-slate-100 text-slate-700 border border-slate-300"
                 }`}
-                title="Uložiť aktuálny stav analýzy a zaznamenať uloženie"
+                title={t("Uložiť aktuálny stav analýzy a zaznamenať uloženie", "Save current analysis state and record the save")}
               >
                 {saveResult === "success" ? <Check size={14} className="text-white" /> : <Save size={14} className="text-blue-600" />}
-                <span>{saveResult === "success" ? "Uložené" : "Uložiť teraz"}</span>
+                <span>{saveResult === "success" ? t("Uložené", "Saved") : t("Uložiť teraz", "Save now")}</span>
               </button>
             )}
             {/* Diff Button */}
@@ -764,7 +768,7 @@ export function ASVSWorkspace() {
                   versionCtx.openDiffWithVersions(baseV, versionCtx.currentWorkingVersion);
                 }}
                 className="px-2.5 py-1.5 flex items-center gap-1 text-xs font-bold bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-md transition-all shadow-xs cursor-pointer"
-                title="Porovnať rozdiely medzi verziami (Diff)"
+                title={t("Porovnať rozdiely medzi verziami (Diff)", "Compare versions")}
               >
                 <Scale size={13} className="text-blue-600" />
                 <span className="hidden sm:inline">Diff</span>
@@ -778,10 +782,10 @@ export function ASVSWorkspace() {
                 setIsTriageModalOpen(true);
               }}
               className="px-3 py-1.5 flex items-center gap-1.5 text-xs bg-blue-600 hover:bg-blue-700 text-white rounded-md font-bold transition-colors cursor-pointer shadow-xs ml-1"
-              title="Otvoriť sprievodcu scopingom a technologickou triážou (V1-V17)"
+              title={t("Otvoriť sprievodcu scopingom a technologickou triážou (V1-V17)", "Open the scope and technology triage wizard (V1-V17)")}
             >
               <Target size={14} />
-              <span>Technologická triáž</span>
+              <span>{t("Technologická triáž", "Technology triage")}</span>
               {triagedExcludedCount > 0 && (
                 <span className="ml-1 px-1.5 py-0.2 bg-blue-800 text-[10px] rounded-full">
                   {triagedExcludedCount} N/A
@@ -797,8 +801,8 @@ export function ASVSWorkspace() {
               <input 
                 ref={asvsSearchInputRef}
                 type="text" 
-                aria-label="Hľadať ASVS požiadavky"
-                placeholder="Hľadať požiadavku, kód, text... ( / )"
+                aria-label={t("Hľadať ASVS požiadavky", "Search ASVS requirements")}
+                placeholder={t("Hľadať požiadavku, kód, text... ( / )", "Search requirements, ID, text... ( / )")}
                 className="w-full pl-9 pr-9 py-2 text-xs border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 bg-slate-50"
                 value={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
@@ -807,7 +811,7 @@ export function ASVSWorkspace() {
                 <button
                   type="button"
                   onClick={() => handleSearchChange("")}
-                  aria-label="Vymazať hľadanie ASVS"
+                  aria-label={t("Vymazať hľadanie ASVS", "Clear ASVS search")}
                   className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-slate-500 hover:bg-slate-200"
                 >
                   <X size={13} />
@@ -825,7 +829,7 @@ export function ASVSWorkspace() {
                 {isExportingExcel ? (
                   <>
                     <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
-                    <span>Generujem...</span>
+                    <span>{t("Generujem...", "Generating...")}</span>
                   </>
                 ) : (
                   <>
@@ -840,7 +844,7 @@ export function ASVSWorkspace() {
                   <div className="fixed inset-0 z-30" onClick={() => setIsExportMenuOpen(false)} />
                   <div className="absolute right-0 mt-1 w-64 bg-white border border-slate-200 rounded-lg shadow-xl z-40 py-1 text-xs divide-y divide-slate-100">
                     <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                      Formát exportu
+                      {t("Formát exportu", "Export format")} · {language.toUpperCase()}
                     </div>
                     <button
                       onClick={handleExportExcel}
@@ -850,9 +854,9 @@ export function ASVSWorkspace() {
                       <div>
                         <div className="font-semibold text-slate-800 flex items-center gap-1.5">
                           Excel (.xlsx)
-                          <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">Odporúčané</span>
+                          <span className="text-[9px] bg-emerald-100 text-emerald-800 px-1.5 py-0.2 rounded font-bold">{t("Odporúčané", "Recommended")}</span>
                         </div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">Súhrn, KPI, farebné stavy, 14 kapitol a STRIDE hrozby</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">{t("Súhrn, KPI, farebné stavy, kapitoly a STRIDE hrozby", "Summary, KPIs, colour-coded statuses, chapters and STRIDE threats")}</div>
                       </div>
                     </button>
                     <button
@@ -861,8 +865,8 @@ export function ASVSWorkspace() {
                     >
                       <FileText size={16} className="text-slate-500 mt-0.5 shrink-0" />
                       <div>
-                        <div className="font-semibold text-slate-800">CSV tabuľka (.csv)</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">UTF-8 s BOM pre tabuľkové procesory a skripty</div>
+                        <div className="font-semibold text-slate-800">{t("CSV tabuľka (.csv)", "CSV spreadsheet (.csv)")}</div>
+                        <div className="text-[11px] text-slate-500 mt-0.5">{t("UTF-8 s BOM pre tabuľkové procesory a skripty", "UTF-8 with BOM for spreadsheets and scripts")}</div>
                       </div>
                     </button>
                   </div>
@@ -874,18 +878,18 @@ export function ASVSWorkspace() {
             {!isReadOnly && (
               <span role={hasStorageError || saveResult === "error" ? "alert" : "status"}>
                 {hasStorageError || saveResult === "error"
-                  ? "Ukladanie zlyhalo. Skontrolujte úložisko a skúste to znova."
-                  : "Priebežné zmeny sa ukladajú automaticky v tomto zariadení."}
+                  ? t("Ukladanie zlyhalo. Skontrolujte úložisko a skúste to znova.", "Saving failed. Check storage and try again.")
+                  : t("Priebežné zmeny sa ukladajú automaticky v tomto zariadení.", "Changes are automatically saved on this device.")}
               </span>
             )}
             {viewPreferenceError && (
               <span role="alert" className="text-red-700">
-                Nastavenia filtrov sa nepodarilo uložiť.
+                {t("Nastavenia filtrov sa nepodarilo uložiť.", "Could not save filter preferences.")}
               </span>
             )}
             <span>
-              Zobrazených {filteredRequirements.length} z {requirementsBeforeStatusFilter.length} požiadaviek
-              {targetLevel !== "all" ? ` (úroveň L${targetLevel})` : ""}
+              {t("Zobrazených", "Showing")} {filteredRequirements.length} {t("z", "of")} {requirementsBeforeStatusFilter.length} {t("požiadaviek", "requirements")}
+              {targetLevel !== "all" ? ` (${t("úroveň", "level")} L${targetLevel})` : ""}
             </span>
             {hasActiveViewFilters && (
               <button
@@ -893,7 +897,7 @@ export function ASVSWorkspace() {
                 onClick={clearViewFilters}
                 className="font-semibold text-blue-700 hover:text-blue-900 underline underline-offset-2"
               >
-                Vymazať všetky filtre
+                {t("Vymazať všetky filtre", "Clear all filters")}
               </button>
             )}
           </div>
@@ -1076,19 +1080,19 @@ export function ASVSWorkspace() {
                 <span className="font-bold text-slate-800 text-sm">V{activeChapter?.id}: {activeChapter?.name}</span>
                 {activeSectionId !== "all" && (
                   <span className="text-xs text-blue-700 bg-blue-50 px-2 py-0.5 rounded border border-blue-200 font-medium">
-                    Sekcia {activeSectionId}
+                    {t("Sekcia", "Section")} {activeSectionId}
                   </span>
                 )}
               </div>
               
               {/* Quick Status Filters */}
-              <div role="group" aria-label="Filtrovať požiadavky podľa stavu" className="flex items-center bg-slate-200/60 p-0.5 rounded-lg text-[11px] font-medium flex-wrap gap-0.5">
+              <div role="group" aria-label={t("Filtrovať požiadavky podľa stavu", "Filter requirements by status")} className="flex items-center bg-slate-200/60 p-0.5 rounded-lg text-[11px] font-medium flex-wrap gap-0.5">
                 <button
                   onClick={() => handleStatusFilterChange("all")}
                   aria-pressed={statusFilter === "all"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "all" ? "bg-white text-slate-800 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                 >
-                  Všetky
+                  {t("Všetky", "All")}
                 </button>
                 <button
                   onClick={() => handleStatusFilterChange("pending")}
@@ -1102,7 +1106,7 @@ export function ASVSWorkspace() {
                   aria-pressed={statusFilter === "Implemented"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "Implemented" ? "bg-white text-green-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
                 >
-                  Splnené
+                  {t("Splnené", "Implemented")}
                 </button>
                 <button
                   onClick={() => handleStatusFilterChange("N/A")}
@@ -1115,17 +1119,17 @@ export function ASVSWorkspace() {
                   onClick={() => handleStatusFilterChange("triaged")}
                   aria-pressed={statusFilter === "triaged"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "triaged" ? "bg-white text-blue-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
-                  title="Zobraziť kontroly vylúčené pomocou triage otázok"
+                  title={t("Zobraziť kontroly vylúčené pomocou triage otázok", "Show controls excluded by triage")}
                 >
-                  Triáž
+                  {t("Triáž", "Triage")}
                 </button>
                 <button
                   onClick={() => handleStatusFilterChange("no_evidence")}
                   aria-pressed={statusFilter === "no_evidence"}
                   className={`px-2 py-1 rounded-md transition-colors cursor-pointer ${statusFilter === "no_evidence" ? "bg-white text-purple-700 shadow-xs font-bold" : "text-slate-600 hover:text-slate-900"}`}
-                  title="Zobraziť kontroly bez vyplneného dôkazu alebo poznámky"
+                  title={t("Zobraziť kontroly bez vyplneného dôkazu alebo poznámky", "Show controls without evidence or notes")}
                 >
-                  Bez dôkazu ({activeChapterRequirements.filter(r => r.status !== "N/A" && (!r.notes || r.notes.trim() === "")).length})
+                  {t("Bez dôkazu", "Without evidence")} ({activeChapterRequirements.filter(r => r.status !== "N/A" && (!r.notes || r.notes.trim() === "")).length})
                 </button>
               </div>
 

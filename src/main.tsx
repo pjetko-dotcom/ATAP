@@ -4,6 +4,7 @@ import App from './App.tsx';
 import './index.css';
 import { migrateWorkspaceSchema } from './utils/storage';
 import favicon from './assets/favicon.svg?inline';
+import { LanguageProvider } from './context/LanguageContext';
 
 migrateWorkspaceSchema();
 
@@ -11,6 +12,6 @@ document.getElementById('app-favicon')?.setAttribute('href', favicon);
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <LanguageProvider><App /></LanguageProvider>
   </StrictMode>,
 );

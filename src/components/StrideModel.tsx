@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import { Shield, Server, Database, Activity, Lock, AlertTriangle, ArrowRight } from "lucide-react";
 import { getInitialThreatsForAnalysis } from "../utils/threatModel";
+import { useLanguage } from "../context/LanguageContext";
 
 interface Threat {
   id: string;
@@ -21,6 +22,7 @@ interface Threat {
  * @returns {JSX.Element} The rendered STRIDE analysis component.
  */
 export function StrideModel() {
+  const { t } = useLanguage();
   const { id: analysisId } = useParams<{ id: string }>();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [threats, setThreats] = useState<Threat[]>([]);
@@ -41,58 +43,58 @@ export function StrideModel() {
     {
       id: "spoofing",
       name: "Spoofing",
-      description: "Pretending to be something or someone other than yourself.",
+      description: t("Vydávanie sa za inú osobu alebo entitu.", "Pretending to be something or someone other than yourself."),
       icon: <Shield size={24} className="text-purple-500" />,
-      examples: ["Replaying authentication tokens", "MAC address spoofing", "DNS cache poisoning"],
-      mitigation: "Strong Authentication (MFA), Mutual TLS, DNSSEC"
+      examples: [t("Opakované použitie autentifikačných tokenov", "Replaying authentication tokens"), t("Podvrhnutie MAC adresy", "MAC address spoofing"), t("Otrávenie DNS cache", "DNS cache poisoning")],
+      mitigation: t("Silná autentifikácia (MFA), vzájomné TLS, DNSSEC", "Strong Authentication (MFA), Mutual TLS, DNSSEC")
     },
     {
       id: "tampering",
       name: "Tampering",
-      description: "Modifying data or code without authorization.",
+      description: t("Neoprávnená zmena údajov alebo kódu.", "Modifying data or code without authorization."),
       icon: <Activity size={24} className="text-red-500" />,
-      examples: ["Modifying database records", "Altering in-transit network packets", "Changing configuration files"],
-      mitigation: "Digital Signatures, Hashing, Immutable Logs, TLS/SSL"
+      examples: [t("Zmena databázových záznamov", "Modifying database records"), t("Zmena prenášaných sieťových paketov", "Altering in-transit network packets"), t("Zmena konfiguračných súborov", "Changing configuration files")],
+      mitigation: t("Digitálne podpisy, hašovanie, nezmeniteľné záznamy, TLS/SSL", "Digital Signatures, Hashing, Immutable Logs, TLS/SSL")
     },
     {
       id: "repudiation",
       name: "Repudiation",
-      description: "Claiming to have not performed an action.",
+      description: t("Popretie vykonania akcie.", "Claiming to have not performed an action."),
       icon: <Lock size={24} className="text-slate-500" />,
-      examples: ["Denying sending an email", "Denying making a transaction", "Deleting audit logs"],
-      mitigation: "Secure Audit Trails, Digital Signatures, Non-repudiation services"
+      examples: [t("Popretie odoslania e-mailu", "Denying sending an email"), t("Popretie vykonania transakcie", "Denying making a transaction"), t("Zmazanie auditných záznamov", "Deleting audit logs")],
+      mitigation: t("Bezpečná auditná stopa, digitálne podpisy, služby nepopierateľnosti", "Secure Audit Trails, Digital Signatures, Non-repudiation services")
     },
     {
       id: "information_disclosure",
       name: "Information Disclosure",
-      description: "Exposing information to individuals who are not authorized to see it.",
+      description: t("Sprístupnenie informácií neoprávneným osobám.", "Exposing information to individuals who are not authorized to see it."),
       icon: <Database size={24} className="text-blue-500" />,
-      examples: ["Data breach", "Exposing API keys in code", "Verbose error messages"],
-      mitigation: "Encryption at rest and in transit, Access Controls, Data Masking"
+      examples: [t("Únik údajov", "Data breach"), t("Odhalenie API kľúčov v kóde", "Exposing API keys in code"), t("Príliš podrobné chybové správy", "Verbose error messages")],
+      mitigation: t("Šifrovanie uložených a prenášaných údajov, riadenie prístupu, maskovanie údajov", "Encryption at rest and in transit, Access Controls, Data Masking")
     },
     {
       id: "denial_of_service",
       name: "Denial of Service",
-      description: "Denying or degrading service to valid users.",
+      description: t("Odmietnutie alebo zhoršenie služby oprávneným používateľom.", "Denying or degrading service to valid users."),
       icon: <Server size={24} className="text-orange-500" />,
-      examples: ["DDoS attacks", "Resource exhaustion", "Application crash via malformed input"],
-      mitigation: "Rate Limiting, High Availability Architecture, WAF"
+      examples: [t("DDoS útoky", "DDoS attacks"), t("Vyčerpanie zdrojov", "Resource exhaustion"), t("Zlyhanie aplikácie chybným vstupom", "Application crash via malformed input")],
+      mitigation: t("Obmedzenie frekvencie požiadaviek, vysoká dostupnosť, WAF", "Rate Limiting, High Availability Architecture, WAF")
     },
     {
       id: "elevation_of_privilege",
       name: "Elevation of Privilege",
-      description: "Gaining capabilities without proper authorization.",
+      description: t("Získanie oprávnení bez potrebnej autorizácie.", "Gaining capabilities without proper authorization."),
       icon: <AlertTriangle size={24} className="text-yellow-600" />,
-      examples: ["Exploiting a buffer overflow", "Vertical privilege escalation", "Bypassing authorization checks"],
-      mitigation: "Principle of Least Privilege, Role-Based Access Control, Input Validation"
+      examples: [t("Zneužitie pretečenia buffera", "Exploiting a buffer overflow"), t("Vertikálne zvýšenie oprávnení", "Vertical privilege escalation"), t("Obídenie kontroly oprávnení", "Bypassing authorization checks")],
+      mitigation: t("Princíp najmenších oprávnení, riadenie prístupu podľa rolí, validácia vstupov", "Principle of Least Privilege, Role-Based Access Control, Input Validation")
     }
   ];
 
   return (
     <div className="flex flex-col h-full bg-slate-50 p-6 overflow-auto">
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">STRIDE Threat Modeling</h2>
-        <p className="text-sm text-slate-500 mt-1">Identify and categorize potential threats to the application by STRIDE categories.</p>
+        <h2 className="text-2xl font-bold text-slate-800">{t("Modelovanie hrozieb STRIDE", "STRIDE Threat Modeling")}</h2>
+        <p className="text-sm text-slate-500 mt-1">{t("Identifikujte a kategorizujte potenciálne hrozby aplikácie podľa STRIDE.", "Identify and categorize potential threats to the application by STRIDE categories.")}</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -115,7 +117,7 @@ export function StrideModel() {
                 </div>
                 {categoryThreats.length > 0 && (
                   <span className={`shrink-0 whitespace-nowrap text-[10px] font-bold px-2 py-1 rounded-full ${openThreatsCount > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-                    {categoryThreats.length} Identified
+                    {categoryThreats.length} {t("identifikovaných", "Identified")}
                   </span>
                 )}
               </div>
@@ -124,7 +126,7 @@ export function StrideModel() {
               {selectedCategory === category.id && (
                 <div className="mt-4 pt-4 border-t border-slate-100 animate-in fade-in slide-in-from-top-2">
                   <div className="mb-4">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">Identified Threats in Register</h4>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase mb-2">{t("Identifikované hrozby v registri", "Identified Threats in Register")}</h4>
                     {categoryThreats.length > 0 ? (
                       <div className="space-y-2">
                         {categoryThreats.map(t => (
@@ -138,15 +140,15 @@ export function StrideModel() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-slate-500 italic bg-slate-50 p-2 rounded">No threats identified in this category.</p>
+                      <p className="text-xs text-slate-500 italic bg-slate-50 p-2 rounded">{t("V tejto kategórii neboli identifikované hrozby.", "No threats identified in this category.")}</p>
                     )}
                     <Link to={`/analysis/${analysisId || "1"}/threats`} className="inline-flex items-center gap-1 text-[11px] font-semibold text-blue-600 hover:text-blue-800 mt-2">
-                      Manage in Threat Register <ArrowRight size={12} />
+                      {t("Spravovať v registri hrozieb", "Manage in Threat Register")} <ArrowRight size={12} />
                     </Link>
                   </div>
                   
                   <div className="mb-3 border-t border-slate-100 pt-3">
-                    <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">Common Examples</h4>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">{t("Bežné príklady", "Common Examples")}</h4>
                     <ul className="list-disc pl-4 text-xs text-slate-600 space-y-1">
                       {category.examples.map((example, i) => (
                         <li key={i}>{example}</li>
@@ -154,7 +156,7 @@ export function StrideModel() {
                     </ul>
                   </div>
                   <div>
-                    <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">Standard Mitigation</h4>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase mb-1">{t("Štandardné zmiernenie", "Standard Mitigation")}</h4>
                     <p className="text-xs text-slate-600">{category.mitigation}</p>
                   </div>
                 </div>

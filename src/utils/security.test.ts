@@ -26,6 +26,9 @@ import { AnalysisVersionSnapshot } from "../types/versioning";
 import FileSaver from "file-saver";
 import ExcelJS from "exceljs";
 import { getVerificationGuide } from "./verificationGuide";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { LanguageProvider, useLanguage } from "../context/LanguageContext";
 
 class MemoryStorage {
   private readonly data = new Map<string, string>();
@@ -127,6 +130,19 @@ test("escapes CSV formulas and quotes every cell", () => {
   assert.equal(sanitizeCsvCell("\t@SUM(A1:A2)"), "\"'\t@SUM(A1:A2)\"");
   assert.equal(sanitizeCsvCell('text "with quotes"'), '"text ""with quotes"""');
   assert.equal(sanitizeCsvCell(3), '"3"');
+});
+
+test("loads the selected interface language without modifying project data", () => {
+  function LanguageProbe() {
+    const { language, t } = useLanguage();
+    return createElement("span", { lang: language }, t("Prehľad", "Dashboard"));
+  }
+  const render = () => renderToStaticMarkup(createElement(LanguageProvider, null, createElement(LanguageProbe)));
+  storage.setItem("atap_analyses", '[{"id":"test","name":"Projekt"}]');
+  assert.equal(render(), '<span lang="sk">Prehľad</span>');
+  storage.setItem("atap_ui_language", "en");
+  assert.equal(render(), '<span lang="en">Dashboard</span>');
+  assert.equal(storage.getItem("atap_analyses"), '[{"id":"test","name":"Projekt"}]');
 });
 
 test("exports localized report labels without changing chapter names or project text", async () => {
