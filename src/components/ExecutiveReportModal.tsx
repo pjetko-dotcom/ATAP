@@ -23,6 +23,7 @@ import {
 import { ASVS_VERSION, asvsChapters, asvsRequirements, ASVSRequirement } from "../data/asvsData";
 import { getInitialThreatsForAnalysis, summarizeThreats, type Threat } from "../utils/threatModel";
 import { calculateAsvsCoverage } from "../utils/asvsMetrics";
+import { reportText, type ReportLanguage } from "../utils/reportLanguage";
 
 interface ExecutiveReportModalProps {
   isOpen: boolean;
@@ -33,18 +34,23 @@ interface ExecutiveReportModalProps {
   currentVersion?: string;
   status?: string;
   businessOwners?: string;
+  language?: ReportLanguage;
 }
 
 export function ExecutiveReportModal({
   isOpen,
   onClose,
   analysisId,
-  analysisName = "Bezpečnostná analýza systému",
+  analysisName,
   asvsLevel = "2",
   currentVersion = "1.0",
   status = "Draft",
-  businessOwners = "Interný bezpečnostný tím"
+  businessOwners,
+  language = "sk"
 }: ExecutiveReportModalProps) {
+  const t = (sk: string, en: string) => reportText(language, sk, en);
+  const locale = language === "sk" ? "sk-SK" : "en-GB";
+  const reportAnalysisName = analysisName || t("Bezpečnostná analýza systému", "System security assessment");
   useEffect(() => {
     if (!isOpen) return;
 
@@ -78,7 +84,7 @@ export function ExecutiveReportModal({
     : storedTargetLevel && [1, 2, 3].includes(Number(storedTargetLevel))
       ? Number(storedTargetLevel)
       : requestedLevel;
-  const targetLevelLabel = targetLevelNum === "all" ? "All Levels (L1-L3)" : `L${targetLevelNum}`;
+  const targetLevelLabel = targetLevelNum === "all" ? t("Všetky úrovne (L1-L3)", "All levels (L1-L3)") : `L${targetLevelNum}`;
   const applicableReqs = reqs.filter(r => targetLevelNum === "all" || r.level <= targetLevelNum);
 
   // Load threats
@@ -162,9 +168,9 @@ export function ExecutiveReportModal({
         <div className="px-4 sm:px-6 py-3.5 bg-slate-900 text-white flex flex-wrap items-center justify-between gap-3 shrink-0 print:hidden">
           <div className="flex min-w-0 items-center gap-2">
             <FileText size={18} className="text-blue-400" />
-            <span id="executive-report-title" className="truncate font-bold text-sm tracking-tight">Exekutívny Security & Compliance Report</span>
+            <span id="executive-report-title" className="truncate font-bold text-sm tracking-tight">{t("Exekutívny Security & Compliance Report", "Executive Security & Compliance Report")}</span>
             <span className="hidden sm:inline text-xs bg-slate-800 text-slate-300 px-2 py-0.5 rounded border border-slate-700">
-              Náhľad pred tlačou / PDF
+              {t("Náhľad pred tlačou / PDF", "Print / PDF preview")}
             </span>
           </div>
 
@@ -174,17 +180,17 @@ export function ExecutiveReportModal({
               className="px-2.5 sm:px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-bold flex items-center gap-1.5 shadow-sm transition-colors cursor-pointer"
             >
               <Printer size={14} />
-              <span className="hidden sm:inline">Tlačiť / Uložiť ako PDF</span>
-              <span className="sm:hidden">Tlačiť</span>
+              <span className="hidden sm:inline">{t("Tlačiť / Uložiť ako PDF", "Print / Save as PDF")}</span>
+              <span className="sm:hidden">{t("Tlačiť", "Print")}</span>
             </button>
             <button
               onClick={onClose}
-              aria-label="Zavrieť náhľad reportu"
-              title="Zavrieť náhľad"
+              aria-label={t("Zavrieť náhľad reportu", "Close report preview")}
+              title={t("Zavrieť náhľad", "Close preview")}
               className="inline-flex items-center gap-1.5 rounded-lg border border-slate-600 px-2.5 py-1.5 text-white hover:bg-slate-800 transition-colors cursor-pointer"
             >
               <X size={18} />
-              <span className="text-xs font-semibold">Zavrieť</span>
+              <span className="text-xs font-semibold">{t("Zavrieť", "Close")}</span>
             </button>
           </div>
         </div>
@@ -200,7 +206,7 @@ export function ExecutiveReportModal({
               </p>
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold uppercase tracking-wider rounded">
-                  Dôverné / Bezpečnostný audit
+                  {t("Dôverné / Bezpečnostný audit", "Confidential / Security audit")}
                 </span>
                 <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded">
                   OWASP ASVS {ASVS_VERSION} ({targetLevelLabel})
@@ -208,11 +214,11 @@ export function ExecutiveReportModal({
                 <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded ${
                   status === "Final" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
                 }`}>
-                  Stav: {status}
+                  {t("Stav", "Status")}: {status}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                {analysisName}
+                {reportAnalysisName}
               </h1>
               <p className="text-sm text-slate-500 mt-1">
                 Architecture · STRIDE · Risk · ASVS · Reports
@@ -220,65 +226,67 @@ export function ExecutiveReportModal({
             </div>
 
             <div className="text-left sm:text-right text-xs text-slate-500 space-y-0.5 shrink-0">
-              <div>Verzia správy: <strong className="text-slate-800">v{currentVersion}</strong></div>
-              <div>Dátum vyhotovenia: <strong className="text-slate-800">{new Date().toLocaleDateString("sk-SK")}</strong></div>
-              <div>Garant systému: <strong className="text-slate-800">{businessOwners}</strong></div>
+              <div>{t("Verzia správy", "Report version")}: <strong className="text-slate-800">v{currentVersion}</strong></div>
+              <div>{t("Dátum vyhotovenia", "Report date")}: <strong className="text-slate-800">{new Date().toLocaleDateString(locale)}</strong></div>
+              <div>{t("Garant systému", "System owner")}: <strong className="text-slate-800">{businessOwners || t("Interný bezpečnostný tím", "Internal security team")}</strong></div>
             </div>
           </div>
 
           {/* Section 1: Executive Summary & KPIs */}
           <div className="mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-              1. Manažérske zhrnutie & Kľúčové ukazovatele
+              {t("1. Manažérske zhrnutie & Kľúčové ukazovatele", "1. Executive summary & key indicators")}
             </h2>
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Vážené pokrytie ASVS</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{t("Vážené pokrytie ASVS", "Weighted ASVS coverage")}</span>
                 <p className={`text-2xl font-extrabold mt-1 ${
                   complianceScore >= 80 ? "text-emerald-600" : complianceScore >= 50 ? "text-amber-600" : "text-red-600"
                 }`}>
                   {complianceScore}%
                 </p>
-                <span className="text-[10px] text-slate-400">Partial = 0,5; Pending a N/A sa nezapočítavajú</span>
+                <span className="text-[10px] text-slate-400">{t("Partial = 0,5; Pending a N/A sa nezapočítavajú", "Partial = 0.5; Pending and N/A are excluded")}</span>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Splnené kontroly</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{t("Splnené kontroly", "Implemented controls")}</span>
                 <p className="text-2xl font-extrabold text-emerald-600 mt-1">
                   {implemented.length} <span className="text-xs font-normal text-slate-400">/ {totalScoped}</span>
                 </p>
-                <span className="text-[10px] text-slate-400">{na.length} vylúčených (N/A)</span>
+                <span className="text-[10px] text-slate-400">{na.length} {t("vylúčených", "excluded")} (N/A)</span>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">Otvorené zistenia</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{t("Otvorené zistenia", "Open findings")}</span>
                 <p className="text-2xl font-extrabold text-red-600 mt-1">
                   {missing.length + partial.length}
                 </p>
-                <span className="text-[10px] text-slate-400">{missing.length} chýba, {partial.length} čiastočne</span>
+                <span className="text-[10px] text-slate-400">{missing.length} {t("chýba", "missing")}, {partial.length} {t("čiastočne", "partial")}</span>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">STRIDE hrozby</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{t("STRIDE hrozby", "STRIDE threats")}</span>
                 <p className="text-2xl font-extrabold text-purple-600 mt-1">
-                  {threatSummary.open} <span className="text-xs font-normal text-slate-400">otvorených</span>
+                  {threatSummary.open} <span className="text-xs font-normal text-slate-400">{t("otvorených", "open")}</span>
                 </p>
-                <span className="text-[10px] text-slate-400">{threatSummary.openHighOrCritical} s vysokým/kritickým otvoreným rizikom</span>
+                <span className="text-[10px] text-slate-400">{threatSummary.openHighOrCritical} {t("s vysokým/kritickým otvoreným rizikom", "with open high/critical risk")}</span>
               </div>
             </div>
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
-              <p>
-                Predložená správa sumarizuje bezpečnostný stav systému <strong>{analysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> v rozsahu <strong>{targetLevelLabel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako zistenie (medzera) vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
-              </p>
+              {language === "sk" ? <p>
+                Predložená správa sumarizuje bezpečnostný stav systému <strong>{reportAnalysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> v rozsahu <strong>{targetLevelLabel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako zistenie (medzera) vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
+              </p> : <p>
+                This report summarizes the security posture of <strong>{reportAnalysisName}</strong> against <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> at <strong>{targetLevelLabel}</strong>. Of <strong>{totalScoped}</strong> controls in scope, <strong>{implemented.length}</strong> were verified as implemented, <strong>{missing.length + partial.length}</strong> were recorded as gaps requiring remediation, and <strong>{na.length}</strong> were identified as not applicable based on the application context and triage.
+              </p>}
             </div>
           </div>
 
           {/* Section 2: Chapter Breakdown */}
           <div className="mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-              2. Súlad po kapitolách štandardu (V1 – V17)
+              {t("2. Súlad po kapitolách štandardu (V1 – V17)", "2. Compliance by standard chapter (V1 – V17)")}
             </h2>
 
             <div className="space-y-2">
@@ -301,7 +309,7 @@ export function ExecutiveReportModal({
 
                   <div className="flex items-center gap-3 text-right shrink-0">
                     <span className="text-[11px] text-slate-400">
-                      {stat.implemented}/{stat.total - stat.na} splnených
+                      {stat.implemented}/{stat.total - stat.na} {t("splnených", "implemented")}
                     </span>
                     <span className={`font-bold w-12 text-right ${
                       stat.score >= 80 ? "text-emerald-700" : stat.score >= 50 ? "text-amber-700" : "text-red-700"
@@ -318,7 +326,7 @@ export function ExecutiveReportModal({
           {topGaps.length > 0 && (
             <div className="mb-8 page-break-inside-avoid">
               <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                3. Prioritné bezpečnostné medzery vyžadujúce nápravu
+                {t("3. Prioritné bezpečnostné medzery vyžadujúce nápravu", "3. Priority security gaps requiring remediation")}
               </h2>
 
               <div className="border border-slate-200 rounded-xl overflow-hidden">
@@ -326,9 +334,9 @@ export function ExecutiveReportModal({
                   <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px]">
                     <tr>
                       <th className="p-2.5 w-20">ID</th>
-                      <th className="p-2.5 w-16 text-center">Stav</th>
-                      <th className="p-2.5">Požiadavka</th>
-                      <th className="p-2.5">Zistenie / Odporúčanie</th>
+                      <th className="p-2.5 w-16 text-center">{t("Stav", "Status")}</th>
+                      <th className="p-2.5">{t("Požiadavka", "Requirement")}</th>
+                      <th className="p-2.5">{t("Zistenie / Odporúčanie", "Finding / Recommendation")}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
@@ -347,7 +355,7 @@ export function ExecutiveReportModal({
                           <span className="text-[11px] text-slate-500 line-clamp-2">{gap.description}</span>
                         </td>
                         <td className="p-2.5 text-slate-600 text-[11px] align-top">
-                          {gap.notes || "Vyžaduje implementáciu a dodanie overovacieho dôkazu (unit/integration testy)."}
+                          {gap.notes || t("Vyžaduje implementáciu a dodanie overovacieho dôkazu (unit/integration testy).", "Requires implementation and verification evidence (unit/integration tests).")}
                         </td>
                       </tr>
                     ))}
@@ -360,25 +368,25 @@ export function ExecutiveReportModal({
           {/* Section 4: Sign-off & Approvals */}
           <div className="pt-8 border-t-2 border-slate-900 mt-12 page-break-inside-avoid">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-6">
-              4. Podpisy & Schválenie auditu
+              {t("4. Podpisy & Schválenie auditu", "4. Signatures & audit approval")}
             </h2>
 
             <div className="grid grid-cols-2 gap-8 text-xs">
               <div className="border border-slate-200 rounded-lg p-4 space-y-4">
-                <span className="text-slate-400 uppercase font-semibold text-[10px] block">Vypracoval bezpečnostný audítor</span>
+                <span className="text-slate-400 uppercase font-semibold text-[10px] block">{t("Vypracoval bezpečnostný audítor", "Prepared by security auditor")}</span>
                 <div className="pt-8 border-b border-dashed border-slate-300"></div>
                 <div className="flex justify-between text-slate-600 text-[11px]">
-                  <span>Meno: ______________________</span>
-                  <span>Dátum: {new Date().toLocaleDateString("sk-SK")}</span>
+                  <span>{t("Meno", "Name")}: ______________________</span>
+                  <span>{t("Dátum", "Date")}: {new Date().toLocaleDateString(locale)}</span>
                 </div>
               </div>
 
               <div className="border border-slate-200 rounded-lg p-4 space-y-4">
-                <span className="text-slate-400 uppercase font-semibold text-[10px] block">Schválil CISO / Vedúci bezpečnosti</span>
+                <span className="text-slate-400 uppercase font-semibold text-[10px] block">{t("Schválil CISO / Vedúci bezpečnosti", "Approved by CISO / Head of security")}</span>
                 <div className="pt-8 border-b border-dashed border-slate-300"></div>
                 <div className="flex justify-between text-slate-600 text-[11px]">
-                  <span>Meno: ______________________</span>
-                  <span>Dátum: ______________________</span>
+                  <span>{t("Meno", "Name")}: ______________________</span>
+                  <span>{t("Dátum", "Date")}: ______________________</span>
                 </div>
               </div>
             </div>

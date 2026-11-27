@@ -4,6 +4,8 @@
  * and testing methods for OWASP ASVS 5.0 security controls.
  */
 
+import { reportText, type ReportLanguage } from "./reportLanguage";
+
 export interface VerificationGuide {
   method: "Code Review (SAST)" | "Dynamic Testing (DAST)" | "Architecture Audit" | "Configuration Check";
   keyQuestion: string;
@@ -13,14 +15,15 @@ export interface VerificationGuide {
   owaspReference?: string;
 }
 
-export function getVerificationGuide(req: { id: string; title: string; description: string; chapterId?: number }): VerificationGuide {
+export function getVerificationGuide(req: { id: string; title: string; description: string; chapterId?: number }, language: ReportLanguage = "sk"): VerificationGuide {
   const text = (req.id + " " + req.title + " " + req.description).toLowerCase();
+  const t = (sk: string, en: string) => reportText(language, sk, en);
 
   // 1. XPath Injection (V1.2.7)
   if (text.includes("xpath")) {
     return {
       method: "Code Review (SAST)",
-      keyQuestion: "Je používateľský vstup bezpečne parametrizovaný alebo ošetrený pred odoslaním do XPath dopytu?",
+      keyQuestion: t("Je používateľský vstup bezpečne parametrizovaný alebo ošetrený pred odoslaním do XPath dopytu?", "Is user input safely parameterized or sanitized before it is sent to an XPath query?"),
       whatToInspect: [
         "Hľadajte v kóde volania typu XPath, XmlDocument.SelectNodes, Evaluate alebo XPathNavigator.",
         "Overte, že používateľský vstup sa neprípája priamo spájaním reťazcov (string concatenation) do XPath výrazu.",
@@ -36,7 +39,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("sql") || text.includes("parameterized queries") || text.includes("nosql") || text.includes("database injection")) {
     return {
       method: "Code Review (SAST)",
-      keyQuestion: "Používajú všetky databázové dopyty ORM, prepared statements alebo parametrizované dopyty?",
+      keyQuestion: t("Používajú všetky databázové dopyty ORM, prepared statements alebo parametrizované dopyty?", "Do all database queries use an ORM, prepared statements, or parameterized queries?"),
       whatToInspect: [
         "Skontrolujte databázové dopyty v ORM (Prisma, Drizzle, Hibernate, Entity Framework, Knex).",
         "Uistite sa, že sa nepoužívajú šablónové reťazce (template literals) ako `SELECT * FROM users WHERE id = ${req.query.id}`.",
@@ -52,7 +55,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("xss") || text.includes("output encoding") || text.includes("escaping") || text.includes("sanitized") || text.includes("wysiwyg") || text.includes("html")) {
     return {
       method: "Dynamic Testing (DAST)",
-      keyQuestion: "Je neoverený používateľský vstup kontextovo kódovaný alebo sanitovaný pred vykreslením v prehliadači?",
+      keyQuestion: t("Je neoverený používateľský vstup kontextovo kódovaný alebo sanitovaný pred vykreslením v prehliadači?", "Is untrusted user input contextually encoded or sanitized before browser rendering?"),
       whatToInspect: [
         "Skontrolujte v React/Vue/Angular miesta s `dangerouslySetInnerHTML`, `v-html` alebo neotestované DOM manipulácie.",
         "Pre WYSIWYG a HTML vstup preverte použitie preverenej knižnice na sanitáciu (napr. DOMPurify, sanitize-html).",
@@ -68,7 +71,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("command injection") || text.includes("os command") || text.includes("eval()") || text.includes("exec")) {
     return {
       method: "Code Review (SAST)",
-      keyQuestion: "Je vylúčené vykonávanie OS príkazov prostredníctvom neovereného vstupu?",
+      keyQuestion: t("Je vylúčené vykonávanie OS príkazov prostredníctvom neovereného vstupu?", "Is execution of OS commands through untrusted input prevented?"),
       whatToInspect: [
         "Vyhľadajte volania shellu: `child_process.exec()`, `system()`, `eval()`, `execScript()`, `Runtime.getRuntime().exec()`.",
         "Ak je systémové volanie nevyhnutné, uistite sa, že nepoužíva shell (`shell: false`) a argumenty sa odovzdávajú ako pole (array)."
@@ -83,7 +86,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("password") || text.includes("credential") || text.includes("brute force") || text.includes("mfa")) {
     return {
       method: "Configuration Check",
-      keyQuestion: "Spĺňajú heslá a autentifikačné mechanizmy moderné štandardy odporúčané OWASP/NIST?",
+      keyQuestion: t("Spĺňajú heslá a autentifikačné mechanizmy moderné štandardy odporúčané OWASP/NIST?", "Do passwords and authentication mechanisms meet current OWASP and NIST recommendations?"),
       whatToInspect: [
         "Skontrolujte minimálnu dĺžku hesla (aspoň 8–12 znakov), povoľte špeciálne znaky a unicode bez skracovania.",
         "Overte hešovanie pomocou Argon2id, bcrypt alebo PBKDF2 s vysokým nákladovým faktorom (cost factor).",
@@ -99,7 +102,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("cookie") || text.includes("session") || text.includes("inactivity") || text.includes("logout")) {
     return {
       method: "Dynamic Testing (DAST)",
-      keyQuestion: "Sú relácie chránené prísnymi príznakmi cookies a vypršaním platnosti na strane servera?",
+      keyQuestion: t("Sú relácie chránené prísnymi príznakmi cookies a vypršaním platnosti na strane servera?", "Are sessions protected by strict cookie flags and server-side expiration?"),
       whatToInspect: [
         "Skontrolujte hlavičky `Set-Cookie`: musia obsahovať `HttpOnly`, `Secure`, `SameSite=Lax` alebo `Strict`.",
         "Overte, že pri odhlásení dochádza k invalidácii relácie na strane servera (server-side session revocation).",
@@ -115,7 +118,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("authorization") || text.includes("access control") || text.includes("tenant") || text.includes("role")) {
     return {
       method: "Architecture Audit",
-      keyQuestion: "Vymáha server overenie oprávnení pri každej požiadavke na chránený zdroj (deny by default)?",
+      keyQuestion: t("Vymáha server overenie oprávnení pri každej požiadavke na chránený zdroj (deny by default)?", "Does the server enforce authorization for every request to a protected resource (deny by default)?"),
       whatToInspect: [
         "Skontrolujte middleware pre autorizáciu na serverových API trasách.",
         "Uistite sa, že ID používateľa / organizácie sa berie z overeného JWT/session tokenu a nie z modifikovateľného URL parametra (IDOR vulnerability).",
@@ -131,7 +134,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("file") || text.includes("upload") || text.includes("path traversal") || text.includes("filename")) {
     return {
       method: "Code Review (SAST)",
-      keyQuestion: "Sú nahrávané súbory overované podľa typu, veľkosti a ukladané mimo spustiteľného adresára?",
+      keyQuestion: t("Sú nahrávané súbory overované podľa typu, veľkosti a ukladané mimo spustiteľného adresára?", "Are uploaded files validated by type and size and stored outside executable directories?"),
       whatToInspect: [
         "Skontrolujte overovanie prípon aj MIME typu (content inspection, nie len hlavička).",
         "Uistite sa, že súbory sa ukladajú s vygenerovaným náhodným názvom (UUID) bez zachovania pôvodného zadaného názvu.",
@@ -147,7 +150,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("header") || text.includes("cors") || text.includes("csp") || text.includes("hsts")) {
     return {
       method: "Configuration Check",
-      keyQuestion: "Obsahuje serverové rozhranie bezpečnostné hlavičky (CSP, HSTS, X-Content-Type-Options)?",
+      keyQuestion: t("Obsahuje serverové rozhranie bezpečnostné hlavičky (CSP, HSTS, X-Content-Type-Options)?", "Does the server provide security headers (CSP, HSTS, X-Content-Type-Options)?"),
       whatToInspect: [
         "Skontrolujte HTTP odpovede na prítomnosť `Content-Security-Policy`, `Strict-Transport-Security`, `X-Frame-Options: DENY/SAMEORIGIN`.",
         "Pre CORS overte, že `Access-Control-Allow-Origin` nie je nastavené na `*` pri overovaných požiadavkách."
@@ -162,7 +165,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   if (text.includes("oauth") || text.includes("jwt") || text.includes("token") || text.includes("openid")) {
     return {
       method: "Architecture Audit",
-      keyQuestion: "Sú žetóny (tokens) podpísané silným algoritmom (RS256/ES256) a overované voči exspirácii a audiencii?",
+      keyQuestion: t("Sú žetóny (tokens) podpísané silným algoritmom (RS256/ES256) a overované voči exspirácii a audiencii?", "Are tokens signed with a strong algorithm (RS256/ES256) and validated for expiration and audience?"),
       whatToInspect: [
         "Skontrolujte validáciu JWT: algoritmus, podpis, exspiráciu (`exp`), vydavateľa (`iss`) a príjemcu (`aud`).",
         "Uistite sa, že alg `none` je nepovolený.",
@@ -177,7 +180,7 @@ export function getVerificationGuide(req: { id: string; title: string; descripti
   // 11. Generic fallback based on requirement level or chapter
   return {
     method: req.chapterId && req.chapterId <= 3 ? "Code Review (SAST)" : "Architecture Audit",
-    keyQuestion: `Je bezpečnostná kontrola '${req.title}' zdokumentovaná, otestovaná a vynútená na úrovni kódu/architektúry?`,
+    keyQuestion: t(`Je bezpečnostná kontrola '${req.title}' zdokumentovaná, otestovaná a vynútená na úrovni kódu/architektúry?`, `Is the '${req.title}' security control documented, tested, and enforced in code or architecture?`),
     whatToInspect: [
       "Overte architektúru a kód zodpovedný za tento bezpečnostný riadiaci prvok.",
       "Skontrolujte, či existuje dokumentácia, konfigurácia alebo automatizovaný test pre danú funkciu.",

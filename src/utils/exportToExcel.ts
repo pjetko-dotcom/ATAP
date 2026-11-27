@@ -4,6 +4,7 @@ import { getVerificationGuide } from "./verificationGuide";
 import { sanitizeCsvCell } from "./csv";
 import { calculateAsvsCoverage } from "./asvsMetrics";
 import { summarizeThreats, type Threat } from "./threatModel";
+import { reportText, type ReportLanguage } from "./reportLanguage";
 
 const { saveAs } = FileSaver;
 
@@ -16,10 +17,11 @@ export interface ExportOptions {
   includeRequirements?: boolean;
   includeThreats?: boolean;
   density?: "comfortable" | "compact";
+  language?: ReportLanguage;
 }
 
-function getStoredAnalysisName(analysisId?: string): string {
-  if (!analysisId) return "Bezpečnostná analýza systému";
+function getStoredAnalysisName(analysisId: string | undefined, language: ReportLanguage): string {
+  if (!analysisId) return reportText(language, "Bezpečnostná analýza systému", "System security assessment");
   try {
     const raw = localStorage.getItem("atap_analyses");
     if (raw) {
@@ -32,7 +34,7 @@ function getStoredAnalysisName(analysisId?: string): string {
   } catch (e) {
     // fallback
   }
-  return `Analýza #${analysisId}`;
+  return reportText(language, `Analýza #${analysisId}`, `Analysis #${analysisId}`);
 }
 
 function getSafeExportId(analysisId: string): string {
@@ -61,13 +63,15 @@ export async function exportASVSToExcel(
     includeSummary = true,
     includeRequirements = true,
     includeThreats = true,
-    density = "comfortable"
+    density = "comfortable",
+    language = "sk"
   } = options;
+  const t = (sk: string, en: string) => reportText(language, sk, en);
   if (!includeSummary && !includeRequirements && !includeThreats) {
     throw new Error("Vyberte aspoň jednu sekciu pre Excel export.");
   }
 
-  const analysisName = options.analysisName || getStoredAnalysisName(analysisId);
+  const analysisName = options.analysisName || getStoredAnalysisName(analysisId, language);
   const { default: ExcelJS } = await import("exceljs");
 
   let scopedReqs = [...requirements];
@@ -99,7 +103,7 @@ export async function exportASVSToExcel(
   // -------------------------------------------------------------
   // 1. Súhrnný hárok (Executive Summary)
   // -------------------------------------------------------------
-  const summarySheet = workbook.addWorksheet("Prehľad auditu", {
+  const summarySheet = workbook.addWorksheet(t("Prehľad auditu", "Audit overview"), {
     views: [{ showGridLines: true }]
   });
 
@@ -123,7 +127,7 @@ export async function exportASVSToExcel(
   summarySheet.getRow(2).height = 24;
 
   // Metadata block
-  const dateStr = new Date().toLocaleDateString("sk-SK", {
+  const dateStr = new Date().toLocaleDateString(language === "sk" ? "sk-SK" : "en-GB", {
     year: "numeric",
     month: "long",
     day: "numeric",
@@ -131,26 +135,26 @@ export async function exportASVSToExcel(
     minute: "2-digit"
   });
 
-  summarySheet.getCell("A3").value = "Názov projektu / analýzy:";
+  summarySheet.getCell("A3").value = t("Názov projektu / analýzy:", "Project / analysis name:");
   summarySheet.getCell("A3").font = { bold: true };
   summarySheet.getCell("B3").value = analysisName;
 
-  summarySheet.getCell("A4").value = "Identifikátor analýzy:";
+  summarySheet.getCell("A4").value = t("Identifikátor analýzy:", "Analysis ID:");
   summarySheet.getCell("A4").font = { bold: true };
   summarySheet.getCell("B4").value = analysisId;
 
-  summarySheet.getCell("A5").value = "Dátum a čas exportu:";
+  summarySheet.getCell("A5").value = t("Dátum a čas exportu:", "Export date and time:");
   summarySheet.getCell("A5").font = { bold: true };
   summarySheet.getCell("B5").value = dateStr;
 
-  summarySheet.getCell("A6").value = "Cieľová úroveň ASVS:";
+  summarySheet.getCell("A6").value = t("Cieľová úroveň ASVS:", "Target ASVS level:");
   summarySheet.getCell("A6").font = { bold: true };
-  summarySheet.getCell("B6").value = targetLevel === "all" ? "Všetky úrovne (L1-L3)" : `Level ${targetLevel}`;
-  summarySheet.getCell("A7").value = "Detail požiadaviek:";
+  summarySheet.getCell("B6").value = targetLevel === "all" ? t("Všetky úrovne (L1-L3)", "All levels (L1-L3)") : `Level ${targetLevel}`;
+  summarySheet.getCell("A7").value = t("Detail požiadaviek:", "Requirements detail:");
   summarySheet.getCell("A7").font = { bold: true };
   summarySheet.getCell("B7").value = onlyGaps
-    ? "Filter detailu: iba Partial a Missing; súhrn pokrýva celý zvolený rozsah."
-    : "Detail obsahuje všetky požiadavky vo zvolenom rozsahu.";
+    ? t("Filter detailu: iba Partial a Missing; súhrn pokrýva celý zvolený rozsah.", "Detail filter: Partial and Missing only; the summary covers the entire selected scope.")
+    : t("Detail obsahuje všetky požiadavky vo zvolenom rozsahu.", "Detail includes all requirements in the selected scope.");
 
   // KPI calculations
   const total = scopedReqs.length;
@@ -163,10 +167,10 @@ export async function exportASVSToExcel(
   const coveragePct = calculateAsvsCoverage(scopedReqs);
 
   // Metrics KPI Table
-  summarySheet.getCell("A8").value = "Kľúčové metriky auditu";
+  summarySheet.getCell("A8").value = t("Kľúčové metriky auditu", "Key audit metrics");
   summarySheet.getCell("A8").font = { bold: true, size: 13, color: { argb: "FF1E293B" } };
 
-  const kpiHeaders = ["Metrika", "Počet požiadaviek", "Podiel z celku (%)", "Poznámka"];
+  const kpiHeaders = [t("Metrika", "Metric"), t("Počet požiadaviek", "Requirements"), t("Podiel z celku (%)", "Share of total (%)"), t("Poznámka", "Note")];
   const kpiHeaderRow = summarySheet.addRow(kpiHeaders);
   kpiHeaderRow.eachCell(cell => {
     cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -175,12 +179,12 @@ export async function exportASVSToExcel(
   });
 
   const kpiData = [
-    ["Kontroly v rozsahu", total, "100%", "Požiadavky vo vybranom rozsahu ASVS"],
-    ["Splnené kontroly (Implemented)", implemented, total > 0 ? `${Math.round((implemented / total) * 100)}%` : "0%", "Plne implementované a overené riadiace prvky"],
-    ["Identifikované bezpečnostné medzery (Gaps)", gaps, total > 0 ? `${Math.round((gaps / total) * 100)}%` : "0%", `Chýbajúce: ${missing}, Čiastočné: ${partial}`],
-    ["Vylúčené z rozsahu (N/A)", na, total > 0 ? `${Math.round((na / total) * 100)}%` : "0%", "Nerelevantné technológie alebo funkcie"],
-    ["Čakajúce na posúdenie (Pending)", pending, total > 0 ? `${Math.round((pending / total) * 100)}%` : "0%", "Zatiaľ neoverené požiadavky"],
-    ["Pokrytie ASVS (vážené)", `${implemented} splnené · ${partial} čiastočné`, `${coveragePct}%`, "Implemented + 0,5 × Partial; Pending a N/A sa nezapočítavajú"]
+    [t("Kontroly v rozsahu", "Controls in scope"), total, "100%", t("Požiadavky vo vybranom rozsahu ASVS", "Requirements in the selected ASVS scope")],
+    [t("Splnené kontroly (Implemented)", "Implemented controls"), implemented, total > 0 ? `${Math.round((implemented / total) * 100)}%` : "0%", t("Plne implementované a overené riadiace prvky", "Fully implemented and verified controls")],
+    [t("Identifikované bezpečnostné medzery (Gaps)", "Identified security gaps"), gaps, total > 0 ? `${Math.round((gaps / total) * 100)}%` : "0%", t(`Chýbajúce: ${missing}, Čiastočné: ${partial}`, `Missing: ${missing}, Partial: ${partial}`)],
+    [t("Vylúčené z rozsahu (N/A)", "Out of scope (N/A)"), na, total > 0 ? `${Math.round((na / total) * 100)}%` : "0%", t("Nerelevantné technológie alebo funkcie", "Irrelevant technologies or features")],
+    [t("Čakajúce na posúdenie (Pending)", "Pending assessment"), pending, total > 0 ? `${Math.round((pending / total) * 100)}%` : "0%", t("Zatiaľ neoverené požiadavky", "Requirements not yet verified")],
+    [t("Pokrytie ASVS (vážené)", "Weighted ASVS coverage"), t(`${implemented} splnené · ${partial} čiastočné`, `${implemented} implemented · ${partial} partial`), `${coveragePct}%`, t("Implemented + 0,5 × Partial; Pending a N/A sa nezapočítavajú", "Implemented + 0.5 × Partial; Pending and N/A are excluded")]
   ];
 
   kpiData.forEach(row => {
@@ -190,32 +194,32 @@ export async function exportASVSToExcel(
   });
 
   summarySheet.addRow([]);
-  const riskTitleRow = summarySheet.addRow(["Súhrn STRIDE a rizík"]);
+  const riskTitleRow = summarySheet.addRow([t("Súhrn STRIDE a rizík", "STRIDE and risk summary")]);
   riskTitleRow.getCell(1).font = { bold: true, size: 13, color: { argb: "FF1E293B" } };
   const threatSummary = summarizeThreats(threats);
   [
-    ["Hrozby spolu", threatSummary.total],
-    ["Otvorené hrozby", threatSummary.open],
-    ["Otvorené High / Critical", threatSummary.openHighOrCritical],
-    ["Otvorené riziká podľa úrovne", (["Critical", "High", "Medium", "Low", "Very Low"] as const)
+    [t("Hrozby spolu", "Total threats"), threatSummary.total],
+    [t("Otvorené hrozby", "Open threats"), threatSummary.open],
+    [t("Otvorené High / Critical", "Open High / Critical"), threatSummary.openHighOrCritical],
+    [t("Otvorené riziká podľa úrovne", "Open risks by level"), (["Critical", "High", "Medium", "Low", "Very Low"] as const)
       .map(level => `${level}: ${threats.filter(threat => threat.status === "Open" && threat.risk === level).length}`)
       .join(" · ")]
   ].forEach(row => summarySheet.addRow(row));
 
   // Chapter breakdown table
   summarySheet.addRow([]);
-  const chTitleRow = summarySheet.addRow(["Rozpad auditu podľa kapitol OWASP ASVS"]);
+  const chTitleRow = summarySheet.addRow([t("Rozpad auditu podľa kapitol OWASP ASVS", "Audit breakdown by OWASP ASVS chapter")]);
   chTitleRow.getCell(1).font = { bold: true, size: 13, color: { argb: "FF1E293B" } };
 
   const chHeaderRow = summarySheet.addRow([
-    "Kapitola",
-    "Názov bezpečnostnej domény",
-    "Celkom",
-    "Splnené",
-    "Medzery (Gaps)",
+    t("Kapitola", "Chapter"),
+    t("Názov bezpečnostnej domény", "Security domain"),
+    t("Celkom", "Total"),
+    t("Splnené", "Implemented"),
+    t("Medzery (Gaps)", "Gaps"),
     "N/A",
-    "Čakajúce",
-    "Pokrytie (%)"
+    t("Čakajúce", "Pending"),
+    t("Pokrytie (%)", "Coverage (%)")
   ]);
   chHeaderRow.eachCell(cell => {
     cell.font = { bold: true, color: { argb: "FFFFFFFF" } };
@@ -265,21 +269,21 @@ export async function exportASVSToExcel(
   // -------------------------------------------------------------
   // 2. Hárok požiadaviek (ASVS Requirements Detail)
   // -------------------------------------------------------------
-  const reqSheet = workbook.addWorksheet("AVERT ASVS 5.0 Požiadavky", {
+  const reqSheet = workbook.addWorksheet(t("AVERT ASVS 5.0 Požiadavky", "AVERT ASVS 5.0 Requirements"), {
     views: [{ state: "frozen", ySplit: 1, showGridLines: true }]
   });
 
   const columns = [
-    { header: "ID Požiadavky", key: "id", width: 15 },
-    { header: "Kapitola", key: "chapter", width: 32 },
-    { header: "Sekcia", key: "section", width: 34 },
+    { header: t("ID Požiadavky", "Requirement ID"), key: "id", width: 15 },
+    { header: t("Kapitola", "Chapter"), key: "chapter", width: 32 },
+    { header: t("Sekcia", "Section"), key: "section", width: 34 },
     { header: "Level", key: "level", width: 10 },
-    { header: "Popis bezpečnostnej požiadavky", key: "description", width: 55 },
-    { header: "Stav overenia", key: "status", width: 16 },
-    { header: "Dôvod vylúčenia / Triáž", key: "triageReason", width: 28 },
-    { header: "Odporúčaná metóda overenia", key: "verificationMethod", width: 24 },
-    { header: "Kľúčová otázka overenia", key: "keyQuestion", width: 45 },
-    { header: "Poznámky audítora a evidencia", key: "notes", width: 45 },
+    { header: t("Popis bezpečnostnej požiadavky", "Security requirement description"), key: "description", width: 55 },
+    { header: t("Stav overenia", "Verification status"), key: "status", width: 16 },
+    { header: t("Dôvod vylúčenia / Triáž", "Exclusion reason / triage"), key: "triageReason", width: 28 },
+    { header: t("Odporúčaná metóda overenia", "Recommended verification method"), key: "verificationMethod", width: 24 },
+    { header: t("Kľúčová otázka overenia", "Key verification question"), key: "keyQuestion", width: 45 },
+    { header: t("Poznámky audítora a evidencia", "Auditor notes and evidence"), key: "notes", width: 45 },
     { header: "CWE", key: "cwe", width: 14 },
     { header: "NIST SP 800-53", key: "nist", width: 16 }
   ];
@@ -306,8 +310,8 @@ export async function exportASVSToExcel(
   filteredReqs.forEach(req => {
     const chapter = asvsChapters.find(c => c.id === req.chapterId);
     const chapterText = chapter ? `V${chapter.id} - ${chapter.name}` : `V${req.chapterId}`;
-    const sectionText = req.sectionName || req.section_name || req.title || (req.sectionId ? `Sekcia ${req.sectionId}` : "");
-    const guide = getVerificationGuide(req);
+    const sectionText = req.sectionName || req.section_name || req.title || (req.sectionId ? t(`Sekcia ${req.sectionId}`, `Section ${req.sectionId}`) : "");
+    const guide = getVerificationGuide(req, language);
 
     const reqAny = req as any;
     const row = reqSheet.addRow({
@@ -317,7 +321,7 @@ export async function exportASVSToExcel(
       level: `L${req.level}`,
       description: req.description || "",
       status: req.status || "Pending",
-      triageReason: req.triageReason || (reqAny.triageExcluded ? "Vylúčené na základe dotazníka" : ""),
+      triageReason: req.triageReason || (reqAny.triageExcluded ? t("Vylúčené na základe dotazníka", "Excluded based on the questionnaire") : ""),
       verificationMethod: reqAny.verificationMethod || guide.method,
       keyQuestion: guide.keyQuestion || "",
       notes: req.notes || "",
@@ -378,23 +382,23 @@ export async function exportASVSToExcel(
   // 3. Hárok hrozieb (STRIDE Threat Register - ak existujú dáta)
   // -------------------------------------------------------------
   if (includeThreats && threats.length > 0) {
-    const threatSheet = workbook.addWorksheet("STRIDE Register hrozieb", {
+    const threatSheet = workbook.addWorksheet(t("STRIDE Register hrozieb", "STRIDE Threat register"), {
       views: [{ state: "frozen", ySplit: 1, showGridLines: true }]
     });
 
     threatSheet.columns = [
-      { header: "ID Hrozby", key: "id", width: 14 },
-      { header: "Názov hrozby", key: "title", width: 35 },
-      { header: "Popis scenára", key: "description", width: 50 },
-      { header: "STRIDE Kategória", key: "stride", width: 22 },
-      { header: "Závažnosť (Impact)", key: "impact", width: 16 },
-      { header: "Pravdepodobnosť", key: "likelihood", width: 16 },
-      { header: "Celkové riziko", key: "risk", width: 16 },
-      { header: "Stav", key: "status", width: 16 },
-      { header: "ASVS referencie", key: "asvsRefs", width: 22 },
-      { header: "Komponenty", key: "components", width: 28 },
-      { header: "Pôvod / kontrola", key: "review", width: 24 },
-      { header: "Zmierňujúce opatrenie", key: "mitigation", width: 45 }
+      { header: t("ID Hrozby", "Threat ID"), key: "id", width: 14 },
+      { header: t("Názov hrozby", "Threat title"), key: "title", width: 35 },
+      { header: t("Popis scenára", "Scenario description"), key: "description", width: 50 },
+      { header: t("STRIDE Kategória", "STRIDE category"), key: "stride", width: 22 },
+      { header: t("Závažnosť (Impact)", "Impact"), key: "impact", width: 16 },
+      { header: t("Pravdepodobnosť", "Likelihood"), key: "likelihood", width: 16 },
+      { header: t("Celkové riziko", "Overall risk"), key: "risk", width: 16 },
+      { header: t("Stav", "Status"), key: "status", width: 16 },
+      { header: t("ASVS referencie", "ASVS references"), key: "asvsRefs", width: 22 },
+      { header: t("Komponenty", "Components"), key: "components", width: 28 },
+      { header: t("Pôvod / kontrola", "Origin / review"), key: "review", width: 24 },
+      { header: t("Zmierňujúce opatrenie", "Mitigation"), key: "mitigation", width: 45 }
     ];
 
     const tHeader = threatSheet.getRow(1);
@@ -419,8 +423,8 @@ export async function exportASVSToExcel(
         asvsRefs: references.join(", "),
         components: threat.componentIds?.join(", ") || "",
         review: threat.architectureFlowId
-          ? (threat.architectureReviewed ? "STRIDE návrh · skontrolovaný" : "STRIDE návrh · vyžaduje kontrolu")
-          : "Manuálne zadaná hrozba",
+          ? (threat.architectureReviewed ? t("STRIDE návrh · skontrolovaný", "STRIDE proposal · reviewed") : t("STRIDE návrh · vyžaduje kontrolu", "STRIDE proposal · review required"))
+          : t("Manuálne zadaná hrozba", "Manually entered threat"),
         mitigation: threat.mitigation
       });
 
@@ -436,12 +440,10 @@ export async function exportASVSToExcel(
   }
 
   if (!includeSummary) {
-    const sheet = workbook.getWorksheet("Prehľad auditu");
-    if (sheet) workbook.removeWorksheet(sheet.id);
+    workbook.removeWorksheet(summarySheet.id);
   }
   if (!includeRequirements) {
-    const sheet = workbook.getWorksheet("AVERT ASVS 5.0 Požiadavky");
-    if (sheet) workbook.removeWorksheet(sheet.id);
+    workbook.removeWorksheet(reqSheet.id);
   }
 
   // -------------------------------------------------------------
@@ -475,7 +477,8 @@ export function exportASVSToCSV(
   const {
     analysisId = "default",
     targetLevel = "all",
-    onlyGaps = false
+    onlyGaps = false,
+    language = "en"
   } = options;
 
   let filteredReqs = [...requirements];
@@ -487,7 +490,9 @@ export function exportASVSToCSV(
   }
 
   // Helper to prevent CSV / Formula Injection (CWE-1236)
-  const header = "Requirement ID,Chapter ID,Chapter Name,Section ID,Section Name,Level,Requirement Description,Status,Triage Justification,Notes\n";
+  const header = reportText(language,
+    "ID požiadavky,ID kapitoly,Názov kapitoly,ID sekcie,Názov sekcie,Úroveň,Popis požiadavky,Stav,Dôvod triáže,Poznámky\n",
+    "Requirement ID,Chapter ID,Chapter Name,Section ID,Section Name,Level,Requirement Description,Status,Triage Justification,Notes\n");
   const csvRows = filteredReqs.map(r => {
     const chapter = asvsChapters.find(c => c.id === r.chapterId);
     return [

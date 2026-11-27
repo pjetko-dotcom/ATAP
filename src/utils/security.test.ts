@@ -23,6 +23,9 @@ import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
 import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
 import { asvsRequirements } from "../data/asvsData";
 import { AnalysisVersionSnapshot } from "../types/versioning";
+import FileSaver from "file-saver";
+import ExcelJS from "exceljs";
+import { getVerificationGuide } from "./verificationGuide";
 
 class MemoryStorage {
   private readonly data = new Map<string, string>();
@@ -124,6 +127,55 @@ test("escapes CSV formulas and quotes every cell", () => {
   assert.equal(sanitizeCsvCell("\t@SUM(A1:A2)"), "\"'\t@SUM(A1:A2)\"");
   assert.equal(sanitizeCsvCell('text "with quotes"'), '"text ""with quotes"""');
   assert.equal(sanitizeCsvCell(3), '"3"');
+});
+
+test("exports localized report labels without changing chapter names or project text", async () => {
+  const savedBlobs: Blob[] = [];
+  const originalSaveAs = FileSaver.saveAs;
+  Object.defineProperty(FileSaver, "saveAs", {
+    configurable: true,
+    value: (data: Blob | string) => {
+      assert.ok(data instanceof Blob);
+      savedBlobs.push(data);
+    }
+  });
+  try {
+    const { exportASVSToCSV, exportASVSToExcel } = await import("./exportToExcel");
+    const requirement = { ...asvsRequirements[0], notes: "=poznámka používateľa" };
+    for (const language of ["sk", "en"] as const) {
+      exportASVSToCSV([requirement], { language });
+      const csvBlob = savedBlobs.pop()!;
+      assert.deepEqual([...new Uint8Array(await csvBlob.arrayBuffer()).slice(0, 3)], [0xef, 0xbb, 0xbf]);
+      const csv = await csvBlob.text();
+      assert.match(csv, language === "sk" ? /^ID požiadavky,/ : /^Requirement ID,/);
+      assert.ok(csv.includes(requirement.chapterName!));
+      assert.ok(csv.includes("\"'=poznámka používateľa\""));
+
+      await exportASVSToExcel([requirement], {
+        language, analysisId: "test", analysisName: "Projekt", includeThreats: false
+      });
+      const workbook = new ExcelJS.Workbook();
+      const data = await savedBlobs.pop()!.arrayBuffer();
+      await workbook.xlsx.load(data);
+      const summary = workbook.getWorksheet(language === "sk" ? "Prehľad auditu" : "Audit overview");
+      const details = workbook.getWorksheet(language === "sk" ? "AVERT ASVS 5.0 Požiadavky" : "AVERT ASVS 5.0 Requirements");
+      assert.ok(summary);
+      assert.ok(details);
+      assert.equal(summary.getCell("A3").value, language === "sk" ? "Názov projektu / analýzy:" : "Project / analysis name:");
+      assert.match(String(details.getCell("B2").value), /Encoding and Sanitization/);
+      assert.equal(details.getCell("J2").value, requirement.notes);
+      assert.equal(details.getCell("I2").value, getVerificationGuide(requirement, language).keyQuestion);
+
+      await exportASVSToExcel([requirement], {
+        language, analysisId: "test", includeSummary: false, includeThreats: false
+      });
+      const detailsOnly = new ExcelJS.Workbook();
+      await detailsOnly.xlsx.load(await savedBlobs.pop()!.arrayBuffer());
+      assert.deepEqual(detailsOnly.worksheets.map(sheet => sheet.name), [language === "sk" ? "AVERT ASVS 5.0 Požiadavky" : "AVERT ASVS 5.0 Requirements"]);
+    }
+  } finally {
+    Object.defineProperty(FileSaver, "saveAs", { configurable: true, value: originalSaveAs });
+  }
 });
 
 test("generates findings only from current ASVS gaps and preserves matching statuses", () => {
