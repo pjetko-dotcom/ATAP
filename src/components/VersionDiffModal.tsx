@@ -22,8 +22,10 @@ import { AnalysisVersionSnapshot } from "../types/versioning";
 import { asvsRequirements } from "../data/asvsData";
 import { getInitialThreatsForAnalysis, summarizeThreats } from "../utils/threatModel";
 import { calculateAsvsCoverage } from "../utils/asvsMetrics";
+import { useLanguage } from "../context/LanguageContext";
 
 export function VersionDiffModal() {
+  const { language, t } = useLanguage();
   const { 
     analysis, 
     currentWorkingVersion, 
@@ -90,9 +92,9 @@ export function VersionDiffModal() {
 
     return {
       version: currentWorkingVersion,
-      label: `Aktuálny rozpracovaný stav (${analysis.status || "Draft"})`,
+      label: t(`Aktuálny rozpracovaný stav (${analysis.status || "Draft"})`, `Current working state (${analysis.status || "Draft"})`),
       createdAt: new Date().toISOString(),
-      createdBy: "Aktuálna relácia",
+      createdBy: t("Aktuálna relácia", "Current session"),
       status: (analysis.status as any) || "Draft",
       asvsLevel: analysis.asvsLevel || "2",
       metrics: {
@@ -113,7 +115,7 @@ export function VersionDiffModal() {
         architecture,
       }
     };
-  }, [analysis, currentWorkingVersion]);
+  }, [analysis, currentWorkingVersion, language]);
 
   // Combine historical snapshots with current working snapshot
   const availableVersions = useMemo(() => {
@@ -154,8 +156,8 @@ export function VersionDiffModal() {
 
   // Compute diff
   const diffResult = useMemo(() => {
-    return computeVersionDiff(snapA, snapB);
-  }, [snapA, snapB]);
+    return computeVersionDiff(snapA, snapB, language);
+  }, [snapA, snapB, language]);
 
   if (!isDiffModalOpen) return null;
 
@@ -167,17 +169,17 @@ export function VersionDiffModal() {
 
   const handleCopySummary = () => {
     const lines = [
-      `Bezpečnostný Diff: Analýza "${analysis.name}"`,
-      `Porovnanie verzie v${snapA.version} (${new Date(snapA.createdAt).toLocaleDateString()}) -> v${snapB.version} (${new Date(snapB.createdAt).toLocaleDateString()})`,
+      t(`Bezpečnostný Diff: Analýza "${analysis.name}"`, `Security diff: Analysis "${analysis.name}"`),
+      t(`Porovnanie verzie v${snapA.version} (${new Date(snapA.createdAt).toLocaleDateString(language)}) -> v${snapB.version} (${new Date(snapB.createdAt).toLocaleDateString(language)})`, `Comparing version v${snapA.version} (${new Date(snapA.createdAt).toLocaleDateString(language)}) -> v${snapB.version} (${new Date(snapB.createdAt).toLocaleDateString(language)})`),
       `----------------------------------------`,
       `ASVS Level: L${diffResult.metricsDelta.levelA} -> L${diffResult.metricsDelta.levelB}`,
-      `ASVS Pokrytie: ${snapA.metrics.asvsCoverage}% -> ${snapB.metrics.asvsCoverage}% (${diffResult.metricsDelta.asvsCoverageDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.asvsCoverageDelta}%)`,
-      `Splnené požiadavky: ${snapA.metrics.totalImplemented} -> ${snapB.metrics.totalImplemented} (${diffResult.metricsDelta.implementedDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.implementedDelta})`,
-      `Otvorené hrozby: ${snapA.metrics.totalOpenThreats} -> ${snapB.metrics.totalOpenThreats} (${diffResult.metricsDelta.openThreatsDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.openThreatsDelta})`,
-      `Otvorené riziká High/Critical: ${snapA.metrics.criticalRisks} -> ${snapB.metrics.criticalRisks} (${diffResult.metricsDelta.criticalRisksDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.criticalRisksDelta})`,
-      `Počet zmenených ASVS požiadaviek: ${diffResult.asvsDiffs.length}`,
-      `Počet zmien v registri hrozieb: ${diffResult.threatDiffs.length}`,
-      `Počet zmien kontextu, architektúry a nastavení: ${diffResult.contextDiffs.length + diffResult.settingsDiffs.length}`,
+      `${t("ASVS Pokrytie", "ASVS coverage")}: ${snapA.metrics.asvsCoverage}% -> ${snapB.metrics.asvsCoverage}% (${diffResult.metricsDelta.asvsCoverageDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.asvsCoverageDelta}%)`,
+      `${t("Splnené požiadavky", "Implemented requirements")}: ${snapA.metrics.totalImplemented} -> ${snapB.metrics.totalImplemented} (${diffResult.metricsDelta.implementedDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.implementedDelta})`,
+      `${t("Otvorené hrozby", "Open threats")}: ${snapA.metrics.totalOpenThreats} -> ${snapB.metrics.totalOpenThreats} (${diffResult.metricsDelta.openThreatsDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.openThreatsDelta})`,
+      `${t("Otvorené riziká High/Critical", "Open High/Critical risks")}: ${snapA.metrics.criticalRisks} -> ${snapB.metrics.criticalRisks} (${diffResult.metricsDelta.criticalRisksDelta >= 0 ? '+' : ''}${diffResult.metricsDelta.criticalRisksDelta})`,
+      `${t("Počet zmenených ASVS požiadaviek", "Changed ASVS requirements")}: ${diffResult.asvsDiffs.length}`,
+      `${t("Počet zmien v registri hrozieb", "Threat register changes")}: ${diffResult.threatDiffs.length}`,
+      `${t("Počet zmien kontextu, architektúry a nastavení", "Context, architecture and settings changes")}: ${diffResult.contextDiffs.length + diffResult.settingsDiffs.length}`,
     ];
     navigator.clipboard.writeText(lines.join("\n"));
     setCopied(true);
@@ -226,9 +228,9 @@ export function VersionDiffModal() {
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-                Porovnanie verzií (Version Diff)
+                {t("Porovnanie verzií (Version Diff)", "Version comparison (Version Diff)")}
                 <span className="px-2 py-0.5 bg-blue-500/20 text-blue-300 border border-blue-400/30 rounded text-xs font-semibold">
-                  {diffResult.totalChangesCount} zmien celkovo
+                  {diffResult.totalChangesCount} {t("zmien celkovo", "changes total")}
                 </span>
               </h3>
               <p className="text-xs text-slate-300">{analysis.name}</p>
@@ -239,10 +241,10 @@ export function VersionDiffModal() {
             <button
               onClick={handleCopySummary}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition-colors cursor-pointer"
-              title="Kopírovať súhrn rozdielov do schránky"
+              title={t("Kopírovať súhrn rozdielov do schránky", "Copy change summary to clipboard")}
             >
               {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
-              <span>{copied ? "Skopírované!" : "Kopírovať diff"}</span>
+              <span>{copied ? t("Skopírované!", "Copied!") : t("Kopírovať diff", "Copy diff")}</span>
             </button>
             <button 
               onClick={() => setIsDiffModalOpen(false)}
@@ -258,7 +260,7 @@ export function VersionDiffModal() {
           <div className="flex items-center gap-3">
             {/* Version A */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-slate-400 uppercase">Základ (A):</span>
+              <span className="text-[11px] font-bold text-slate-400 uppercase">{t("Základ (A):", "Base (A):")}</span>
               <select
                 value={versionAId}
                 onChange={(e) => setVersionAId(e.target.value)}
@@ -266,7 +268,7 @@ export function VersionDiffModal() {
               >
                 {availableVersions.map(v => (
                   <option key={`a-${v.version}`} value={v.version}>
-                    v{v.version} ({v.status === "Final" ? "Final" : "Draft"} - {new Date(v.createdAt).toLocaleDateString()})
+                    v{v.version} ({v.status === "Final" ? "Final" : "Draft"} - {new Date(v.createdAt).toLocaleDateString(language)})
                   </option>
                 ))}
               </select>
@@ -276,7 +278,7 @@ export function VersionDiffModal() {
 
             {/* Version B */}
             <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-bold text-blue-600 uppercase">Porovnať s (B):</span>
+              <span className="text-[11px] font-bold text-blue-600 uppercase">{t("Porovnať s (B):", "Compare with (B):")}</span>
               <select
                 value={versionBId}
                 onChange={(e) => setVersionBId(e.target.value)}
@@ -284,7 +286,7 @@ export function VersionDiffModal() {
               >
                 {availableVersions.map(v => (
                   <option key={`b-${v.version}`} value={v.version}>
-                    v{v.version} ({v.status === "Final" ? "Final" : "Draft"} - {new Date(v.createdAt).toLocaleDateString()})
+                    v{v.version} ({v.status === "Final" ? "Final" : "Draft"} - {new Date(v.createdAt).toLocaleDateString(language)})
                   </option>
                 ))}
               </select>
@@ -292,7 +294,7 @@ export function VersionDiffModal() {
           </div>
 
           <div className="text-xs text-slate-500">
-            Dátum A: <strong>{new Date(snapA.createdAt).toLocaleDateString()}</strong> ➔ Dátum B: <strong>{new Date(snapB.createdAt).toLocaleDateString()}</strong>
+            {t("Dátum A:", "Date A:")} <strong>{new Date(snapA.createdAt).toLocaleDateString(language)}</strong> ➔ {t("Dátum B:", "Date B:")} <strong>{new Date(snapB.createdAt).toLocaleDateString(language)}</strong>
           </div>
         </div>
 
@@ -311,7 +313,7 @@ export function VersionDiffModal() {
 
           {/* ASVS Coverage */}
           <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">ASVS Pokrytie</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t("ASVS Pokrytie", "ASVS coverage")}</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-bold text-slate-800">
                 {snapA.metrics?.asvsCoverage ?? 0}% ➔ {snapB.metrics?.asvsCoverage ?? 0}%
@@ -332,7 +334,7 @@ export function VersionDiffModal() {
 
           {/* Implemented Reqs */}
           <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Splnené kontroly</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t("Splnené kontroly", "Implemented controls")}</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-bold text-slate-800">
                 {snapA.metrics?.totalImplemented ?? 0} ➔ {snapB.metrics?.totalImplemented ?? 0}
@@ -345,7 +347,7 @@ export function VersionDiffModal() {
 
           {/* Open Threats */}
           <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Otvorené hrozby</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t("Otvorené hrozby", "Open threats")}</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-bold text-slate-800">
                 {snapA.metrics?.totalOpenThreats ?? 0} ➔ {snapB.metrics?.totalOpenThreats ?? 0}
@@ -358,7 +360,7 @@ export function VersionDiffModal() {
 
           {/* Open High/Critical Risks */}
           <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Otvorené High/Critical riziká</span>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">{t("Otvorené High/Critical riziká", "Open High/Critical risks")}</span>
             <div className="flex items-center justify-between mt-1">
               <span className="text-sm font-bold text-slate-800">
                 {snapA.metrics?.criticalRisks ?? 0} ➔ {snapB.metrics?.criticalRisks ?? 0}
@@ -383,7 +385,7 @@ export function VersionDiffModal() {
               }`}
             >
               <ShieldCheck size={16} />
-              <span>ASVS Požiadavky</span>
+              <span>{t("ASVS Požiadavky", "ASVS Requirements")}</span>
               <span className="ml-1 px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded-full text-[10px] font-bold">
                 {diffResult.asvsDiffs.length}
               </span>
@@ -398,7 +400,7 @@ export function VersionDiffModal() {
               }`}
             >
               <AlertTriangle size={16} />
-              <span>Register hrozieb</span>
+              <span>{t("Register hrozieb", "Threat register")}</span>
               <span className="ml-1 px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded-full text-[10px] font-bold">
                 {diffResult.threatDiffs.length}
               </span>
@@ -413,7 +415,7 @@ export function VersionDiffModal() {
               }`}
             >
               <FileText size={16} />
-              <span>Kontext, architektúra a nastavenia</span>
+              <span>{t("Kontext, architektúra a nastavenia", "Context, architecture and settings")}</span>
               <span className="ml-1 px-1.5 py-0.2 bg-slate-100 text-slate-700 rounded-full text-[10px] font-bold">
                 {diffResult.contextDiffs.length + diffResult.settingsDiffs.length}
               </span>
@@ -429,9 +431,9 @@ export function VersionDiffModal() {
                 onChange={(e: any) => setAsvsFilter(e.target.value)}
                 className="px-2 py-1 text-[11px] font-semibold text-slate-700 bg-slate-100 border border-slate-200 rounded-md focus:outline-none cursor-pointer"
               >
-                <option value="all">Všetky rozdiely ({diffResult.asvsDiffs.length})</option>
-                <option value="status">Len zmeny stavu</option>
-                <option value="notes">Len poznámky a trasovanie</option>
+                <option value="all">{t("Všetky rozdiely", "All differences")} ({diffResult.asvsDiffs.length})</option>
+                <option value="status">{t("Len zmeny stavu", "Status changes only")}</option>
+                <option value="notes">{t("Len poznámky a trasovanie", "Notes and traceability only")}</option>
               </select>
             </div>
           )}
@@ -455,31 +457,31 @@ export function VersionDiffModal() {
                           {diff.id}
                         </span>
                         <span className="text-xs text-slate-400 font-semibold">
-                          Kapitola {diff.chapter} • Sekcia {diff.section}
+                          {t("Kapitola", "Chapter")} {diff.chapter} • {t("Sekcia", "Section")} {diff.section}
                         </span>
                         {diff.changeType === "status_changed" && (
                           <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md uppercase tracking-wider">
-                            Zmena stavu
+                            {t("Zmena stavu", "Status change")}
                           </span>
                         )}
                         {diff.changeType === "notes_changed" && (
                           <span className="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-bold rounded-md uppercase tracking-wider">
-                            Zmena poznámky
+                            {t("Zmena poznámky", "Note change")}
                           </span>
                         )}
                         {diff.changeType === "traceability_changed" && (
                           <span className="px-2 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-bold rounded-md uppercase tracking-wider">
-                            Zmena komponentov
+                            {t("Zmena komponentov", "Component change")}
                           </span>
                         )}
                         {diff.changeType === "added" && (
-                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md uppercase tracking-wider">Pridaná</span>
+                          <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-md uppercase tracking-wider">{t("Pridaná", "Added")}</span>
                         )}
                         {diff.changeType === "removed" && (
-                          <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded-md uppercase tracking-wider">Odstránená</span>
+                          <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded-md uppercase tracking-wider">{t("Odstránená", "Removed")}</span>
                         )}
                         {diff.changeType === "details_changed" && (
-                          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md uppercase tracking-wider">Zmena detailov</span>
+                          <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md uppercase tracking-wider">{t("Zmena detailov", "Details changed")}</span>
                         )}
                       </div>
                       <h4 className="text-sm font-bold text-slate-800 mt-1">
@@ -511,12 +513,12 @@ export function VersionDiffModal() {
                   {(diff.oldNotes || diff.newNotes) && diff.oldNotes !== diff.newNotes && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs">
                       <div className="p-2.5 bg-red-50/50 border border-red-100 rounded-lg">
-                        <span className="text-[10px] font-bold text-red-500 uppercase block mb-0.5">Predchádzajúca poznámka (v{snapA.version}):</span>
-                        <p className="text-slate-700 italic">{diff.oldNotes || "<Žiadna poznámka>"}</p>
+                        <span className="text-[10px] font-bold text-red-500 uppercase block mb-0.5">{t("Predchádzajúca poznámka", "Previous note")} (v{snapA.version}):</span>
+                        <p className="text-slate-700 italic">{diff.oldNotes || t("<Žiadna poznámka>", "<No note>")}</p>
                       </div>
                       <div className="p-2.5 bg-emerald-50/50 border border-emerald-100 rounded-lg">
-                        <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-0.5">Nová poznámka (v{snapB.version}):</span>
-                        <p className="text-slate-800 font-medium">{diff.newNotes || "<Žiadna poznámka>"}</p>
+                        <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-0.5">{t("Nová poznámka", "New note")} (v{snapB.version}):</span>
+                        <p className="text-slate-800 font-medium">{diff.newNotes || t("<Žiadna poznámka>", "<No note>")}</p>
                       </div>
                     </div>
                   )}
@@ -524,7 +526,7 @@ export function VersionDiffModal() {
                   {/* Traceability components comparison if changed */}
                   {diff.oldTraceability && diff.newTraceability && JSON.stringify(diff.oldTraceability) !== JSON.stringify(diff.newTraceability) && (
                     <div className="pt-2 border-t border-slate-100 text-xs flex items-center gap-2">
-                      <span className="text-slate-400 font-semibold">Komponenty:</span>
+                      <span className="text-slate-400 font-semibold">{t("Komponenty:", "Components:")}</span>
                       <span className="text-slate-600">[{diff.oldTraceability.join(", ") || "None"}]</span>
                       <ArrowRight size={12} className="text-slate-400" />
                       <span className="text-blue-700 font-bold">[{diff.newTraceability.join(", ") || "None"}]</span>
@@ -536,9 +538,9 @@ export function VersionDiffModal() {
               {filteredAsvsDiffs.length === 0 && (
                 <div className="p-12 text-center bg-white rounded-xl border border-slate-200 text-slate-500">
                   <CheckCircle2 size={36} className="mx-auto text-emerald-500 mb-2" />
-                  <p className="font-bold text-slate-800">Žiadne rozdiely v ASVS požiadavkách</p>
+                  <p className="font-bold text-slate-800">{t("Žiadne rozdiely v ASVS požiadavkách", "No differences in ASVS requirements")}</p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Medzi verziou v{snapA.version} a v{snapB.version} neboli nájdené žiadne zmeny v požiadavkách podľa zvoleného filtra.
+                    {t(`Medzi verziou v${snapA.version} a v${snapB.version} neboli nájdené žiadne zmeny v požiadavkách podľa zvoleného filtra.`, `No requirement changes matching the filter were found between v${snapA.version} and v${snapB.version}.`)}
                   </p>
                 </div>
               )}
@@ -561,22 +563,22 @@ export function VersionDiffModal() {
                         </span>
                         {td.changeType === "added" && (
                           <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded uppercase">
-                            + Nová hrozba
+                            + {t("Nová hrozba", "New threat")}
                           </span>
                         )}
                         {td.changeType === "removed" && (
                           <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold rounded uppercase">
-                            - Odstránená
+                            - {t("Odstránená", "Removed")}
                           </span>
                         )}
                         {td.changeType === "status_changed" && (
                           <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded uppercase">
-                            Zmena stavu
+                            {t("Zmena stavu", "Status change")}
                           </span>
                         )}
                         {td.changeType === "risk_changed" && (
                           <span className="px-2 py-0.5 bg-amber-100 text-amber-800 text-[10px] font-bold rounded uppercase">
-                            Zmena rizika
+                            {t("Zmena rizika", "Risk change")}
                           </span>
                         )}
                       </div>
@@ -609,12 +611,12 @@ export function VersionDiffModal() {
                   {(td.oldMitigation || td.newMitigation) && td.oldMitigation !== td.newMitigation && (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-100 text-xs">
                       <div className="p-2 bg-slate-50 rounded border border-slate-200">
-                        <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">Predtým:</span>
-                        <p className="text-slate-700">{td.oldMitigation || "<Bez mitigácie>"}</p>
+                        <span className="text-[10px] font-bold text-slate-400 uppercase block mb-0.5">{t("Predtým:", "Before:")}</span>
+                        <p className="text-slate-700">{td.oldMitigation || t("<Bez mitigácie>", "<No mitigation>")}</p>
                       </div>
                       <div className="p-2 bg-blue-50/60 rounded border border-blue-200">
-                        <span className="text-[10px] font-bold text-blue-700 uppercase block mb-0.5">Nové bezpečnostné opatrenie:</span>
-                        <p className="text-blue-950 font-medium">{td.newMitigation || "<Bez mitigácie>"}</p>
+                        <span className="text-[10px] font-bold text-blue-700 uppercase block mb-0.5">{t("Nové bezpečnostné opatrenie:", "New security measure:")}</span>
+                        <p className="text-blue-950 font-medium">{td.newMitigation || t("<Bez mitigácie>", "<No mitigation>")}</p>
                       </div>
                     </div>
                   )}
@@ -631,9 +633,9 @@ export function VersionDiffModal() {
               {diffResult.threatDiffs.length === 0 && (
                 <div className="p-12 text-center bg-white rounded-xl border border-slate-200 text-slate-500">
                   <CheckCircle2 size={36} className="mx-auto text-emerald-500 mb-2" />
-                  <p className="font-bold text-slate-800">Žiadne rozdiely v registri hrozieb</p>
+                  <p className="font-bold text-slate-800">{t("Žiadne rozdiely v registri hrozieb", "No differences in the threat register")}</p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Medzi verziou v{snapA.version} a v{snapB.version} sú hrozby a ich mitigácie identické.
+                    {t(`Medzi verziou v${snapA.version} a v${snapB.version} sú hrozby a ich mitigácie identické.`, `Threats and mitigations are identical between v${snapA.version} and v${snapB.version}.`)}
                   </p>
                 </div>
               )}
@@ -650,16 +652,16 @@ export function VersionDiffModal() {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div className="p-3 bg-red-50/50 border border-red-100 rounded-lg">
-                      <span className="text-[10px] font-bold text-red-500 uppercase block mb-1">Pôvodná hodnota (v{snapA.version}):</span>
+                      <span className="text-[10px] font-bold text-red-500 uppercase block mb-1">{t("Pôvodná hodnota", "Previous value")} (v{snapA.version}):</span>
                       <p className="font-semibold text-slate-800">
-                        {Array.isArray(cd.oldValue) ? cd.oldValue.join(", ") : String(cd.oldValue || "<Nevyplnené>")}
+                        {Array.isArray(cd.oldValue) ? cd.oldValue.join(", ") : String(cd.oldValue || t("<Nevyplnené>", "<Not set>"))}
                       </p>
                     </div>
 
                     <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-lg">
-                      <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-1">Nová hodnota (v{snapB.version}):</span>
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-1">{t("Nová hodnota", "New value")} (v{snapB.version}):</span>
                       <p className="font-bold text-emerald-950">
-                        {Array.isArray(cd.newValue) ? cd.newValue.join(", ") : String(cd.newValue || "<Nevyplnené>")}
+                        {Array.isArray(cd.newValue) ? cd.newValue.join(", ") : String(cd.newValue || t("<Nevyplnené>", "<Not set>"))}
                       </p>
                     </div>
                   </div>
@@ -671,11 +673,11 @@ export function VersionDiffModal() {
                   <h4 className="text-xs font-bold text-blue-700 uppercase tracking-wider">{setting.label}</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div className="p-3 bg-red-50/50 border border-red-100 rounded-lg">
-                      <span className="text-[10px] font-bold text-red-500 uppercase block mb-1">Pôvodné nastavenie (v{snapA.version}):</span>
+                      <span className="text-[10px] font-bold text-red-500 uppercase block mb-1">{t("Pôvodné nastavenie", "Previous setting")} (v{snapA.version}):</span>
                       <p className="font-semibold text-slate-800">{String(setting.oldValue)}</p>
                     </div>
                     <div className="p-3 bg-emerald-50/50 border border-emerald-100 rounded-lg">
-                      <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-1">Nové nastavenie (v{snapB.version}):</span>
+                      <span className="text-[10px] font-bold text-emerald-600 uppercase block mb-1">{t("Nové nastavenie", "New setting")} (v{snapB.version}):</span>
                       <p className="font-bold text-emerald-950">{String(setting.newValue)}</p>
                     </div>
                   </div>
@@ -685,9 +687,9 @@ export function VersionDiffModal() {
               {diffResult.contextDiffs.length + diffResult.settingsDiffs.length === 0 && (
                 <div className="p-12 text-center bg-white rounded-xl border border-slate-200 text-slate-500">
                   <CheckCircle2 size={36} className="mx-auto text-emerald-500 mb-2" />
-                  <p className="font-bold text-slate-800">Kontext a rozsah sú zhodné</p>
+                  <p className="font-bold text-slate-800">{t("Kontext a rozsah sú zhodné", "Context and scope match")}</p>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Klasifikácia dát, štandardy zhody a typy používateľov sa medzi týmito verziami nezmenili.
+                    {t("Klasifikácia dát, štandardy zhody a typy používateľov sa medzi týmito verziami nezmenili.", "Data classification, compliance standards and user types have not changed between these versions.")}
                   </p>
                 </div>
               )}
@@ -699,13 +701,13 @@ export function VersionDiffModal() {
         {/* Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <div className="text-xs text-slate-500">
-            Porovnáva sa <strong>v{snapA.version}</strong> s <strong>v{snapB.version}</strong>.
+            {t("Porovnáva sa", "Comparing")} <strong>v{snapA.version}</strong> {t("s", "with")} <strong>v{snapB.version}</strong>.
           </div>
           <button
             onClick={() => setIsDiffModalOpen(false)}
             className="px-5 py-2 bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer"
           >
-            Zatvoriť diff
+            {t("Zatvoriť diff", "Close diff")}
           </button>
         </div>
 

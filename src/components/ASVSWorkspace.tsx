@@ -44,6 +44,7 @@ import { HelpTooltip } from "./HelpTooltip";
 import { VerificationHintTooltip } from "./VerificationHintTooltip";
 import { useDialogFocus } from "../hooks/useDialogFocus";
 import { getVerificationGuide } from "../utils/verificationGuide";
+import { getEnglishTriageQuestion } from "../data/asvsTriageEnglish";
 import { ASVSTriageModal } from "./ASVSTriageModal";
 import { ProjectCategorizationModal } from "./ProjectCategorizationModal";
 import { exportASVSToExcel, exportASVSToCSV } from "../utils/exportToExcel";
@@ -408,7 +409,7 @@ export function ASVSWorkspace() {
     const selectedArray: string[] = Array.from(selectedIds);
     batchUpdateRequirementStatus(selectedArray, status, reason);
     setSelectedIds(new Set());
-    setExportNotice(`Hromadne nastavený stav "${status}" pre ${selectedArray.length} požiadaviek.`);
+    setExportNotice(t(`Hromadne nastavený stav "${status}" pre ${selectedArray.length} požiadaviek.`, `Set status "${status}" for ${selectedArray.length} requirements.`));
     setTimeout(() => setExportNotice(null), 3500);
   };
 
@@ -432,7 +433,7 @@ export function ASVSWorkspace() {
     e.preventDefault();
     if (selectedIds.size === 0) return;
     if (!bulkNoteText.trim()) {
-      setBulkNoteError("Zadajte text poznámky alebo dôkazu.");
+      setBulkNoteError(t("Zadajte text poznámky alebo dôkazu.", "Enter a note or evidence."));
       return;
     }
     const selectedArray: string[] = Array.from(selectedIds);
@@ -441,7 +442,7 @@ export function ASVSWorkspace() {
     setBulkNoteText("");
     setBulkNoteError(null);
     setSelectedIds(new Set());
-    setExportNotice(`Poznámka / dôkaz bol úspešne pridaný ku ${selectedArray.length} požiadavkám.`);
+    setExportNotice(t(`Poznámka / dôkaz bol úspešne pridaný ku ${selectedArray.length} požiadavkám.`, `Note / evidence added to ${selectedArray.length} requirements.`));
     setTimeout(() => setExportNotice(null), 3500);
   };
 
@@ -449,7 +450,7 @@ export function ASVSWorkspace() {
     e.preventDefault();
     if (bulkNaTargetIds.length === 0) return;
     if (!bulkNaReason.trim()) {
-      setBulkNaReasonError("Odôvodnenie nesmie byť prázdne.");
+      setBulkNaReasonError(t("Odôvodnenie nesmie byť prázdne.", "The reason cannot be empty."));
       return;
     }
     const targetIds = new Set(bulkNaTargetIds);
@@ -459,7 +460,7 @@ export function ASVSWorkspace() {
     setBulkNaReasonError(null);
     setBulkNaTargetIds([]);
     setSelectedIds(previous => new Set(Array.from(previous).filter(id => !targetIds.has(id))));
-    setExportNotice(`${targetIds.size} požiadaviek bolo označených ako N/A s odôvodnením.`);
+    setExportNotice(t(`${targetIds.size} požiadaviek bolo označených ako N/A s odôvodnením.`, `${targetIds.size} requirements were marked N/A with a reason.`));
     setTimeout(() => setExportNotice(null), 3500);
   };
 
@@ -485,9 +486,9 @@ export function ASVSWorkspace() {
       openBulkNaModal(ids);
       return;
     }
-    if (!window.confirm(`Označiť ${ids.length} zobrazených požiadaviek ako Implemented? Potvrďte, že ste každú požiadavku skontrolovali.`)) return;
+    if (!window.confirm(t(`Označiť ${ids.length} zobrazených požiadaviek ako Implemented? Potvrďte, že ste každú požiadavku skontrolovali.`, `Mark ${ids.length} visible requirements as Implemented? Confirm that you have reviewed each requirement.`))) return;
     batchUpdateRequirementStatus(ids, status);
-    setExportNotice(`${ids.length} zobrazených požiadaviek bolo označených ako Implemented.`);
+    setExportNotice(t(`${ids.length} zobrazených požiadaviek bolo označených ako Implemented.`, `${ids.length} visible requirements were marked Implemented.`));
     setTimeout(() => setExportNotice(null), 3500);
   };
 
@@ -905,37 +906,37 @@ export function ASVSWorkspace() {
 {/* Dynamic Progress Stats */}
         <div className={`grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4 ${isSummaryOpen ? 'grid' : 'hidden xl:grid'}`}>
           <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs">
-            <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">Pokrytie požiadaviek</p>
+            <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">{t("Pokrytie požiadaviek", "Requirement coverage")}</p>
             <p className="text-2xl font-bold text-slate-800">{coverage}%</p>
             <div className="w-full bg-slate-100 h-1.5 mt-2 rounded-full">
               <div className="bg-blue-600 h-1.5 rounded-full transition-all duration-300" style={{ width: `${coverage}%` }}></div>
             </div>
-            <p className="text-[10px] text-slate-400 mt-1">{implementedCount} z {totalRelevant} relevantných</p>
+            <p className="text-[10px] text-slate-400 mt-1">{implementedCount} {t("z", "of")} {totalRelevant} {t("relevantných", "relevant")}</p>
           </div>
           
           <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs">
-            <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">Otvorené nálezy (Gaps)</p>
+            <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">{t("Otvorené nálezy (Gaps)", "Open findings (Gaps)")}</p>
             <p className="text-2xl font-bold text-red-600">{findingsCount}</p>
-            <p className="text-[10px] text-slate-400 mt-1 uppercase">Partial alebo Missing</p>
+            <p className="text-[10px] text-slate-400 mt-1 uppercase">Partial {t("alebo", "or")} Missing</p>
           </div>
 
           <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs">
-            <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">Splnené (Mitigated)</p>
+            <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">{t("Splnené (Mitigated)", "Implemented (Mitigated)")}</p>
             <p className="text-2xl font-bold text-green-600">{implementedCount}</p>
-            <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight">Overené bezpečnostné kontroly</p>
+            <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-tight">{t("Overené bezpečnostné kontroly", "Verified security controls")}</p>
           </div>
 
           <div className="bg-white p-3.5 rounded-lg border border-slate-200 shadow-xs">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">Nepotrebné (N/A)</p>
+              <p className="text-[11px] text-slate-500 uppercase font-bold mb-0.5">{t("Nepotrebné (N/A)", "Not applicable (N/A)")}</p>
               {triagedExcludedCount > 0 && (
                 <span className="text-[10px] text-blue-700 bg-blue-50 px-1.5 py-0.2 rounded font-semibold border border-blue-200">
-                  {triagedExcludedCount} triáž
+                  {triagedExcludedCount} {t("triáž", "triage")}
                 </span>
               )}
             </div>
             <p className="text-2xl font-bold text-slate-500">{notRelevantCount}</p>
-            <p className="text-[10px] text-slate-400 mt-1 uppercase">Označené ako N/A / Scoped Out</p>
+            <p className="text-[10px] text-slate-400 mt-1 uppercase">{t("Označené ako N/A / Scoped Out", "Marked N/A / Scoped Out")}</p>
           </div>
         </div>
 
@@ -952,14 +953,14 @@ export function ASVSWorkspace() {
               <span className="flex min-w-0 items-center gap-2">
                 <Target size={15} className="shrink-0 text-blue-600" />
                 <span className="text-xs font-semibold text-slate-800">
-                  Triage pre V{activeChapterId}
+                  {t("Triage pre", "Triage for")} V{activeChapterId}
                 </span>
                 <span className="text-[11px] text-slate-500">
-                  {answeredTriageQuestionCount}/{currentChapterTriageQuestions.length} zodpovedané
+                  {answeredTriageQuestionCount}/{currentChapterTriageQuestions.length} {t("zodpovedané", "answered")}
                 </span>
               </span>
               <span className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-blue-700">
-                {isChapterTriageOpen ? "Skryť triage" : "Zobraziť triage"}
+                {isChapterTriageOpen ? t("Skryť triage", "Hide triage") : t("Zobraziť triage", "Show triage")}
                 {isChapterTriageOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </span>
             </button>
@@ -968,7 +969,8 @@ export function ASVSWorkspace() {
               hidden={!isChapterTriageOpen}
               className="space-y-2.5 border-t border-slate-100 p-2.5"
             >
-                {currentChapterTriageQuestions.map((triageQ) => {
+                {currentChapterTriageQuestions.map((originalQuestion) => {
+              const triageQ = language === "en" ? getEnglishTriageQuestion(originalQuestion) : originalQuestion;
               const answer = triageAnswers[triageQ.id];
               return (
                 <div
@@ -996,11 +998,11 @@ export function ASVSWorkspace() {
                     <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-blue-800 bg-blue-100 px-1.5 py-0.2 rounded">
-                          Triage otázka pre V{activeChapterId}
+                          {t("Triage otázka pre", "Triage question for")} V{activeChapterId}
                         </span>
                         {triageQ.sectionId && (
                           <span className="text-[10px] font-bold text-slate-700 bg-white px-1.5 py-0.2 rounded border border-slate-200">
-                            Sekcia {triageQ.sectionId}
+                            {t("Sekcia", "Section")} {triageQ.sectionId}
                           </span>
                         )}
                         <span className="text-xs text-blue-900 font-semibold">
@@ -1029,12 +1031,12 @@ export function ASVSWorkspace() {
                     {answer === false ? (
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-slate-600 bg-white px-2.5 py-1 rounded-md border border-slate-300 flex items-center gap-1 shadow-xs">
-                          <Ban size={13} className="text-slate-500" /> Kontroly označené ako N/A
+                          <Ban size={13} className="text-slate-500" /> {t("Kontroly označené ako N/A", "Controls marked N/A")}
                         </span>
                         <button
                           onClick={() => resetTriageAnswer(triageQ.id)}
                           className="p-1.5 text-slate-500 hover:text-slate-800 hover:bg-white rounded-md transition-colors cursor-pointer border border-transparent hover:border-slate-200"
-                          title="Resetovať odpoveď"
+                          title={t("Resetovať odpoveď", "Reset answer")}
                         >
                           <RotateCcw size={14} />
                         </button>
@@ -1050,15 +1052,15 @@ export function ASVSWorkspace() {
                           }`}
                         >
                           <Check size={13} />
-                          <span>Relevantné</span>
+                          <span>{t("Relevantné", "Relevant")}</span>
                         </button>
                         <button
                           onClick={() => setTriageAnswer(triageQ.id, false)}
                           className="px-3 py-1 text-xs font-semibold rounded-md bg-white text-slate-700 border border-slate-200 hover:border-red-300 hover:text-red-700 hover:bg-red-50/50 transition-colors cursor-pointer flex items-center gap-1"
-                          title="Označiť celú oblasť ako nepotrebnú (N/A)"
+                          title={t("Označiť celú oblasť ako nepotrebnú (N/A)", "Mark the entire area not applicable (N/A)")}
                         >
                           <Ban size={13} />
-                          <span>Nie je relevantné (N/A)</span>
+                          <span>{t("Nie je relevantné (N/A)", "Not applicable (N/A)")}</span>
                         </button>
                       </>
                     )}
@@ -1138,24 +1140,24 @@ export function ASVSWorkspace() {
                 <button
                   onClick={() => handleBatchMarkVisible("Implemented")}
                   className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium bg-green-50 text-green-700 hover:bg-green-100 rounded border border-green-200 transition-colors cursor-pointer"
-                  title="Označiť všetky zobrazené požiadavky ako Implemented"
+                  title={t("Označiť všetky zobrazené požiadavky ako Implemented", "Mark all visible requirements Implemented")}
                 >
                   <ShieldCheck size={13} />
-                  <span>Schváliť zobrazené</span>
+                  <span>{t("Schváliť zobrazené", "Approve visible")}</span>
                 </button>
                 <button
                   onClick={() => handleBatchMarkVisible("N/A")}
                   className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium bg-slate-100 text-slate-600 hover:bg-slate-200 rounded border border-slate-200 transition-colors cursor-pointer"
-                  title="Označiť všetky zobrazené požiadavky ako N/A"
+                  title={t("Označiť všetky zobrazené požiadavky ako N/A", "Mark all visible requirements N/A")}
                 >
-                  <span>Nastaviť N/A</span>
+                  <span>{t("Nastaviť N/A", "Set N/A")}</span>
                 </button>
                 <button
                   onClick={handleSelectAllInChapter}
                   className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 rounded border border-blue-200 transition-colors cursor-pointer"
-                  title="Označiť všetky zobrazené požiadavky pre hromadnú akciu"
+                  title={t("Označiť všetky zobrazené požiadavky pre hromadnú akciu", "Select all visible requirements for a bulk action")}
                 >
-                  <span>Označiť zobrazené ({filteredRequirements.length})</span>
+                  <span>{t("Označiť zobrazené", "Select visible")} ({filteredRequirements.length})</span>
                 </button>
               </div>
             </div>
@@ -1169,17 +1171,17 @@ export function ASVSWorkspace() {
                   {selectedIds.size}
                 </span>
                 <span className="text-xs font-bold text-white tracking-tight">
-                  {selectedIds.size === 1 ? "požiadavka označená" : selectedIds.size < 5 ? "požiadavky označené" : "požiadaviek označených"}
-                  {selectedOutsideFiltersCount > 0 && ` · ${selectedOutsideFiltersCount} mimo aktuálnych filtrov`}
+                  {t(selectedIds.size === 1 ? "požiadavka označená" : selectedIds.size < 5 ? "požiadavky označené" : "požiadaviek označených", selectedIds.size === 1 ? "requirement selected" : "requirements selected")}
+                  {selectedOutsideFiltersCount > 0 && t(` · ${selectedOutsideFiltersCount} mimo aktuálnych filtrov`, ` · ${selectedOutsideFiltersCount} outside current filters`)}
                 </span>
-                <span className="text-[11px] text-blue-300 hidden md:inline">• Hromadná zmena:</span>
+                <span className="text-[11px] text-blue-300 hidden md:inline">• {t("Hromadná zmena:", "Bulk change:")}</span>
               </div>
 
               <div className="flex items-center gap-1.5 flex-wrap">
                 <button
                   onClick={() => handleBulkStatusDirect("Implemented")}
                   className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded shadow-xs transition-colors cursor-pointer flex items-center gap-1"
-                  title="Nastaviť vybrané ako Implemented"
+                  title={t("Nastaviť vybrané ako Implemented", "Set selection to Implemented")}
                 >
                   <ShieldCheck size={13} />
                   <span>Implemented</span>
@@ -1187,21 +1189,21 @@ export function ASVSWorkspace() {
                 <button
                   onClick={() => handleBulkStatusDirect("Partial")}
                   className="px-2.5 py-1 bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold rounded shadow-xs transition-colors cursor-pointer"
-                  title="Nastaviť vybrané ako Partial"
+                  title={t("Nastaviť vybrané ako Partial", "Set selection to Partial")}
                 >
                   <span>Partial</span>
                 </button>
                 <button
                   onClick={() => handleBulkStatusDirect("Missing")}
                   className="px-2.5 py-1 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded shadow-xs transition-colors cursor-pointer"
-                  title="Nastaviť vybrané ako Missing"
+                  title={t("Nastaviť vybrané ako Missing", "Set selection to Missing")}
                 >
                   <span>Missing</span>
                 </button>
                 <button
                   onClick={() => openBulkNaModal(Array.from(selectedIds))}
                   className="px-2.5 py-1 bg-slate-700 hover:bg-slate-600 text-white text-xs font-bold rounded shadow-xs transition-colors cursor-pointer"
-                  title="Nastaviť vybrané ako N/A s odôvodnením"
+                  title={t("Nastaviť vybrané ako N/A s odôvodnením", "Set selection to N/A with a reason")}
                 >
                   <span>N/A...</span>
                 </button>
@@ -1214,16 +1216,16 @@ export function ASVSWorkspace() {
                     setIsBulkNoteModalOpen(true);
                   }}
                   className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded shadow-xs transition-colors cursor-pointer flex items-center gap-1"
-                  title="Pripojiť spoločnú poznámku alebo dôkaz ku všetkým vybraným"
+                  title={t("Pripojiť spoločnú poznámku alebo dôkaz ku všetkým vybraným", "Append a shared note or evidence to the selection")}
                 >
                   <FileText size={13} />
-                  <span>Doplniť dôkaz / poznámku</span>
+                  <span>{t("Doplniť dôkaz / poznámku", "Add evidence / note")}</span>
                 </button>
 
                 <button
                   onClick={() => setSelectedIds(new Set())}
                   className="p-1 text-slate-300 hover:text-white rounded hover:bg-slate-800 transition-colors ml-1 cursor-pointer"
-                  title="Zrušiť výber"
+                  title={t("Zrušiť výber", "Clear selection")}
                 >
                   <X size={15} />
                 </button>
@@ -1246,7 +1248,7 @@ export function ASVSWorkspace() {
                   <th className="px-3 py-2.5 border-b border-slate-100 w-10 text-center">
                     <input 
                       type="checkbox" 
-                      aria-label="Označiť všetky zobrazené požiadavky"
+                      aria-label={t("Označiť všetky zobrazené požiadavky", "Select all visible requirements")}
                       className="rounded border-slate-300 text-blue-600 cursor-pointer"
                       checked={filteredRequirements.length > 0 && filteredRequirements.every(requirement => selectedIds.has(requirement.id))}
                       onChange={toggleAll}
@@ -1254,10 +1256,10 @@ export function ASVSWorkspace() {
                   </th>
                   <th className="px-3 py-2.5 border-b border-slate-100 w-16">ID</th>
                   <th className="px-3 py-2.5 border-b border-slate-100 w-14 text-center">Level</th>
-                  <th className="px-4 py-2.5 border-b border-slate-100 min-w-[340px] lg:min-w-[420px]">Požiadavka</th>
-                  <th className="px-3 py-2.5 border-b border-slate-100 w-40">Stav (Status)</th>
-                  <th className="px-3 py-2.5 border-b border-slate-100 w-52 hidden md:table-cell">Poznámka / Dôkaz</th>
-                  <th className="px-3 py-2.5 border-b border-slate-100 w-24 text-center">Akcie</th>
+                  <th className="px-4 py-2.5 border-b border-slate-100 min-w-[340px] lg:min-w-[420px]">{t("Požiadavka", "Requirement")}</th>
+                  <th className="px-3 py-2.5 border-b border-slate-100 w-40">{t("Stav (Status)", "Status")}</th>
+                  <th className="px-3 py-2.5 border-b border-slate-100 w-52 hidden md:table-cell">{t("Poznámka / Dôkaz", "Note / Evidence")}</th>
+                  <th className="px-3 py-2.5 border-b border-slate-100 w-24 text-center">{t("Akcie", "Actions")}</th>
                 </tr>
               </thead>
               <tbody className="text-sm divide-y divide-slate-100">
@@ -1293,7 +1295,7 @@ export function ASVSWorkspace() {
                                 <span>{currentSection?.name || req.sectionName || req.title}</span>
                               </div>
                               <span className="text-[11px] font-normal text-slate-500">
-                                {reqs.filter(r => r.sectionId === req.sectionId).length} požiadaviek
+                                {reqs.filter(r => r.sectionId === req.sectionId).length} {t("požiadaviek", "requirements")}
                               </span>
                             </div>
                           </td>
@@ -1303,7 +1305,7 @@ export function ASVSWorkspace() {
                         <td className="px-3 py-2.5 text-center">
                           <input 
                             type="checkbox" 
-                            aria-label={`Označiť ${req.id}`}
+                            aria-label={t(`Označiť ${req.id}`, `Select ${req.id}`)}
                             className="rounded border-slate-300 text-blue-600 cursor-pointer"
                             checked={isSelected}
                             onChange={() => toggleSelection(req.id)}
@@ -1326,13 +1328,13 @@ export function ASVSWorkspace() {
                           {req.triageReason && (
                             <div className="mt-1 flex items-start gap-1.5 text-[11px] text-blue-700 bg-blue-50/60 p-1.5 rounded border border-blue-100">
                               <Info size={13} className="shrink-0 mt-0.5" />
-                              <span><strong>Vylúčené technológiou:</strong> {req.triageReason}</span>
+                              <span><strong>{t("Vylúčené technológiou:", "Excluded by technology:")}</strong> {req.triageReason}</span>
                             </div>
                           )}
                         </td>
                         <td className="px-3 py-2.5">
                           <select 
-                            aria-label={`Stav požiadavky ${req.id}`}
+                            aria-label={t(`Stav požiadavky ${req.id}`, `Status of requirement ${req.id}`)}
                             className={`w-full px-2 py-1.5 text-xs font-semibold rounded-md border appearance-none focus:outline-none focus:ring-2 focus:ring-blue-500/20 cursor-pointer transition-colors ${
                               req.status === "Implemented" ? "bg-green-50 border-green-200 text-green-700" :
                               req.status === "Partial" ? "bg-orange-50 border-orange-200 text-orange-700" :
@@ -1344,7 +1346,7 @@ export function ASVSWorkspace() {
                             onChange={(e) => handleRequirementStatusChange(req.id, e.target.value)}
                             disabled={!!req.triageReason}
                           >
-                            <option value="" disabled>Vyberte stav...</option>
+                            <option value="" disabled>{t("Vyberte stav...", "Select status...")}</option>
                             <option value="Implemented">Implemented</option>
                             <option value="Partial">Partial</option>
                             <option value="Missing">Missing</option>
@@ -1354,9 +1356,9 @@ export function ASVSWorkspace() {
                         <td className="px-3 py-2.5 hidden md:table-cell">
                           <input 
                             type="text" 
-                            aria-label={`Poznámka alebo dôkaz pre ${req.id}`}
+                            aria-label={t(`Poznámka alebo dôkaz pre ${req.id}`, `Note or evidence for ${req.id}`)}
                             className="w-full px-2.5 py-1.5 text-xs border border-slate-200 rounded-md focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 bg-white placeholder:text-slate-300 disabled:bg-slate-50 disabled:text-slate-400"
-                            placeholder={req.triageReason ? "Vylúčené z analýzy" : "Pridať referenciu, link, dôkaz..."}
+                            placeholder={req.triageReason ? t("Vylúčené z analýzy", "Excluded from analysis") : t("Pridať referenciu, link, dôkaz...", "Add a reference, link or evidence...")}
                             value={req.notes || ""}
                             onChange={(e) => updateRequirementNote(req.id, e.target.value)}
                             disabled={!!req.triageReason}
@@ -1367,7 +1369,7 @@ export function ASVSWorkspace() {
                             onClick={() => toggleRow(req.id)}
                             aria-expanded={isExpanded}
                             aria-controls={isExpanded ? `desktop-details-${req.id}` : undefined}
-                            aria-label={`${isExpanded ? "Skryť" : "Zobraziť"} detail požiadavky ${req.id}`}
+                            aria-label={isExpanded ? t(`Skryť detail požiadavky ${req.id}`, `Hide details for ${req.id}`) : t(`Zobraziť detail požiadavky ${req.id}`, `Show details for ${req.id}`)}
                             className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-md text-xs font-medium transition-colors cursor-pointer w-full justify-center ${
                               isExpanded 
                                 ? "bg-blue-100 text-blue-700" 
@@ -1375,7 +1377,7 @@ export function ASVSWorkspace() {
                             }`}
                           >
                             {isExpanded ? (
-                              <><ChevronUp size={14} /> Skryť</>
+                              <><ChevronUp size={14} /> {t("Skryť", "Hide")}</>
                             ) : (
                               <><ChevronDown size={14} /> Detail</>
                             )}
@@ -1385,7 +1387,7 @@ export function ASVSWorkspace() {
                       
                       {/* Expanded Details Row */}
                       {isExpanded && (() => {
-                        const guide = getVerificationGuide(req);
+                        const guide = getVerificationGuide(req, language);
                         return (
                           <tr id={`desktop-details-${req.id}`} className="bg-slate-50/70 border-b border-slate-200 animate-in fade-in duration-150">
                             <td colSpan={7} className="px-0 py-0">
@@ -1397,7 +1399,7 @@ export function ASVSWorkspace() {
                                       <div className="flex items-center justify-between mb-2">
                                         <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
                                           <ShieldCheck size={14} className="text-blue-600" />
-                                          Metodika overenia kontroly ({req.id})
+                                          {t("Metodika overenia kontroly", "Control verification guidance")} ({req.id})
                                         </h4>
                                         <span className="text-[11px] font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
                                           {guide.method}
@@ -1408,7 +1410,7 @@ export function ASVSWorkspace() {
                                         {/* Kľúčová otázka */}
                                         <div>
                                           <span className="text-[10px] font-bold text-blue-800 uppercase tracking-wider block mb-1">
-                                            Kľúčová otázka auditu:
+                                            {t("Kľúčová otázka auditu:", "Key audit question:")}
                                           </span>
                                           <p className="font-semibold text-slate-800 text-xs leading-relaxed">
                                             {guide.keyQuestion}
@@ -1419,7 +1421,7 @@ export function ASVSWorkspace() {
                                         {guide.whatToInspect && guide.whatToInspect.length > 0 && (
                                           <div>
                                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-1">
-                                              Čo skontrolovať v kóde / konfigurácii:
+                                              {t("Čo skontrolovať v kóde / konfigurácii:", "What to inspect in code / configuration:")}
                                             </span>
                                             <ul className="list-disc list-inside space-y-1 text-slate-700 text-xs">
                                               {guide.whatToInspect.map((item, idx) => (
@@ -1435,7 +1437,7 @@ export function ASVSWorkspace() {
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-blue-100">
                                           <div>
                                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
-                                              Testovací postup:
+                                              {t("Testovací postup:", "Test procedure:")}
                                             </span>
                                             <p className="text-slate-600 text-[11px] leading-relaxed">
                                               {guide.exampleTest}
@@ -1443,7 +1445,7 @@ export function ASVSWorkspace() {
                                           </div>
                                           <div>
                                             <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block mb-0.5">
-                                              Očakávaný dôkaz (Evidence):
+                                              {t("Očakávaný dôkaz (Evidence):", "Expected evidence:")}
                                             </span>
                                             <p className="text-slate-600 text-[11px] leading-relaxed">
                                               {guide.expectedEvidence}
@@ -1453,7 +1455,7 @@ export function ASVSWorkspace() {
 
                                         {guide.owaspReference && (
                                           <div className="text-[11px] text-slate-500 pt-1 border-t border-blue-100 flex items-center gap-1">
-                                            <span className="font-semibold">OWASP referencia:</span>
+                                            <span className="font-semibold">{t("OWASP referencia:", "OWASP reference:")}</span>
                                             <span>{guide.owaspReference}</span>
                                           </div>
                                         )}
@@ -1462,11 +1464,11 @@ export function ASVSWorkspace() {
 
                                     {/* Poznámka audítora na mobile */}
                                     <div className="md:hidden">
-                                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Poznámka audítora</h4>
+                                      <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">{t("Poznámka audítora", "Auditor note")}</h4>
                                       <textarea 
-                                        aria-label={`Poznámka audítora pre ${req.id}`}
+                                        aria-label={t(`Poznámka audítora pre ${req.id}`, `Auditor note for ${req.id}`)}
                                         className="w-full p-2.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 min-h-[80px] resize-y"
-                                        placeholder="Zadajte detaily zistenia, kroky k reprodukcii, alebo referenciu na zdrojový kód..."
+                                        placeholder={t("Zadajte detaily zistenia, kroky k reprodukcii, alebo referenciu na zdrojový kód...", "Enter finding details, reproduction steps or a source code reference...")}
                                         value={req.notes || ""}
                                         onChange={(e) => updateRequirementNote(req.id, e.target.value)}
                                         disabled={!!req.triageReason}
@@ -1479,10 +1481,10 @@ export function ASVSWorkspace() {
                                     <div>
                                       <h4 className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                                         <Layers size={14} className="text-slate-500" />
-                                        Prepojenie na komponenty
+                                        {t("Prepojenie na komponenty", "Component traceability")}
                                       </h4>
                                       <p className="text-[11px] text-slate-500 mb-2">
-                                        Priraďte kontrolu ku komponentom architektúry:
+                                        {t("Priraďte kontrolu ku komponentom architektúry:", "Link the control to architecture components:")}
                                       </p>
                                       <div className="space-y-1.5">
                                         {TRACE_COMPONENTS.map(comp => {
@@ -1510,7 +1512,7 @@ export function ASVSWorkspace() {
                                                   to={`/analysis/${analysisId}/architecture?component=${encodeURIComponent(comp.id)}`}
                                                   className="block px-2 py-0.5 text-right text-[10px] font-semibold text-blue-700 hover:underline"
                                                 >
-                                                  Otvoriť komponent v DFD →
+                                                  {t("Otvoriť komponent v DFD →", "Open component in DFD →")}
                                                 </Link>
                                               )}
                                             </React.Fragment>
@@ -1531,7 +1533,7 @@ export function ASVSWorkspace() {
                 {filteredRequirements.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-6 py-10 text-center text-slate-500 text-sm">
-                      Nenašli sa žiadne požiadavky zodpovedajúce filtru alebo hľadanému výrazu "{searchQuery}"
+                      {t(`Nenašli sa žiadne požiadavky zodpovedajúce filtru alebo hľadanému výrazu "${searchQuery}"`, `No requirements match the filter or search term "${searchQuery}"`)}
                     </td>
                   </tr>
                 )}
@@ -1544,20 +1546,20 @@ export function ASVSWorkspace() {
                 <label className="flex items-center gap-2 font-semibold">
                   <input
                     type="checkbox"
-                    aria-label="Označiť všetky zobrazené požiadavky"
+                    aria-label={t("Označiť všetky zobrazené požiadavky", "Select all visible requirements")}
                     className="rounded border-slate-300 text-blue-600"
                     checked={filteredRequirements.length > 0 && filteredRequirements.every(requirement => selectedIds.has(requirement.id))}
                     onChange={toggleAll}
                   />
-                  Označi všetky zobrazené
+                  {t("Označi všetky zobrazené", "Select all visible")}
                 </label>
-                <span>{filteredRequirements.length} požiadaviek</span>
+                <span>{filteredRequirements.length} {t("požiadaviek", "requirements")}</span>
               </div>
               {filteredRequirements.map((req, index) => {
                 const isSelected = selectedIds.has(req.id);
                 const isExpanded = expandedRows.has(req.id);
                 const showSectionHeader = index === 0 || filteredRequirements[index - 1].sectionId !== req.sectionId;
-                const guide = isExpanded ? getVerificationGuide(req) : null;
+                const guide = isExpanded ? getVerificationGuide(req, language) : null;
 
                 return (
                   <React.Fragment key={req.id}>
@@ -1571,7 +1573,7 @@ export function ASVSWorkspace() {
                       <div className="flex items-start gap-2">
                         <input
                           type="checkbox"
-                          aria-label={`Označi ${req.id}`}
+                          aria-label={t(`Označi ${req.id}`, `Select ${req.id}`)}
                           className="mt-1 rounded border-slate-300 text-blue-600"
                           checked={isSelected}
                           onChange={() => toggleSelection(req.id)}
@@ -1588,10 +1590,10 @@ export function ASVSWorkspace() {
                           <p className="mt-2 text-sm leading-relaxed text-slate-800">{req.description}</p>
                           {req.triageReason && (
                             <p className="mt-2 rounded border border-blue-100 bg-blue-50 p-2 text-xs text-blue-800">
-                              <strong>Vylúčené technológiou:</strong> {req.triageReason}
+                              <strong>{t("Vylúčené technológiou:", "Excluded by technology:")}</strong> {req.triageReason}
                             </p>
                           )}
-                          <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor={`mobile-status-${req.id}`}>Stav</label>
+                          <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor={`mobile-status-${req.id}`}>{t("Stav", "Status")}</label>
                           <select
                             id={`mobile-status-${req.id}`}
                             className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium"
@@ -1599,18 +1601,18 @@ export function ASVSWorkspace() {
                             onChange={event => handleRequirementStatusChange(req.id, event.target.value)}
                             disabled={!!req.triageReason}
                           >
-                            <option value="" disabled>Vyberte stav...</option>
+                            <option value="" disabled>{t("Vyberte stav...", "Select status...")}</option>
                             <option value="Implemented">Implemented</option>
                             <option value="Partial">Partial</option>
                             <option value="Missing">Missing</option>
                             <option value="N/A">Not Applicable</option>
                           </select>
-                          <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor={`mobile-notes-${req.id}`}>Poznámka / dôkaz</label>
+                          <label className="mt-3 block text-[10px] font-bold uppercase tracking-wide text-slate-500" htmlFor={`mobile-notes-${req.id}`}>{t("Poznámka / dôkaz", "Note / evidence")}</label>
                           <input
                             id={`mobile-notes-${req.id}`}
                             type="text"
                             className="mt-1 w-full rounded-md border border-slate-200 px-3 py-2 text-sm"
-                            placeholder={req.triageReason ? "Vylúčené z analýzy" : "Pridať referenciu, link alebo dôkaz"}
+                            placeholder={req.triageReason ? t("Vylúčené z analýzy", "Excluded from analysis") : t("Pridať referenciu, link alebo dôkaz", "Add a reference, link or evidence")}
                             value={req.notes || ""}
                             onChange={event => updateRequirementNote(req.id, event.target.value)}
                             disabled={!!req.triageReason}
@@ -1623,27 +1625,27 @@ export function ASVSWorkspace() {
                             className="mt-3 flex w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-semibold text-slate-700"
                           >
                             {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                            {isExpanded ? "Skryť metodiku" : "Zobraziť metodiku"}
+                            {isExpanded ? t("Skryť metodiku", "Hide guidance") : t("Zobraziť metodiku", "Show guidance")}
                           </button>
                           {guide && (
                             <div id={`mobile-details-${req.id}`} className="mt-3 space-y-3 rounded-lg border border-blue-100 bg-blue-50/50 p-3 text-xs">
                               <p className="font-bold text-blue-800">{guide.method}</p>
                               <div>
-                                <p className="font-semibold text-slate-700">Kľúčová otázka</p>
+                                <p className="font-semibold text-slate-700">{t("Kľúčová otázka", "Key question")}</p>
                                 <p className="mt-1 text-slate-600">{guide.keyQuestion}</p>
                               </div>
                               <div>
-                                <p className="font-semibold text-slate-700">Čo overiť</p>
+                                <p className="font-semibold text-slate-700">{t("Čo overiť", "What to inspect")}</p>
                                 <ul className="mt-1 list-disc space-y-1 pl-4 text-slate-600">
                                   {guide.whatToInspect.map(item => <li key={item}>{item}</li>)}
                                 </ul>
                               </div>
                               <div>
-                                <p className="font-semibold text-slate-700">Očakávaný dôkaz</p>
+                                <p className="font-semibold text-slate-700">{t("Očakávaný dôkaz", "Expected evidence")}</p>
                                 <p className="mt-1 text-slate-600">{guide.expectedEvidence}</p>
                               </div>
                               <div>
-                                <p className="mb-1 font-semibold text-slate-700">Súvisiace komponenty</p>
+                                <p className="mb-1 font-semibold text-slate-700">{t("Súvisiace komponenty", "Related components")}</p>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                                   {TRACE_COMPONENTS.map(component => {
                                     const isLinked = req.traceability?.some(trace => trace.id === component.id) || (req as any).traceComponents?.includes(component.id);
@@ -1671,7 +1673,7 @@ export function ASVSWorkspace() {
               })}
               {filteredRequirements.length === 0 && (
                 <p className="px-4 py-10 text-center text-sm text-slate-500">
-                  Nenašli sa žiadne požiadavky pre aktuálne filtre.
+                  {t("Nenašli sa žiadne požiadavky pre aktuálne filtre.", "No requirements match the current filters.")}
                 </p>
               )}
             </div>
@@ -1693,12 +1695,12 @@ export function ASVSWorkspace() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <FileText size={18} className="text-blue-600" />
-                <h3 id="bulk-note-title" className="font-bold text-slate-800 text-sm">Hromadná poznámka / Dôkaz</h3>
+                <h3 id="bulk-note-title" className="font-bold text-slate-800 text-sm">{t("Hromadná poznámka / Dôkaz", "Bulk note / Evidence")}</h3>
               </div>
               <button 
                 type="button"
                 onClick={() => setIsBulkNoteModalOpen(false)} 
-                aria-label="Zavrieť hromadnú poznámku"
+                aria-label={t("Zavrieť hromadnú poznámku", "Close bulk note")}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
                 <X size={16} />
@@ -1706,8 +1708,8 @@ export function ASVSWorkspace() {
             </div>
 
             <p className="text-xs text-slate-500 mb-3">
-              Zadaný text bude pripojený ako implementačná poznámka ku všetkým <strong>{selectedIds.size}</strong> vybraným kontrolám.
-              {selectedOutsideFiltersCount > 0 && ` Výber zahŕňa aj ${selectedOutsideFiltersCount} kontrol mimo aktuálnych filtrov.`}
+              {t(`Zadaný text bude pripojený ako implementačná poznámka ku všetkým ${selectedIds.size} vybraným kontrolám.`, `The text will be appended as an implementation note to all ${selectedIds.size} selected controls.`)}
+              {selectedOutsideFiltersCount > 0 && t(` Výber zahŕňa aj ${selectedOutsideFiltersCount} kontrol mimo aktuálnych filtrov.`, ` The selection includes ${selectedOutsideFiltersCount} controls outside the current filters.`)}
             </p>
 
             <form onSubmit={handleApplyBulkNote} className="space-y-3">
@@ -1722,7 +1724,7 @@ export function ASVSWorkspace() {
                   }}
                   aria-invalid={!!bulkNoteError}
                   aria-describedby={bulkNoteError ? "bulk-note-error" : undefined}
-                  placeholder="napr. Overené statickou analýzou SonarQube a penetračným testom v2.4 (Odkaz na JIRA-4291)."
+                  placeholder={t("napr. Overené statickou analýzou SonarQube a penetračným testom v2.4 (Odkaz na JIRA-4291).", "e.g. Verified with SonarQube static analysis and penetration test v2.4 (JIRA-4291).")}
                   className="w-full p-2.5 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 resize-none"
                   autoFocus
                 />
@@ -1735,13 +1737,13 @@ export function ASVSWorkspace() {
                   onClick={() => setIsBulkNoteModalOpen(false)}
                   className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50"
                 >
-                  Zrušiť
+                  {t("Zrušiť", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs"
                 >
-                  Uložiť pre {selectedIds.size} kontrol
+                  {t(`Uložiť pre ${selectedIds.size} kontrol`, `Save for ${selectedIds.size} controls`)}
                 </button>
               </div>
             </form>
@@ -1763,12 +1765,12 @@ export function ASVSWorkspace() {
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
                 <Ban size={18} className="text-slate-600" />
-                <h3 id="bulk-na-title" className="font-bold text-slate-800 text-sm">Hromadné označenie N/A (Nepotrebné)</h3>
+                <h3 id="bulk-na-title" className="font-bold text-slate-800 text-sm">{t("Hromadné označenie N/A (Nepotrebné)", "Bulk mark N/A (Not Applicable)")}</h3>
               </div>
               <button 
                 type="button"
                 onClick={() => setIsBulkNaModalOpen(false)} 
-                aria-label="Zavrieť hromadné označenie N/A"
+                aria-label={t("Zavrieť hromadné označenie N/A", "Close bulk N/A dialog")}
                 className="text-slate-400 hover:text-slate-600 p-1"
               >
                 <X size={16} />
@@ -1776,8 +1778,8 @@ export function ASVSWorkspace() {
             </div>
 
             <p className="text-xs text-slate-500 mb-3">
-              Všetkých <strong>{bulkNaTargetIds.length}</strong> vybraných požiadaviek bude označených ako <strong>N/A</strong> (Not Applicable / Mimo rozsah). Zadajte odôvodnenie pre audit:
-              {bulkNaOutsideFiltersCount > 0 && ` Výber zahŕňa aj ${bulkNaOutsideFiltersCount} kontrol mimo aktuálnych filtrov.`}
+              {t(`Všetkých ${bulkNaTargetIds.length} vybraných požiadaviek bude označených ako N/A (Not Applicable / Mimo rozsah). Zadajte odôvodnenie pre audit:`, `All ${bulkNaTargetIds.length} selected requirements will be marked N/A (Not Applicable / Out of scope). Enter a reason for the audit:`)}
+              {bulkNaOutsideFiltersCount > 0 && t(` Výber zahŕňa aj ${bulkNaOutsideFiltersCount} kontrol mimo aktuálnych filtrov.`, ` The selection includes ${bulkNaOutsideFiltersCount} controls outside the current filters.`)}
             </p>
 
             <form onSubmit={handleApplyBulkNa} className="space-y-3">
@@ -1785,7 +1787,7 @@ export function ASVSWorkspace() {
                 <input
                   type="text"
                   required
-                  aria-label="Odôvodnenie označenia N/A"
+                  aria-label={t("Odôvodnenie označenia N/A", "Reason for marking N/A")}
                   aria-invalid={!!bulkNaReasonError}
                   aria-describedby={bulkNaReasonError ? "bulk-na-reason-error" : undefined}
                   value={bulkNaReason}
@@ -1793,7 +1795,7 @@ export function ASVSWorkspace() {
                     setBulkNaReason(e.target.value);
                     setBulkNaReasonError(null);
                   }}
-                  placeholder="napr. Systém nepoužíva hardvérové kryptografické moduly (HSM)"
+                  placeholder={t("napr. Systém nepoužíva hardvérové kryptografické moduly (HSM)", "e.g. The system does not use hardware security modules (HSM)")}
                   className="w-full px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500"
                   autoFocus
                 />
@@ -1806,13 +1808,13 @@ export function ASVSWorkspace() {
                   onClick={() => setIsBulkNaModalOpen(false)}
                   className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg text-xs font-semibold hover:bg-slate-50"
                 >
-                  Zrušiť
+                  {t("Zrušiť", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs"
                 >
-                  Označiť {bulkNaTargetIds.length} ako N/A
+                  {t(`Označiť ${bulkNaTargetIds.length} ako N/A`, `Mark ${bulkNaTargetIds.length} as N/A`)}
                 </button>
               </div>
             </form>

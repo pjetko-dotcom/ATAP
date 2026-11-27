@@ -33,12 +33,12 @@ const AuditTrail = lazy(() => import("./components/AuditTrail.tsx").then(module 
  * Supports both web HTTP server and Electron file:// offline desktop mode.
  */
 export default function App() {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const isFileProtocol = typeof window !== 'undefined' && (window.location.protocol === 'file:' || navigator.userAgent.includes('Electron'));
   const RouterComponent = isFileProtocol ? HashRouter : BrowserRouter;
 
   return (
-    <ErrorBoundary>
+    <ErrorBoundary language={language}>
       <RouterComponent>
         <Suspense fallback={<div role="status" className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">{t("Načítavam stránku...", "Loading page...")}</div>}>
           <Routes>

@@ -6,6 +6,7 @@
  * @module backupRestore
  */
 import FileSaver from "file-saver";
+import { reportText, type ReportLanguage } from "./reportLanguage";
 
 const { saveAs } = FileSaver;
 
@@ -159,9 +160,10 @@ function isRecordArray(value: unknown, maxLength: number): value is Record<strin
   return Array.isArray(value) && value.length <= maxLength && value.every(isRecord);
 }
 
-function getBackupItems(parsed: unknown): { items: ProjectBackupData[] } | { error: string } {
+function getBackupItems(parsed: unknown, language: ReportLanguage): { items: ProjectBackupData[] } | { error: string } {
+  const t = (sk: string, en: string) => reportText(language, sk, en);
   if (!isRecord(parsed) || containsUnsafeKeys(parsed)) {
-    return { error: "Záloha obsahuje neplatnú alebo nebezpečnú štruktúru." };
+    return { error: t("Záloha obsahuje neplatnú alebo nebezpečnú štruktúru.", "The backup contains an invalid or unsafe structure.") };
   }
 
   let candidates: unknown[];
@@ -170,17 +172,17 @@ function getBackupItems(parsed: unknown): { items: ProjectBackupData[] } | { err
   } else if (parsed.version === "1.0" && isRecord(parsed.project)) {
     candidates = [parsed];
   } else {
-    return { error: "Neplatný formát zálohy. Súbor neobsahuje platnú štruktúru projektu AVERT alebo staršej verzie ATAP." };
+    return { error: t("Neplatný formát zálohy. Súbor neobsahuje platnú štruktúru projektu AVERT alebo staršej verzie ATAP.", "Invalid backup format. The file does not contain a valid AVERT or legacy ATAP project structure.") };
   }
 
   if (candidates.length === 0 || candidates.length > MAX_PROJECTS_PER_BACKUP) {
-    return { error: `Záloha musí obsahovať 1 až ${MAX_PROJECTS_PER_BACKUP} projektov.` };
+    return { error: t(`Záloha musí obsahovať 1 až ${MAX_PROJECTS_PER_BACKUP} projektov.`, `The backup must contain 1 to ${MAX_PROJECTS_PER_BACKUP} projects.`) };
   }
 
   const items: ProjectBackupData[] = [];
   for (const candidate of candidates) {
     if (!isRecord(candidate) || candidate.version !== "1.0" || !isRecord(candidate.project)) {
-      return { error: "Záloha obsahuje projekt v nepodporovanom formáte." };
+      return { error: t("Záloha obsahuje projekt v nepodporovanom formáte.", "The backup contains a project in an unsupported format.") };
     }
 
     const project = candidate.project;
@@ -191,30 +193,30 @@ function getBackupItems(parsed: unknown): { items: ProjectBackupData[] } | { err
       project.name.trim().length === 0 ||
       project.name.trim().length > 150
     ) {
-      return { error: "Projekt v zálohe nemá platný identifikátor alebo názov." };
+      return { error: t("Projekt v zálohe nemá platný identifikátor alebo názov.", "A project in the backup has an invalid ID or name.") };
     }
 
     if (candidate.asvsReqs !== undefined && !isRecordArray(candidate.asvsReqs, 5000)) {
-      return { error: "ASVS požiadavky v zálohe majú neplatný formát." };
+      return { error: t("ASVS požiadavky v zálohe majú neplatný formát.", "ASVS requirements in the backup have an invalid format.") };
     }
     if (candidate.auditLogs !== undefined && !isRecordArray(candidate.auditLogs, 50000)) {
-      return { error: "Audit log v zálohe má neplatný formát." };
+      return { error: t("Audit log v zálohe má neplatný formát.", "The audit log in the backup has an invalid format.") };
     }
     if (
       candidate.triageAnswers !== undefined &&
       (!isRecord(candidate.triageAnswers) || Object.values(candidate.triageAnswers).some(value => typeof value !== "boolean"))
     ) {
-      return { error: "Triage odpovede v zálohe majú neplatný formát." };
+      return { error: t("Triage odpovede v zálohe majú neplatný formát.", "Triage answers in the backup have an invalid format.") };
     }
     if (candidate.context !== undefined && !isRecord(candidate.context)) {
-      return { error: "Kontext projektu v zálohe má neplatný formát." };
+      return { error: t("Kontext projektu v zálohe má neplatný formát.", "Project context in the backup has an invalid format.") };
     }
     if (
       candidate.targetLevel !== undefined &&
       candidate.targetLevel !== "all" &&
       !(typeof candidate.targetLevel === "number" && [1, 2, 3].includes(candidate.targetLevel))
     ) {
-      return { error: "Cieľová ASVS úroveň v zálohe je neplatná." };
+      return { error: t("Cieľová ASVS úroveň v zálohe je neplatná.", "The target ASVS level in the backup is invalid.") };
     }
     if (
       candidate.architecture !== undefined &&
@@ -222,10 +224,10 @@ function getBackupItems(parsed: unknown): { items: ProjectBackupData[] } | { err
         (candidate.architecture.components !== undefined && !isRecordArray(candidate.architecture.components, 5000)) ||
         (candidate.architecture.flows !== undefined && !isRecordArray(candidate.architecture.flows, 10000)))
     ) {
-      return { error: "Architektúra v zálohe má neplatný formát." };
+      return { error: t("Architektúra v zálohe má neplatný formát.", "Architecture in the backup has an invalid format.") };
     }
     if (candidate.threats !== undefined && !isRecordArray(candidate.threats, 10000)) {
-      return { error: "Register hrozieb v zálohe má neplatný formát." };
+      return { error: t("Register hrozieb v zálohe má neplatný formát.", "The threat register in the backup has an invalid format.") };
     }
 
     items.push(candidate as unknown as ProjectBackupData);
@@ -234,20 +236,20 @@ function getBackupItems(parsed: unknown): { items: ProjectBackupData[] } | { err
   return { items };
 }
 
-function parseBackup(jsonString: string): { items: ProjectBackupData[] } | { error: string } {
+function parseBackup(jsonString: string, language: ReportLanguage): { items: ProjectBackupData[] } | { error: string } {
   if (!jsonString || jsonString.length > MAX_BACKUP_SIZE) {
-    return { error: "Súbor zálohy je prázdny alebo presahuje maximálnu povolenú veľkosť (25 MB)." };
+    return { error: reportText(language, "Súbor zálohy je prázdny alebo presahuje maximálnu povolenú veľkosť (25 MB).", "The backup is empty or exceeds the maximum permitted size (25 MB).") };
   }
 
   try {
-    return getBackupItems(JSON.parse(jsonString) as unknown);
+    return getBackupItems(JSON.parse(jsonString) as unknown, language);
   } catch {
-    return { error: "Súbor zálohy neobsahuje platný JSON." };
+    return { error: reportText(language, "Súbor zálohy neobsahuje platný JSON.", "The backup does not contain valid JSON.") };
   }
 }
 
-export function validateBackup(jsonString: string): string | null {
-  const parsed = parseBackup(jsonString);
+export function validateBackup(jsonString: string, language: ReportLanguage = "sk"): string | null {
+  const parsed = parseBackup(jsonString, language);
   return "error" in parsed ? parsed.error : null;
 }
 
@@ -257,13 +259,14 @@ export function validateBackup(jsonString: string): string | null {
  * @param jsonString Raw JSON string from uploaded file
  * @param mode 'new_id' (creates fresh clone ID) or 'overwrite' (replaces if matching ID exists)
  */
-export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' = 'new_id'): RestoreResult {
+export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' = 'new_id', language: ReportLanguage = "sk"): RestoreResult {
+  const t = (sk: string, en: string) => reportText(language, sk, en);
   try {
     if (mode !== "new_id" && mode !== "overwrite") {
-      return { success: false, importedCount: 0, projectNames: [], error: "Neplatný režim obnovy zálohy." };
+      return { success: false, importedCount: 0, projectNames: [], error: t("Neplatný režim obnovy zálohy.", "Invalid backup restore mode.") };
     }
 
-    const parsed = parseBackup(jsonString);
+    const parsed = parseBackup(jsonString, language);
     if ("error" in parsed) {
       return { success: false, importedCount: 0, projectNames: [], error: parsed.error };
     }
@@ -272,7 +275,7 @@ export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' =
     const rawAnalyses = localStorage.getItem("atap_analyses");
     const parsedAnalyses: unknown = rawAnalyses ? JSON.parse(rawAnalyses) : [];
     if (!Array.isArray(parsedAnalyses) || !parsedAnalyses.every(isRecord)) {
-      return { success: false, importedCount: 0, projectNames: [], error: "Existujúci zoznam projektov je poškodený; obnova bola zrušená." };
+      return { success: false, importedCount: 0, projectNames: [], error: t("Existujúci zoznam projektov je poškodený; obnova bola zrušená.", "The existing project list is corrupt; restore was cancelled.") };
     }
 
     let currentAnalyses = parsedAnalyses;
@@ -356,8 +359,8 @@ export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' =
         importedCount: 0,
         projectNames: [],
         error: rollbackFailed
-          ? `Obnova zlyhala (${reason}) a úplné vrátenie zmien sa nepodarilo. Skontrolujte úložisko a obnovte zálohu.`
-          : `Obnova zlyhala (${reason}); zmeny boli vrátené.`,
+          ? t(`Obnova zlyhala (${reason}) a úplné vrátenie zmien sa nepodarilo. Skontrolujte úložisko a obnovte zálohu.`, `Restore failed (${reason}) and changes could not be fully rolled back. Check storage and restore the backup.`)
+          : t(`Obnova zlyhala (${reason}); zmeny boli vrátené.`, `Restore failed (${reason}); changes were rolled back.`),
       };
     }
 
@@ -376,7 +379,7 @@ export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' =
       success: false,
       importedCount: 0,
       projectNames: [],
-      error: `Chyba pri spracovaní JSON súboru: ${reason}`
+      error: t(`Chyba pri spracovaní JSON súboru: ${reason}`, `Error processing JSON file: ${reason}`)
     };
   }
 }

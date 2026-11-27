@@ -609,12 +609,12 @@ function AnalysisLayoutInner() {
                 {/* Desktop Lock Toggle */}
                 <button
                   onClick={toggleRightPanelLock}
-                  aria-label={isRightPanelLocked ? "Odomknúť kontextový panel" : "Pripnúť kontextový panel"}
+                  aria-label={isRightPanelLocked ? t("Odomknúť kontextový panel", "Unlock context panel") : t("Pripnúť kontextový panel", "Pin context panel")}
                   aria-pressed={isRightPanelLocked}
                   className={`hidden lg:flex p-1.5 rounded hover:bg-slate-200 transition-colors ${
                     isRightPanelLocked ? 'text-blue-600 bg-blue-50' : 'text-slate-400'
                   }`}
-                  title={isRightPanelLocked ? "Unlock Sidebar" : "Lock Sidebar Open"}
+                  title={isRightPanelLocked ? t("Odomknúť panel", "Unlock Sidebar") : t("Pripnúť panel", "Lock Sidebar Open")}
                 >
                   {isRightPanelLocked ? <Pin size={16} /> : <PinOff size={16} />}
                 </button>
@@ -634,7 +634,7 @@ function AnalysisLayoutInner() {
               {/* Progress Summary Card */}
               <div className="bg-slate-50 p-3.5 rounded-lg border border-slate-200">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-semibold text-slate-600">Verification Progress</span>
+                  <span className="text-xs font-semibold text-slate-600">{t("Priebeh overovania", "Verification Progress")}</span>
                   <span className="text-xs font-bold text-slate-900">{progressPercentage}%</span>
                 </div>
                 <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
@@ -644,14 +644,14 @@ function AnalysisLayoutInner() {
                   />
                 </div>
                 <div className="mt-2 flex justify-between text-[11px] text-slate-500">
-                  <span>Implemented: {implementedCount}</span>
-                  <span>Evaluated: {totalReqs}</span>
+                  <span>{t("Splnené:", "Implemented:")} {implementedCount}</span>
+                  <span>{t("Hodnotené:", "Evaluated:")} {totalReqs}</span>
                 </div>
               </div>
 
               {/* Architecture Components (Traceability) */}
               <div>
-                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">System Components</h4>
+                <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">{t("Komponenty systému", "System Components")}</h4>
                 <div className="space-y-2">
                   {componentsList.map(comp => {
                     const IconComponent = COMPONENT_ICONS[comp.name] || Shield;
@@ -680,13 +680,13 @@ function AnalysisLayoutInner() {
               {/* Activity Log (Audit Trail) */}
               <div>
                 <div className="flex items-center justify-between mb-3">
-                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Audit Trail</h4>
+                  <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest">{t("Auditná stopa", "Audit Trail")}</h4>
                   {!isReadOnly && (
                     <button
                       onClick={() => setShowAddNote(!showAddNote)}
                       className="text-[10px] text-blue-600 font-semibold hover:underline cursor-pointer"
                     >
-                      {showAddNote ? "Zrušiť" : "+ Poznámka"}
+                      {showAddNote ? t("Zrušiť", "Cancel") : t("+ Poznámka", "+ Note")}
                     </button>
                   )}
                 </div>
@@ -695,7 +695,7 @@ function AnalysisLayoutInner() {
                   <form onSubmit={handleAddCustomNote} className="mb-3 space-y-2">
                     <input
                       type="text"
-                      placeholder="Pridať poznámku do auditu..."
+                      placeholder={t("Pridať poznámku do auditu...", "Add an audit note...")}
                       value={newNoteText}
                       onChange={(e) => setNewNoteText(e.target.value)}
                       className="w-full text-xs px-2.5 py-1.5 bg-slate-50 border border-slate-300 rounded focus:bg-white focus:outline-none"
@@ -704,7 +704,7 @@ function AnalysisLayoutInner() {
                       type="submit"
                       className="w-full py-1 bg-blue-600 text-white rounded text-[11px] font-semibold hover:bg-blue-700"
                     >
-                      Zaznamenať do auditu
+                      {t("Zaznamenať do auditu", "Record in audit trail")}
                     </button>
                   </form>
                 )}
@@ -741,7 +741,7 @@ function AnalysisLayoutInner() {
           onClose={() => setRenameModalTarget(null)}
           onRenamed={(newName) => {
             setSaveToastType("success");
-            setSaveToast(`Projekt bol úspešne premenovaný na "${newName}".`);
+            setSaveToast(t(`Projekt bol úspešne premenovaný na "${newName}".`, `Project renamed to "${newName}".`));
             setTimeout(() => setSaveToast(null), 3500);
           }}
         />

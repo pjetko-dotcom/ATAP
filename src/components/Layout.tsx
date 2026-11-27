@@ -13,6 +13,7 @@ import { useAnalyses } from "../hooks/useAnalyses";
 import packageInfo from "../../package.json";
 import { useLanguage } from "../context/LanguageContext";
 import { LanguageFlag } from "./LanguageFlag";
+import { reportText, type ReportLanguage } from "../utils/reportLanguage";
 
 const SIDEBAR_LOCK_KEY = "atap_sidebar_locked";
 const appVersion = packageInfo.version;
@@ -51,14 +52,15 @@ function readWorkspaceArray<T>(key: string): T[] {
   }
 }
 
-function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>): WorkspaceSearchResult[] {
+function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>, language: ReportLanguage): WorkspaceSearchResult[] {
+  const t = (sk: string, en: string) => reportText(language, sk, en);
   return analyses.flatMap(analysis => {
     const basePath = `/analysis/${analysis.id}`;
     const results: WorkspaceSearchResult[] = [{
       id: `${analysis.id}-project`,
       title: analysis.name,
-      detail: "Projekt",
-      category: "Projekt",
+      detail: t("Projekt", "Project"),
+      category: t("Projekt", "Project"),
       path: `${basePath}/asvs`,
     }];
     const currentRequirements = readWorkspaceArray<SearchableRequirement>(`atap_asvs_v5_${analysis.id}`);
@@ -78,8 +80,8 @@ function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>
     ).map(item => ({
       id: `${analysis.id}-threat-${item.id}`,
       title: `${item.id} ${item.title}`,
-      detail: `${analysis.name} · ${item.stride || "Hrozba"} · ${item.description || ""}`,
-      category: "Hrozba",
+      detail: `${analysis.name} · ${item.stride || t("Hrozba", "Threat")} · ${item.description || ""}`,
+      category: t("Hrozba", "Threat"),
       path: `${basePath}/threats?search=${encodeURIComponent(item.id)}`,
     })));
     const architecture = (() => {
@@ -94,8 +96,8 @@ function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>
     results.push(...(architecture?.components || []).map(component => ({
       id: `${analysis.id}-component-${component.id}`,
       title: component.name,
-      detail: `${analysis.name} · ${component.type || "Komponent"} · ${component.tech || ""}`,
-      category: "Komponent",
+      detail: `${analysis.name} · ${component.type || t("Komponent", "Component")} · ${component.tech || ""}`,
+      category: t("Komponent", "Component"),
       path: `${basePath}/architecture?component=${encodeURIComponent(component.id)}`,
     })));
     results.push(...uniqueRequirements
@@ -104,7 +106,7 @@ function buildWorkspaceSearchIndex(analyses: Array<{ id: string; name: string }>
         id: `${analysis.id}-finding-${item.id}`,
         title: `${item.id} ${item.title}`,
         detail: `${analysis.name} · ${item.status} · ${item.description || ""}`,
-        category: "Nález / medzera",
+        category: t("Nález / medzera", "Finding / gap"),
         path: `${basePath}/asvs?${item.chapterId ? `chapter=${item.chapterId}&` : ""}search=${encodeURIComponent(item.id)}`,
       })));
     return results;
@@ -138,7 +140,7 @@ export function Layout() {
   const searchButtonRef = useRef<HTMLButtonElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchModalRef = useRef<HTMLElement>(null);
-  const searchIndex = useMemo(() => buildWorkspaceSearchIndex(analyses), [analyses, searchIndexRevision]);
+  const searchIndex = useMemo(() => buildWorkspaceSearchIndex(analyses, language), [analyses, searchIndexRevision, language]);
   const searchResults = useMemo(() => {
     const query = searchQuery.trim().toLocaleLowerCase();
     if (!query) return searchIndex.slice(0, 12);
@@ -166,6 +168,8 @@ export function Layout() {
     () => typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches
   );
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileSearchButtonRef = useRef<HTMLButtonElement>(null);
+  const mobileOverlayButtonRef = useRef<HTMLButtonElement>(null);
   const helpModalRef = useRef<HTMLDivElement>(null);
   const profileModalRef = useRef<HTMLFormElement>(null);
   
@@ -252,8 +256,8 @@ export function Layout() {
     if (!isMobileMenuOpen || !isMobileViewport) return;
     const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const nav = document.getElementById("app-navigation");
-    const mobileSearchButton = document.querySelector<HTMLElement>('button[aria-label="Otvoriť vyhľadávanie"]');
-    const overlayButton = document.querySelector<HTMLElement>('button[aria-label="Zavrieť menu kliknutím mimo"]');
+    const mobileSearchButton = mobileSearchButtonRef.current;
+    const overlayButton = mobileOverlayButtonRef.current;
     const focusableElements = [
       ...(mobileSearchButton ? [mobileSearchButton] : []),
       ...(mobileMenuButtonRef.current ? [mobileMenuButtonRef.current] : []),
@@ -436,7 +440,7 @@ export function Layout() {
           <button type="button" onClick={() => setLanguage(language === "sk" ? "en" : "sk")} aria-label={t("Prepnúť rozhranie do angličtiny", "Switch interface to Slovak")} className="flex items-center gap-1 rounded-md border border-slate-700 bg-slate-800 p-1.5 text-xs font-bold">
             <LanguageFlag language={language} /> {language.toUpperCase()}
           </button>
-          <button type="button" onClick={openWorkspaceSearch} aria-label={t("Otvoriť vyhľadávanie (Ctrl/Cmd+K)", "Open search (Ctrl/Cmd+K)")} className="rounded-md border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:text-white">
+          <button ref={mobileSearchButtonRef} type="button" onClick={openWorkspaceSearch} aria-label={t("Otvoriť vyhľadávanie (Ctrl/Cmd+K)", "Open search (Ctrl/Cmd+K)")} className="rounded-md border border-slate-700 bg-slate-800 p-1.5 text-slate-300 hover:text-white">
             <Search size={19} />
           </button>
           <button
@@ -456,6 +460,7 @@ export function Layout() {
       {/* Mobile Menu Overlay */}
       {isMobileMenuOpen && (
         <button
+          ref={mobileOverlayButtonRef}
           type="button"
           aria-label={t("Zavrieť menu kliknutím mimo", "Close menu")}
           className="fixed inset-0 bg-black/50 z-30 md:hidden"

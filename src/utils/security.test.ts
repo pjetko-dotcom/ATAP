@@ -21,7 +21,8 @@ import {
 import { getDiagramLayoutIssues, getFlowPathGeometry } from "./dfd";
 import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
 import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
-import { asvsRequirements } from "../data/asvsData";
+import { asvsRequirements, asvsTriageQuestions } from "../data/asvsData";
+import { englishTriageQuestions } from "../data/asvsTriageEnglish";
 import { AnalysisVersionSnapshot } from "../types/versioning";
 import FileSaver from "file-saver";
 import ExcelJS from "exceljs";
@@ -103,6 +104,14 @@ test("rejects prototype keys and malformed project data before writing", () => {
   assert.ok(validateBackup("x".repeat(MAX_BACKUP_SIZE + 1)));
 });
 
+test("backup validation and restore errors follow the selected language", () => {
+  const invalid = '{"version":"1.0","project":{"id":"","name":"Project"}}';
+  assert.match(validateBackup(invalid, "sk") ?? "", /identifikátor/);
+  assert.match(validateBackup(invalid, "en") ?? "", /invalid ID or name/);
+  assert.equal(restoreBackup(invalid, "overwrite", "en").error, validateBackup(invalid, "en"));
+  assert.equal(storage.getItem("atap_analyses"), null);
+});
+
 test("overwrite removes stale project data absent from the backup", () => {
   storage.setItem("atap_analyses", JSON.stringify([{ id: "project-1", name: "Old name" }]));
   storage.setItem("atap_threats_project-1", JSON.stringify([{ id: "stale" }]));
@@ -166,6 +175,34 @@ test("categorization translations preserve question IDs and recommendations", ()
     if (sk.rationale.length) assert.notEqual(en.rationale[0], sk.rationale[0]);
     assert.notEqual(en.guidanceText, sk.guidanceText);
   }
+});
+
+test("verification guidance localizes every generated field in each category", () => {
+  for (const title of ["xpath", "sql", "xss", "command injection", "password", "cookie", "authorization", "upload", "cors", "oauth", "unmatched control"]) {
+    const requirement = { id: "V99.1", title, description: "" };
+    const sk = getVerificationGuide(requirement, "sk");
+    const en = getVerificationGuide(requirement, "en");
+    assert.equal(en.method, sk.method);
+    assert.equal(en.owaspReference, sk.owaspReference);
+    assert.notEqual(en.keyQuestion, sk.keyQuestion);
+    assert.equal(en.whatToInspect.length, sk.whatToInspect.length);
+    en.whatToInspect.forEach((step, index) => assert.notEqual(step, sk.whatToInspect[index]));
+    assert.notEqual(en.exampleTest, sk.exampleTest);
+    assert.notEqual(en.expectedEvidence, sk.expectedEvidence);
+  }
+});
+
+test("translated triage questions preserve scope and identifiers", () => {
+  assert.equal(englishTriageQuestions.length, asvsTriageQuestions.length);
+  englishTriageQuestions.forEach((question, index) => {
+    const original = asvsTriageQuestions[index];
+    assert.deepEqual(
+      { id: question.id, targetScope: question.targetScope, chapterId: question.chapterId, sectionId: question.sectionId, reqIds: question.reqIds },
+      { id: original.id, targetScope: original.targetScope, chapterId: original.chapterId, sectionId: original.sectionId, reqIds: original.reqIds }
+    );
+    assert.notEqual(question.question, original.question);
+    assert.notEqual(question.description, original.description);
+  });
 });
 
 test("exports localized report labels without changing chapter names or project text", async () => {
@@ -355,6 +392,24 @@ test("compares removed ASVS requirements, threat details and version settings", 
   assert.ok(diff.settingsDiffs.some(item => item.field === "targetLevel"));
   assert.ok(diff.settingsDiffs.some(item => item.field === "systemType"));
   assert.ok(diff.settingsDiffs.some(item => item.field === "architectureComponents"));
+
+  const englishDiff = computeVersionDiff(baseSnapshot, nextSnapshot, "en");
+  assert.equal(englishDiff.totalChangesCount, diff.totalChangesCount);
+  assert.deepEqual(englishDiff.asvsDiffs.find(item => item.id === requirement.id)?.changes?.find(change => change.field === "notes"), {
+    field: "notes", label: "Notes", oldValue: "old", newValue: "verified",
+  });
+
+  const unnamed = { ...baseSnapshot, data: { ...baseSnapshot.data, architecture: {
+    components: [{ id: "api" }], flows: [{ id: "flow", from: "api", to: "db" }],
+  } } };
+  const named = { ...unnamed, data: { ...unnamed.data, architecture: {
+    components: [{ id: "api", name: "Unnamed" }], flows: [{ id: "flow", from: "api", to: "db", protocol: "no protocol" }],
+  } } };
+  for (const language of ["sk", "en"] as const) {
+    const localized = computeVersionDiff(unnamed, named, language);
+    assert.ok(localized.settingsDiffs.some(item => item.field === "architectureComponents"));
+    assert.ok(localized.settingsDiffs.some(item => item.field === "architectureFlows"));
+  }
 });
 
 test("suggests ASVS controls from STRIDE threat details", () => {

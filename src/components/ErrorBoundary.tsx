@@ -1,8 +1,10 @@
 import React, { ErrorInfo, ReactNode } from "react";
 import { AlertTriangle, RotateCcw, Home } from "lucide-react";
+import { reportText, type ReportLanguage } from "../utils/reportLanguage";
 
 interface Props {
   children: ReactNode;
+  language: ReportLanguage;
 }
 
 interface State {
@@ -33,6 +35,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   };
 
   public render() {
+    const t = (sk: string, en: string) => reportText(this.props.language, sk, en);
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
@@ -41,10 +44,10 @@ export class ErrorBoundary extends React.Component<Props, State> {
               <AlertTriangle size={24} />
             </div>
             <h2 className="text-lg font-bold text-slate-900 mb-2">
-              Nastala neočakávaná chyba zobrazenia
+              {t("Nastala neočakávaná chyba zobrazenia", "An unexpected display error occurred")}
             </h2>
             <p className="text-sm text-slate-600 mb-6 leading-relaxed">
-              Komponent narazil na problém pri vykresľovaní. Môžete skúsiť obnoviť zobrazenie alebo sa vrátiť na prehľad analýz.
+              {t("Komponent narazil na problém pri vykresľovaní. Môžete skúsiť obnoviť zobrazenie alebo sa vrátiť na prehľad analýz.", "A component encountered a rendering error. Try reloading or return to the analysis overview.")}
             </p>
             {this.state.error && (
               <div className="bg-slate-100 rounded-lg p-3 text-left mb-6 overflow-auto max-h-32 text-xs font-mono text-slate-700">
@@ -57,14 +60,14 @@ export class ErrorBoundary extends React.Component<Props, State> {
                 className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer"
               >
                 <RotateCcw size={16} />
-                <span>Obnoviť stránku</span>
+                <span>{t("Obnoviť stránku", "Reload page")}</span>
               </button>
               <button
                 onClick={this.handleReset}
                 className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors cursor-pointer border border-slate-200"
               >
                 <Home size={16} />
-                <span>Prejsť na Dashboard</span>
+                <span>{t("Prejsť na Dashboard", "Go to Dashboard")}</span>
               </button>
             </div>
           </div>

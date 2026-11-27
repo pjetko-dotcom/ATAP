@@ -26,6 +26,7 @@ import {
   MAX_BACKUP_SIZE,
   validateBackup,
 } from "../utils/backupRestore";
+import { useLanguage } from "../context/LanguageContext";
 
 interface BackupRestoreModalProps {
   isOpen: boolean;
@@ -42,6 +43,7 @@ export function BackupRestoreModal({
   currentAnalysisName,
   onRestoreSuccess
 }: BackupRestoreModalProps) {
+  const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"backup" | "restore">("backup");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState<string | null>(null);
@@ -112,12 +114,12 @@ export function BackupRestoreModal({
       setLastBackupTime(timestamp);
       setStatusMessage({
         type: "success",
-        text: `Záloha projektu "${currentAnalysisName || currentAnalysisId}" bola stiahnutá.`
+        text: t(`Záloha projektu "${currentAnalysisName || currentAnalysisId}" bola stiahnutá.`, `Backup of project "${currentAnalysisName || currentAnalysisId}" was downloaded.`)
       });
     } else {
       setStatusMessage({
         type: "error",
-        text: "Nepodarilo sa vygenerovať zálohu projektu."
+        text: t("Nepodarilo sa vygenerovať zálohu projektu.", "Could not generate the project backup.")
       });
     }
   };
@@ -130,12 +132,12 @@ export function BackupRestoreModal({
       setLastBackupTime(timestamp);
       setStatusMessage({
         type: "success",
-        text: "Kompletný JSON archív všetkých projektov bol úspešne stiahnutý."
+        text: t("Kompletný JSON archív všetkých projektov bol úspešne stiahnutý.", "The complete JSON archive of all projects was downloaded.")
       });
     } else {
       setStatusMessage({
         type: "error",
-        text: "Nepodarilo sa exportovať archív projektov."
+        text: t("Nepodarilo sa exportovať archív projektov.", "Could not export the project archive.")
       });
     }
   };
@@ -151,7 +153,7 @@ export function BackupRestoreModal({
       setSelectedFile(null);
       setStatusMessage({
         type: "error",
-        text: "Súbor zálohy presahuje maximálnu povolenú veľkosť (25 MB)."
+        text: t("Súbor zálohy presahuje maximálnu povolenú veľkosť (25 MB).", "The backup exceeds the maximum permitted size (25 MB).")
       });
       e.target.value = "";
       return;
@@ -166,7 +168,7 @@ export function BackupRestoreModal({
         if (typeof text !== "string") {
           throw new Error("Súbor sa nepodarilo prečítať ako text.");
         }
-        const validationError = validateBackup(text);
+        const validationError = validateBackup(text, language);
         if (validationError) {
           setFileContent(null);
           setParsedPreview(null);
@@ -180,14 +182,14 @@ export function BackupRestoreModal({
         setParsedPreview(null);
         setStatusMessage({
           type: "error",
-          text: "Zvolený súbor neobsahuje platný JSON formát."
+          text: t("Zvolený súbor neobsahuje platný JSON formát.", "The selected file is not valid JSON.")
         });
       }
     };
     reader.onerror = () => {
       setFileContent(null);
       setParsedPreview(null);
-      setStatusMessage({ type: "error", text: "Súbor sa nepodarilo prečítať." });
+      setStatusMessage({ type: "error", text: t("Súbor sa nepodarilo prečítať.", "Could not read the file.") });
     };
     reader.readAsText(file);
   };
@@ -199,15 +201,15 @@ export function BackupRestoreModal({
     setStatusMessage(null);
 
     setTimeout(() => {
-      const result: RestoreResult = restoreBackup(fileContent, importMode);
+      const result: RestoreResult = restoreBackup(fileContent, importMode, language);
       setIsProcessing(false);
 
       if (result.success) {
         setStatusMessage({
           type: "success",
-          text: `Úspešne obnovené ${result.importedCount} ${
+          text: t(`Úspešne obnovené ${result.importedCount} ${
             result.importedCount === 1 ? "projekt" : result.importedCount < 5 ? "projekty" : "projektov"
-          }: ${result.projectNames.join(", ")}`
+          }: ${result.projectNames.join(", ")}`, `Successfully restored ${result.importedCount} ${result.importedCount === 1 ? "project" : "projects"}: ${result.projectNames.join(", ")}`)
         });
         if (onRestoreSuccess) {
           onRestoreSuccess(result.projectNames);
@@ -220,7 +222,7 @@ export function BackupRestoreModal({
       } else {
         setStatusMessage({
           type: "error",
-          text: result.error || "Obnova dát zo zálohy zlyhala."
+          text: result.error || t("Obnova dát zo zálohy zlyhala.", "Restoring the backup failed.")
         });
       }
     }, 150);
@@ -249,14 +251,14 @@ export function BackupRestoreModal({
               <Database size={18} />
             </div>
             <div>
-              <h3 id="backup-modal-title" className="font-bold text-slate-800 text-base">Záloha a obnova projektov (JSON)</h3>
-              <p className="text-xs text-slate-500">Zmeny sa ukladajú lokálne; záloha umožňuje preniesť alebo obnoviť dáta.</p>
+              <h3 id="backup-modal-title" className="font-bold text-slate-800 text-base">{t("Záloha a obnova projektov (JSON)", "Project backup and restore (JSON)")}</h3>
+              <p className="text-xs text-slate-500">{t("Zmeny sa ukladajú lokálne; záloha umožňuje preniesť alebo obnoviť dáta.", "Changes are stored locally; backups let you transfer or restore data.")}</p>
             </div>
           </div>
           <button
             ref={closeButtonRef}
             onClick={onClose}
-            aria-label="Zavrieť zálohu a obnovu"
+            aria-label={t("Zavrieť zálohu a obnovu", "Close backup and restore")}
             className="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X size={18} />
@@ -264,7 +266,7 @@ export function BackupRestoreModal({
         </div>
 
         {/* Tab Switcher */}
-        <div role="tablist" aria-label="Režim zálohy" className="flex border-b border-slate-200 bg-slate-50/50 px-6 pt-2">
+        <div role="tablist" aria-label={t("Režim zálohy", "Backup mode")} className="flex border-b border-slate-200 bg-slate-50/50 px-6 pt-2">
           <button
             type="button"
             role="tab"
@@ -282,7 +284,7 @@ export function BackupRestoreModal({
             }`}
           >
             <Download size={14} />
-            <span>Zálohovať (Export JSON)</span>
+            <span>{t("Zálohovať (Export JSON)", "Backup (Export JSON)")}</span>
           </button>
           <button
             type="button"
@@ -301,7 +303,7 @@ export function BackupRestoreModal({
             }`}
           >
             <Upload size={14} />
-            <span>Obnoviť zo zálohy (Import)</span>
+            <span>{t("Obnoviť zo zálohy (Import)", "Restore backup (Import)")}</span>
           </button>
         </div>
 
@@ -331,22 +333,21 @@ export function BackupRestoreModal({
           {activeTab === "backup" ? (
             <div className="space-y-4">
               <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
-                Záloha môže obsahovať citlivú architektúru, dôkazový materiál, hrozby a poznámky.
-                Uchovávajte ju šifrovanú a neodesielajte cez nedôveryhodný kanál.
+                {t("Záloha môže obsahovať citlivú architektúru, dôkazový materiál, hrozby a poznámky. Uchovávajte ju šifrovanú a neodesielajte cez nedôveryhodný kanál.", "Backups can contain sensitive architecture, evidence, threats and notes. Store them encrypted and do not send them over untrusted channels.")}
               </div>
               <p className="text-[11px] text-slate-500">
-                Posledná vytvorená záloha: {lastBackupTime ? new Date(lastBackupTime).toLocaleString("sk-SK") : "ešte nebola zaznamenaná"}
+                {t("Posledná vytvorená záloha:", "Last backup:")} {lastBackupTime ? new Date(lastBackupTime).toLocaleString(language) : t("ešte nebola zaznamenaná", "none recorded yet")}
               </p>
               {currentAnalysisId && (
                 <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/40 flex items-start justify-between gap-4">
                   <div>
                     <div className="flex items-center gap-2">
                       <FileJson size={16} className="text-blue-600" />
-                      <h4 className="font-bold text-slate-800 text-sm">Aktuálny projekt</h4>
+                      <h4 className="font-bold text-slate-800 text-sm">{t("Aktuálny projekt", "Current project")}</h4>
                     </div>
-                    <p className="text-xs text-slate-600 mt-1 font-medium">{currentAnalysisName || "Tento projekt"}</p>
+                    <p className="text-xs text-slate-600 mt-1 font-medium">{currentAnalysisName || t("Tento projekt", "This project")}</p>
                     <p className="text-[11px] text-slate-500 mt-1">
-                      Záloha obsahuje ASVS hodnotenie, architektúru, DFD toky, STRIDE hrozby a históriu verzií.
+                      {t("Záloha obsahuje ASVS hodnotenie, architektúru, DFD toky, STRIDE hrozby a históriu verzií.", "The backup includes ASVS assessment, architecture, DFD flows, STRIDE threats and version history.")}
                     </p>
                   </div>
                   <button
@@ -354,7 +355,7 @@ export function BackupRestoreModal({
                     className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
                   >
                     <Download size={14} />
-                    <span>Stiahnuť JSON</span>
+                    <span>{t("Stiahnuť JSON", "Download JSON")}</span>
                   </button>
                 </div>
               )}
@@ -363,13 +364,13 @@ export function BackupRestoreModal({
                 <div>
                   <div className="flex items-center gap-2">
                     <Layers size={16} className="text-slate-700" />
-                    <h4 className="font-bold text-slate-800 text-sm">Všetky projekty (Kompletný archív)</h4>
+                    <h4 className="font-bold text-slate-800 text-sm">{t("Všetky projekty (Kompletný archív)", "All projects (Complete archive)")}</h4>
                   </div>
                   <p className="text-xs text-slate-600 mt-1">
-                    Exportuje všetky analýzy a projekty evidované vo vašom lokálnom úložisku do jedného súboru.
+                    {t("Exportuje všetky analýzy a projekty evidované vo vašom lokálnom úložisku do jedného súboru.", "Exports all analyses and projects in local storage to one file.")}
                   </p>
                   <p className="text-[11px] text-slate-400 mt-1">
-                    Ideálne pre offline zálohu, zmenu počítača alebo migráciu.
+                    {t("Ideálne pre offline zálohu, zmenu počítača alebo migráciu.", "Suitable for offline backup, changing computers or migration.")}
                   </p>
                 </div>
                 <button
@@ -377,7 +378,7 @@ export function BackupRestoreModal({
                   className="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 shrink-0 transition-colors cursor-pointer"
                 >
                   <Download size={14} />
-                  <span>Stiahnuť archív</span>
+                  <span>{t("Stiahnuť archív", "Download archive")}</span>
                 </button>
               </div>
             </div>
@@ -399,10 +400,10 @@ export function BackupRestoreModal({
                   <Upload size={20} />
                 </div>
                 <p className="text-xs font-bold text-slate-700">
-                  {selectedFile ? selectedFile.name : "Kliknite pre výber .json zálohy alebo presuňte súbor sem"}
+                  {selectedFile ? selectedFile.name : t("Kliknite pre výber .json zálohy alebo presuňte súbor sem", "Click to select a .json backup or drop a file here")}
                 </p>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Podporuje zálohy AVERT aj archívy zo starších verzií ATAP
+                  {t("Podporuje zálohy AVERT aj archívy zo starších verzií ATAP", "Supports AVERT backups and archives from older ATAP versions")}
                 </p>
               </div>
 
@@ -410,16 +411,16 @@ export function BackupRestoreModal({
               {parsedPreview && (
                 <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-lg text-xs space-y-2">
                   <div className="font-bold text-slate-700 flex items-center justify-between">
-                    <span>Detegovaný obsah zálohy:</span>
+                    <span>{t("Detegovaný obsah zálohy:", "Detected backup contents:")}</span>
                     <span className="text-[11px] font-normal text-slate-400">
-                      {parsedPreview.exportedAt ? new Date(parsedPreview.exportedAt).toLocaleString("sk-SK") : ""}
+                      {parsedPreview.exportedAt ? new Date(parsedPreview.exportedAt).toLocaleString(language) : ""}
                     </span>
                   </div>
 
                   {parsedPreview.type === "atap_full_backup" ? (
                     <div>
                       <p className="text-slate-600">
-                        Typ: <strong className="text-blue-700">Kompletný archív ({parsedPreview.projects?.length || 0} projektov)</strong>
+                        {t("Typ:", "Type:")} <strong className="text-blue-700">{t("Kompletný archív", "Complete archive")} ({parsedPreview.projects?.length || 0} {t("projektov", "projects")})</strong>
                       </p>
                       <ul className="list-disc list-inside mt-1 space-y-0.5 text-slate-600">
                         {parsedPreview.projects?.slice(0, 4).map((p: any, i: number) => (
@@ -428,21 +429,21 @@ export function BackupRestoreModal({
                           </li>
                         ))}
                         {(parsedPreview.projects?.length || 0) > 4 && (
-                          <li className="text-slate-400 italic">...a ďalšie {parsedPreview.projects.length - 4} projekty</li>
+                          <li className="text-slate-400 italic">{t(`...a ďalšie ${parsedPreview.projects.length - 4} projekty`, `...and ${parsedPreview.projects.length - 4} more projects`)}</li>
                         )}
                       </ul>
                     </div>
                   ) : parsedPreview.project ? (
                     <div>
                       <p className="text-slate-600">
-                        Projekt: <strong className="text-blue-700">{parsedPreview.project?.name}</strong>
+                        {t("Projekt:", "Project:")} <strong className="text-blue-700">{parsedPreview.project?.name}</strong>
                       </p>
                       <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-500">
                         <span>Level: L{parsedPreview.project?.asvsLevel || 2}</span>
                         <span>•</span>
-                        <span>Verzia: v{parsedPreview.project?.currentVersion || "1.0"}</span>
+                        <span>{t("Verzia:", "Version:")} v{parsedPreview.project?.currentVersion || "1.0"}</span>
                         <span>•</span>
-                        <span>Požiadaviek ASVS: {parsedPreview.asvsReqs?.length || 0}</span>
+                        <span>{t("Požiadaviek ASVS:", "ASVS requirements:")} {parsedPreview.asvsReqs?.length || 0}</span>
                       </div>
                     </div>
                   ) : null}
@@ -450,7 +451,7 @@ export function BackupRestoreModal({
                   {/* Mode Selector */}
                   <div className="pt-2 border-t border-slate-200/80 mt-2">
                     <span className="text-[11px] font-bold text-slate-700 block mb-1.5">
-                      Režim importu:
+                      {t("Režim importu:", "Import mode:")}
                     </span>
                     <div className="grid grid-cols-2 gap-2">
                       <label className={`p-2 border rounded-lg cursor-pointer text-left transition-colors ${
@@ -464,8 +465,8 @@ export function BackupRestoreModal({
                           onChange={() => setImportMode("new_id")}
                           className="mr-1.5"
                         />
-                        <span className="font-bold text-[11px] text-slate-800">Ako nový projekt</span>
-                        <p className="text-[10px] text-slate-500 mt-0.5">Vytvorí nezávislú kópiu bez prepísania existujúcich</p>
+                        <span className="font-bold text-[11px] text-slate-800">{t("Ako nový projekt", "As a new project")}</span>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{t("Vytvorí nezávislú kópiu bez prepísania existujúcich", "Creates an independent copy without overwriting existing projects")}</p>
                       </label>
 
                       <label className={`p-2 border rounded-lg cursor-pointer text-left transition-colors ${
@@ -479,8 +480,8 @@ export function BackupRestoreModal({
                           onChange={() => setImportMode("overwrite")}
                           className="mr-1.5"
                         />
-                        <span className="font-bold text-[11px] text-slate-800">Prepísať zhodné ID</span>
-                        <p className="text-[10px] text-slate-500 mt-0.5">Aktualizuje existujúci projekt rovnakého ID</p>
+                        <span className="font-bold text-[11px] text-slate-800">{t("Prepísať zhodné ID", "Overwrite matching ID")}</span>
+                        <p className="text-[10px] text-slate-500 mt-0.5">{t("Aktualizuje existujúci projekt rovnakého ID", "Updates an existing project with the same ID")}</p>
                       </label>
                     </div>
                   </div>
@@ -497,12 +498,12 @@ export function BackupRestoreModal({
                   {isProcessing ? (
                     <>
                       <RefreshCw size={14} className="animate-spin" />
-                      <span>Obnovujem dáta...</span>
+                      <span>{t("Obnovujem dáta...", "Restoring data...")}</span>
                     </>
                   ) : (
                     <>
                       <CheckCircle2 size={15} />
-                      <span>Spustiť obnovu zo súboru</span>
+                      <span>{t("Spustiť obnovu zo súboru", "Restore from file")}</span>
                     </>
                   )}
                 </button>
@@ -517,7 +518,7 @@ export function BackupRestoreModal({
             onClick={onClose}
             className="px-4 py-1.5 border border-slate-200 hover:bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold transition-colors cursor-pointer"
           >
-            Zavrieť
+            {t("Zavrieť", "Close")}
           </button>
         </div>
       </div>

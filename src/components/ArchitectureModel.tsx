@@ -37,6 +37,8 @@ import { useWorkspaceState } from "../hooks/useWorkspaceState";
 import { getInitialThreatsForAnalysis, syncArchitectureThreats, type Threat } from "../utils/threatModel";
 import { getDiagramLayoutIssues, getFlowPathGeometry } from "../utils/dfd";
 import { writeJson } from "../utils/storage";
+import { useLanguage } from "../context/LanguageContext";
+import type { ReportLanguage } from "../utils/reportLanguage";
 
 export interface ArchComponent {
   id: string;
@@ -77,6 +79,7 @@ export interface DataFlow {
 
 interface DfdReviewIssue {
   flowId: string;
+  kind: string;
   flowName: string;
   severity: "warning" | "info";
   message: string;
@@ -96,11 +99,11 @@ function getPqcDesignStatus(keyExchange?: string): NonNullable<DataFlow["pqcStat
   return keyExchange.startsWith("ML-KEM-") ? "post-quantum" : "classical";
 }
 
-function getPqcDesignStatusLabel(status: NonNullable<DataFlow["pqcStatus"]>): string {
+function getPqcDesignStatusLabel(status: NonNullable<DataFlow["pqcStatus"]>, language: ReportLanguage): string {
   switch (status) {
-    case "classical": return "Klasický";
-    case "post-quantum": return "Postkvantový";
-    case "unknown": return "Neznámy";
+    case "classical": return language === "sk" ? "Klasický" : "Classical";
+    case "post-quantum": return language === "sk" ? "Postkvantový" : "Post-quantum";
+    case "unknown": return language === "sk" ? "Neznámy" : "Unknown";
   }
 }
 
@@ -462,6 +465,7 @@ const DEFAULT_FLOWS: DataFlow[] = [
 ];
 
 export function ArchitectureModel() {
+  const { language, t } = useLanguage();
   const { id: analysisId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const requestedComponent = searchParams.get("component");
@@ -696,7 +700,7 @@ export function ArchitectureModel() {
       writeJson(storageKey, data);
     } catch (error) {
       console.error("Failed to save architecture model", error);
-      setToastMessage("Model architektúry sa nepodarilo uložiť do lokálneho úložiska.");
+      setToastMessage(t("Model architektúry sa nepodarilo uložiť do lokálneho úložiska.", "Could not save the architecture model to local storage."));
     }
   }, [components, flows, zones, storageKey]);
 
@@ -725,7 +729,7 @@ export function ArchitectureModel() {
         writeJson(threatStorageKey, syncedThreats);
       } catch (error) {
         console.error("Failed to save architecture-generated threats", error);
-        setToastMessage("Automatické hrozby sa nepodarilo uložiť do registra hrozieb.");
+        setToastMessage(t("Automatické hrozby sa nepodarilo uložiť do registra hrozieb.", "Could not save generated threats to the threat register."));
       }
     }
   }, [analysisId, components, flows, zones]);
@@ -890,12 +894,12 @@ export function ArchitectureModel() {
   };
 
   const handleResetArchitecture = () => {
-    if (window.confirm("Naozaj chcete obnoviť architektúru na predvolený stav?")) {
+    if (window.confirm(t("Naozaj chcete obnoviť architektúru na predvolený stav?", "Reset the architecture to its default state?"))) {
       setComponents(DEFAULT_COMPONENTS);
       setFlows(DEFAULT_FLOWS);
       setZones(DEFAULT_ZONES);
       setSelectedCompId(null);
-      setToastMessage("Architektúra bola obnovená na odporúčaný model.");
+      setToastMessage(t("Architektúra bola obnovená na odporúčaný model.", "Architecture was reset to the recommended model."));
       setTimeout(() => setToastMessage(null), 3000);
     }
   };
@@ -905,7 +909,7 @@ export function ArchitectureModel() {
     const name = newZoneName.trim();
     if (!name) return;
     if (zones.some(zone => zone.id !== editingZoneId && zone.name.toLowerCase() === name.toLowerCase())) {
-      alert("Zóna s týmto názvom už existuje.");
+      alert(t("Zóna s týmto názvom už existuje.", "A zone with this name already exists."));
       return;
     }
 
@@ -915,7 +919,7 @@ export function ArchitectureModel() {
         ? { ...zone, name, color: color.color, borderColor: color.borderColor, bgTint: color.bgTint }
         : zone
       ));
-      setToastMessage(`Trust zóna "${name}" bola upravená.`);
+      setToastMessage(t(`Trust zóna "${name}" bola upravená.`, `Trust zone "${name}" was updated.`));
     } else {
       let id = `zone_${Date.now()}`;
       let suffix = 2;
@@ -934,7 +938,7 @@ export function ArchitectureModel() {
         width: 260,
         height: 280
       }]);
-      setToastMessage(`Trust zóna "${name}" bola vytvorená.`);
+      setToastMessage(t(`Trust zóna "${name}" bola vytvorená.`, `Trust zone "${name}" was created.`));
     }
     setIsZoneModalOpen(false);
     setTimeout(() => setToastMessage(null), 3000);
@@ -942,10 +946,10 @@ export function ArchitectureModel() {
 
   const handleDeleteZone = (zone: TrustZone) => {
     if (zones.length < 2) {
-      alert("V modeli musí zostať aspoň jedna trust zóna.");
+      alert(t("V modeli musí zostať aspoň jedna trust zóna.", "At least one trust zone must remain in the model."));
       return;
     }
-    if (!window.confirm(`Odstrániť zónu "${zone.name}"? Jej komponenty sa presunú do inej zóny.`)) return;
+    if (!window.confirm(t(`Odstrániť zónu "${zone.name}"? Jej komponenty sa presunú do inej zóny.`, `Delete zone "${zone.name}"? Its components will be moved to another zone.`))) return;
 
     const remainingZones = zones.filter(item => item.id !== zone.id);
     const fallbackZone = remainingZones[0];
@@ -961,7 +965,7 @@ export function ArchitectureModel() {
 
     setZones(remainingZones);
     setComponents(prev => prev.map(component => movedById.get(component.id) ?? component));
-    setToastMessage(`Trust zóna "${zone.name}" bola odstránená.`);
+    setToastMessage(t(`Trust zóna "${zone.name}" bola odstránená.`, `Trust zone "${zone.name}" was deleted.`));
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -975,14 +979,14 @@ export function ArchitectureModel() {
       (c.id.toLowerCase() === name.toLowerCase() || c.name.toLowerCase() === name.toLowerCase())
     );
     if (duplicate) {
-      alert("Komponent s týmto názvom už existuje.");
+      alert(t("Komponent s týmto názvom už existuje.", "A component with this name already exists."));
       return;
     }
 
     const tech = (newCompTech === CUSTOM_TECH_STACK ? newCompCustomTech : newCompTech).trim() || "Všeobecná služba";
     const targetZone = zones.find(zone => zone.id === newCompZone);
     if (!targetZone) {
-      alert("Vybraná trust zóna už neexistuje. Obnovte formulár a skúste znova.");
+      alert(t("Vybraná trust zóna už neexistuje. Obnovte formulár a skúste znova.", "The selected trust zone no longer exists. Reopen the form and try again."));
       return;
     }
     if (editingCompId) {
@@ -998,7 +1002,7 @@ export function ArchitectureModel() {
       setSelectedCompId(editingCompId);
       setIsComponentModalOpen(false);
       setEditingCompId(null);
-      setToastMessage(`Komponent "${name}" bol upravený.`);
+      setToastMessage(t(`Komponent "${name}" bol upravený.`, `Component "${name}" was updated.`));
       setTimeout(() => setToastMessage(null), 3000);
       return;
     }
@@ -1018,16 +1022,16 @@ export function ArchitectureModel() {
     setComponents(prev => [...prev, newComp]);
     setSelectedCompId(newComp.id);
     setIsComponentModalOpen(false);
-    setToastMessage(`Komponent "${newComp.name}" bol pridaný do modelu.`);
+    setToastMessage(t(`Komponent "${newComp.name}" bol pridaný do modelu.`, `Component "${newComp.name}" was added to the model.`));
     setTimeout(() => setToastMessage(null), 3000);
   };
 
   const handleDeleteComponent = (id: string) => {
-    if (window.confirm(`Naozaj chcete odstrániť komponent "${id}" z diagramu?`)) {
+    if (window.confirm(t(`Naozaj chcete odstrániť komponent "${id}" z diagramu?`, `Remove component "${id}" from the diagram?`))) {
       setComponents(prev => prev.filter(c => c.id !== id));
       setFlows(prev => prev.filter(f => f.from !== id && f.to !== id));
       if (selectedCompId === id) setSelectedCompId(null);
-      setToastMessage(`Komponent "${id}" bol odstránený.`);
+      setToastMessage(t(`Komponent "${id}" bol odstránený.`, `Component "${id}" was removed.`));
       setTimeout(() => setToastMessage(null), 3000);
     }
   };
@@ -1035,12 +1039,12 @@ export function ArchitectureModel() {
   const handleAddFlow = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFlowFrom || !newFlowTo || newFlowFrom === newFlowTo) {
-      alert("Zvoľte odlišný zdrojový a cieľový komponent.");
+      alert(t("Zvoľte odlišný zdrojový a cieľový komponent.", "Select different source and destination components."));
       return;
     }
     const protocol = (newFlowProtocol === CUSTOM_FLOW_PROTOCOL ? newFlowCustomProtocol : newFlowProtocol).trim();
     if (!protocol) {
-      alert("Zadajte protokol alebo spôsob komunikácie.");
+      alert(t("Zadajte protokol alebo spôsob komunikácie.", "Enter a protocol or communication method."));
       return;
     }
     const showTlsCryptoOptions = usesTlsCrypto(protocol, newFlowEncrypted);
@@ -1067,8 +1071,8 @@ export function ArchitectureModel() {
     setIsAddFlowOpen(false);
     setEditingFlowId(null);
     setToastMessage(editingFlowId
-      ? `Tok dát z ${newFlowFrom} do ${newFlowTo} bol aktualizovaný.`
-      : `Tok dát z ${newFlowFrom} do ${newFlowTo} bol pridaný.`);
+      ? t(`Tok dát z ${newFlowFrom} do ${newFlowTo} bol aktualizovaný.`, `Data flow from ${newFlowFrom} to ${newFlowTo} was updated.`)
+      : t(`Tok dát z ${newFlowFrom} do ${newFlowTo} bol pridaný.`, `Data flow from ${newFlowFrom} to ${newFlowTo} was added.`));
     setTimeout(() => setToastMessage(null), 3000);
   };
 
@@ -1147,39 +1151,43 @@ export function ArchitectureModel() {
     if (!flow.encrypted && flow.dataClassification !== "Public") {
       issues.push({
         flowId: flow.id,
+        kind: `unencrypted:${flow.dataClassification}`,
         flowName,
         severity: "warning",
-        message: `${flow.dataClassification} dáta sú označené ako nešifrované.`
+        message: t(`${flow.dataClassification} dáta sú označené ako nešifrované.`, `${flow.dataClassification} data is marked unencrypted.`)
       });
     } else if (hasExplicitTlsProtocol && !flow.encrypted) {
       issues.push({
         flowId: flow.id,
+        kind: "tls-unencrypted",
         flowName,
         severity: "warning",
-        message: "Protokol uvádza TLS, ale prenos je označený ako nešifrovaný."
+        message: t("Protokol uvádza TLS, ale prenos je označený ako nešifrovaný.", "The protocol specifies TLS but the flow is marked unencrypted.")
       });
     }
 
     if (!flow.authenticated && ["Confidential", "Restricted"].includes(flow.dataClassification)) {
       issues.push({
         flowId: flow.id,
+        kind: `unauthenticated:${flow.dataClassification}`,
         flowName,
         severity: "warning",
-        message: `${flow.dataClassification} dáta sú označené bez autentifikácie odosielateľa.`
+        message: t(`${flow.dataClassification} dáta sú označené bez autentifikácie odosielateľa.`, `${flow.dataClassification} data is marked without sender authentication.`)
       });
     }
 
     if (usesTlsCrypto(flow.protocol, flow.encrypted)) {
       const cryptoGaps = [
-        !flow.cipherSuite ? "cipher suite nie je určená" : "",
-        getPqcDesignStatus(flow.keyExchange) === "unknown" ? "PQC stav je neznámy" : ""
+        !flow.cipherSuite ? t("cipher suite nie je určená", "cipher suite is unspecified") : "",
+        getPqcDesignStatus(flow.keyExchange) === "unknown" ? t("PQC stav je neznámy", "PQC status is unknown") : ""
       ].filter(Boolean);
       if (cryptoGaps.length) {
         issues.push({
           flowId: flow.id,
+          kind: `crypto:${!flow.cipherSuite}:${getPqcDesignStatus(flow.keyExchange) === "unknown"}`,
           flowName,
           severity: "info",
-          message: `V návrhu: ${cryptoGaps.join("; ")}.`
+          message: t(`V návrhu: ${cryptoGaps.join("; ")}.`, `In the design: ${cryptoGaps.join("; ")}.`)
         });
       }
     }
@@ -1194,13 +1202,13 @@ export function ArchitectureModel() {
       <div className="px-6 py-4 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-4 shrink-0 shadow-xs">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Architektonický DFD Model</h1>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">{t("Architektonický DFD Model", "Architecture DFD Model")}</h1>
             <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-[10px] font-bold rounded border border-blue-200 uppercase">
               Data Flow Diagram
             </span>
           </div>
           <p className="text-xs text-slate-500 mt-0.5">
-            Interaktívna mapa komponentov, hraníc dôvery (Trust Boundaries) a šifrovaných tokov dát prepojená so STRIDE hrozbami. Šípka ukazuje smer toku od zdroja k cieľu.
+            {t("Interaktívna mapa komponentov, hraníc dôvery (Trust Boundaries) a šifrovaných tokov dát prepojená so STRIDE hrozbami. Šípka ukazuje smer toku od zdroja k cieľu.", "Interactive map of components, trust boundaries and encrypted data flows linked to STRIDE threats. Arrows show flow direction from source to destination.")}
           </p>
         </div>
 
@@ -1210,13 +1218,13 @@ export function ArchitectureModel() {
             className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Plus size={14} />
-            <span>Nový komponent</span>
+            <span>{t("Nový komponent", "New component")}</span>
           </button>
 
           <button
             onClick={() => {
               if (components.length < 2) {
-                alert("Najprv vytvorte aspoň dva komponenty na prepojenie.");
+                alert(t("Najprv vytvorte aspoň dva komponenty na prepojenie.", "First create at least two components to connect."));
                 return;
               }
               openAddFlowModal(components[0].id, components[1].id);
@@ -1224,17 +1232,17 @@ export function ArchitectureModel() {
             className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Plus size={14} />
-            <span>Prepojiť tokom dát</span>
+            <span>{t("Prepojiť tokom dát", "Connect with data flow")}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setIsDfdReviewOpen(true)}
             className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
-            title="Voliteľná kontrola návrhu DFD"
+            title={t("Voliteľná kontrola návrhu DFD", "Optional DFD design review")}
           >
             <ShieldAlert size={14} className="text-amber-600" />
-            <span>Kontrola návrhu</span>
+            <span>{t("Kontrola návrhu", "Design review")}</span>
           </button>
 
           <button
@@ -1242,16 +1250,16 @@ export function ArchitectureModel() {
             className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 rounded-lg text-xs font-semibold shadow-xs flex items-center gap-1.5 transition-colors cursor-pointer"
           >
             <Layers size={14} />
-            <span>Pridať trust zónu</span>
+            <span>{t("Pridať trust zónu", "Add trust zone")}</span>
           </button>
 
           <button
             onClick={handleResetArchitecture}
             className="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center gap-1.5"
-            title="Resetovať na odporúčanú bezpečnú architektúru"
+            title={t("Resetovať na odporúčanú bezpečnú architektúru", "Reset to the recommended secure architecture")}
           >
             <RefreshCw size={13} />
-            <span>Reset modelu</span>
+            <span>{t("Reset modelu", "Reset model")}</span>
           </button>
         </div>
       </div>
@@ -1269,14 +1277,14 @@ export function ArchitectureModel() {
           <div role="alert" className="shrink-0 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-[11px] text-amber-900">
             <div className="flex items-center gap-2 font-semibold">
               <AlertTriangle size={14} />
-              <span>Rozloženie diagramu obsahuje prekrývajúce sa prvky.</span>
+              <span>{t("Rozloženie diagramu obsahuje prekrývajúce sa prvky.", "The diagram contains overlapping elements.")}</span>
             </div>
             {layoutIssues.overlappingZones.length > 0 && (
-              <p className="mt-1">Trust zóny: {layoutIssues.overlappingZones.map(([a, b]) => `${a.name} / ${b.name}`).join(", ")}</p>
+              <p className="mt-1">{t("Trust zóny:", "Trust zones:")} {layoutIssues.overlappingZones.map(([a, b]) => `${a.name} / ${b.name}`).join(", ")}</p>
             )}
             {layoutIssues.overlappingComponents.length > 0 && (
               <div className="mt-1 flex flex-wrap items-center gap-2">
-                <span>Komponenty:</span>
+                <span>{t("Komponenty:", "Components:")}</span>
                 {layoutIssues.overlappingComponents.flatMap(([a, b]) => [a, b]).filter((component, index, items) =>
                   items.findIndex(item => item.id === component.id) === index
                 ).map(component => (
@@ -1286,14 +1294,14 @@ export function ArchitectureModel() {
                     onClick={() => setSelectedCompId(component.id)}
                     className="rounded border border-amber-300 bg-white px-2 py-0.5 font-semibold text-amber-900 hover:bg-amber-100"
                   >
-                    Zamerať {component.name}
+                    {t("Zamerať", "Focus")} {component.name}
                   </button>
                 ))}
               </div>
             )}
             {obstructedFlowIds.length > 0 && (
               <p className="mt-1">
-                Toky vedené cez komponenty: {obstructedFlowIds.map(flow => {
+                {t("Toky vedené cez komponenty:", "Flows routed through components:")} {obstructedFlowIds.map(flow => {
                   const blockedBy = flowGeometries.get(flow.id)?.obstructedComponentIds
                     .map(id => components.find(component => component.id === id)?.name ?? id)
                     .join(", ");
@@ -1349,7 +1357,7 @@ export function ArchitectureModel() {
               <div
                 onMouseDown={event => handleZoneMouseDown(event, zone)}
                 className="pointer-events-auto flex items-center justify-between gap-2 p-2.5 cursor-move select-none"
-                title="Potiahnutím presuňte trust zónu"
+                title={t("Potiahnutím presuňte trust zónu", "Drag to move the trust zone")}
               >
                 <span className={`text-[11px] font-bold uppercase tracking-wider ${zone.color}`}>
                   {zone.name}
@@ -1359,8 +1367,8 @@ export function ArchitectureModel() {
                     type="button"
                     onMouseDown={event => event.stopPropagation()}
                     onClick={() => openEditZoneModal(zone)}
-                    aria-label={`Upraviť zónu ${zone.name}`}
-                    title="Upraviť zónu"
+                    aria-label={t(`Upraviť zónu ${zone.name}`, `Edit zone ${zone.name}`)}
+                    title={t("Upraviť zónu", "Edit zone")}
                     className="pointer-events-auto rounded bg-white/80 p-1 text-slate-500 hover:text-blue-700"
                   >
                     <Pencil size={12} />
@@ -1369,8 +1377,8 @@ export function ArchitectureModel() {
                     type="button"
                     onMouseDown={event => event.stopPropagation()}
                     onClick={() => handleDeleteZone(zone)}
-                    aria-label={`Odstrániť zónu ${zone.name}`}
-                    title="Odstrániť zónu"
+                    aria-label={t(`Odstrániť zónu ${zone.name}`, `Delete zone ${zone.name}`)}
+                    title={t("Odstrániť zónu", "Delete zone")}
                     className="pointer-events-auto rounded bg-white/80 p-1 text-slate-500 hover:text-red-600"
                   >
                     <Trash2 size={12} />
@@ -1381,8 +1389,8 @@ export function ArchitectureModel() {
                 type="button"
                 onMouseDown={event => handleZoneResizeMouseDown(event, zone)}
                 onKeyDown={event => handleZoneKeyboardResize(event, zone)}
-                aria-label={`Zmeniť veľkosť zóny ${zone.name}. Pomocou šípok upravujte veľkosť po 20 pixeloch.`}
-                title="Potiahnutím zmeňte veľkosť; klávesmi šípok upravujte po 20 px"
+                aria-label={t(`Zmeniť veľkosť zóny ${zone.name}. Pomocou šípok upravujte veľkosť po 20 pixeloch.`, `Resize zone ${zone.name}. Use arrow keys to resize in 20-pixel steps.`)}
+                title={t("Potiahnutím zmeňte veľkosť; klávesmi šípok upravujte po 20 px", "Drag to resize; use arrow keys for 20 px steps")}
                 className="pointer-events-auto absolute bottom-0 right-0 h-5 w-5 cursor-nwse-resize rounded-tl bg-white/80 text-slate-500 hover:text-blue-700"
               >
                 <Move size={12} className="mx-auto rotate-45" />
@@ -1457,11 +1465,11 @@ export function ArchitectureModel() {
               const isFlowHighlighted = selectedCompId === flow.from || selectedCompId === flow.to;
               const crossesTrustBoundary = fromComp.zoneId !== toComp.zoneId;
               const flowTitle = [
-                `Tok dát: ${flow.protocol}; ${flow.transferType.toLowerCase()}; ${crossesTrustBoundary ? "prekračuje hranicu trust zóny" : "v rámci jednej trust zóny"}`,
+                `${t("Tok dát", "Data flow")}: ${flow.protocol}; ${flow.transferType.toLowerCase()}; ${crossesTrustBoundary ? t("prekračuje hranicu trust zóny", "crosses a trust boundary") : t("v rámci jednej trust zóny", "within one trust zone")}`,
                 ...(flow.cipherSuite ? [`Cipher suite: ${flow.cipherSuite}`] : []),
-                ...(flow.keyExchange ? [`Výmena kľúčov / KEM: ${flow.keyExchange}`] : []),
+                ...(flow.keyExchange ? [`${t("Výmena kľúčov / KEM", "Key exchange / KEM")}: ${flow.keyExchange}`] : []),
                 ...(usesTlsCrypto(flow.protocol, flow.encrypted)
-                  ? [`PQC stav návrhu: ${getPqcDesignStatusLabel(flow.pqcStatus ?? getPqcDesignStatus(flow.keyExchange))}`]
+                  ? [`${t("PQC stav návrhu", "PQC design status")}: ${getPqcDesignStatusLabel(flow.pqcStatus ?? getPqcDesignStatus(flow.keyExchange), language)}`]
                   : [])
               ].join("; ");
               const stroke = crossesTrustBoundary
@@ -1515,7 +1523,7 @@ export function ArchitectureModel() {
                     pointerEvents="stroke"
                     role="button"
                     tabIndex={0}
-                    aria-label={`Upraviť tok ${flow.from} do ${flow.to}`}
+                    aria-label={t(`Upraviť tok ${flow.from} do ${flow.to}`, `Edit flow from ${flow.from} to ${flow.to}`)}
                     onMouseDown={event => event.stopPropagation()}
                     onClick={event => {
                       event.stopPropagation();
@@ -1544,7 +1552,7 @@ export function ArchitectureModel() {
                 key={comp.id}
                 role="button"
                 tabIndex={0}
-                aria-label={`Komponent ${comp.name}, typ ${comp.type}, technológia ${comp.tech}`}
+                aria-label={t(`Komponent ${comp.name}, typ ${comp.type}, technológia ${comp.tech}`, `Component ${comp.name}, type ${comp.type}, technology ${comp.tech}`)}
                 aria-pressed={isSelected}
                 onMouseDown={(e) => handleMouseDown(e, comp.id)}
                 onClick={(e) => { e.stopPropagation(); setSelectedCompId(comp.id); }}
@@ -1600,7 +1608,7 @@ export function ArchitectureModel() {
                     {comp.type}
                   </span>
                   {isSelected && (
-                    <span className="text-blue-600 font-bold">Vybrané</span>
+                    <span className="text-blue-600 font-bold">{t("Vybrané", "Selected")}</span>
                   )}
                 </div>
               </div>
@@ -1614,8 +1622,8 @@ export function ArchitectureModel() {
               type="button"
               onClick={() => setCanvasZoom(current => clamp(current - 0.1, MIN_CANVAS_ZOOM, MAX_CANVAS_ZOOM))}
               disabled={canvasZoom <= MIN_CANVAS_ZOOM}
-              aria-label="Oddialiť DFD diagram"
-              title="Oddialiť"
+              aria-label={t("Oddialiť DFD diagram", "Zoom out DFD diagram")}
+              title={t("Oddialiť", "Zoom out")}
               className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ZoomOut size={16} />
@@ -1627,8 +1635,8 @@ export function ArchitectureModel() {
               type="button"
               onClick={() => setCanvasZoom(current => clamp(current + 0.1, MIN_CANVAS_ZOOM, MAX_CANVAS_ZOOM))}
               disabled={canvasZoom >= MAX_CANVAS_ZOOM}
-              aria-label="Priblížiť DFD diagram"
-              title="Priblížiť"
+              aria-label={t("Priblížiť DFD diagram", "Zoom in DFD diagram")}
+              title={t("Priblížiť", "Zoom in")}
               className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <ZoomIn size={16} />
@@ -1636,8 +1644,8 @@ export function ArchitectureModel() {
             <button
               type="button"
               onClick={fitCanvasToViewport}
-              aria-label="Prispôsobiť DFD diagram šírke plátna"
-              title="Prispôsobiť plátnu"
+              aria-label={t("Prispôsobiť DFD diagram šírke plátna", "Fit DFD diagram to canvas width")}
+              title={t("Prispôsobiť plátnu", "Fit to canvas")}
               className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Maximize2 size={15} />
@@ -1651,7 +1659,7 @@ export function ArchitectureModel() {
             <div className="flex items-center gap-2">
               <Sliders size={16} className="text-blue-600" />
               <h3 className="font-bold text-xs uppercase tracking-wider text-slate-700">
-                Inšpektor komponentu
+                {t("Inšpektor komponentu", "Component inspector")}
               </h3>
             </div>
             {selectedComp && (
@@ -1669,38 +1677,38 @@ export function ArchitectureModel() {
               <>
                 <div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[10px] font-bold uppercase text-slate-400">Komponent</span>
+                    <span className="text-[10px] font-bold uppercase text-slate-400">{t("Komponent", "Component")}</span>
                     <div className="flex items-center gap-3">
                       <button
                         onClick={() => openEditComponentModal(selectedComp)}
                         className="text-blue-600 hover:text-blue-800 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                        title="Upraviť komponent"
+                        title={t("Upraviť komponent", "Edit component")}
                       >
                         <Pencil size={12} />
-                        <span>Upraviť</span>
+                        <span>{t("Upraviť", "Edit")}</span>
                       </button>
                       <button
                         onClick={() => handleDeleteComponent(selectedComp.id)}
                         className="text-red-500 hover:text-red-700 text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
-                        title="Zmazať komponent"
+                        title={t("Zmazať komponent", "Delete component")}
                       >
                         <Trash2 size={12} />
-                        <span>Zmazať</span>
+                        <span>{t("Zmazať", "Delete")}</span>
                       </button>
                     </div>
                   </div>
                   <h4 className="font-extrabold text-slate-800 text-sm mt-0.5">{selectedComp.name}</h4>
                   <div className="mt-2 space-y-1 text-slate-600 text-[11px]">
-                    <div><strong>Typ:</strong> <span className="capitalize">{selectedComp.type}</span></div>
-                    <div><strong>Technológia:</strong> {selectedComp.tech}</div>
-                    <div><strong>Hranica dôvery:</strong> {zones.find(z => z.id === selectedComp.zoneId)?.name || "Zóna"}</div>
+                    <div><strong>{t("Typ:", "Type:")}</strong> <span className="capitalize">{selectedComp.type}</span></div>
+                    <div><strong>{t("Technológia:", "Technology:")}</strong> {selectedComp.tech}</div>
+                    <div><strong>{t("Hranica dôvery:", "Trust boundary:")}</strong> {zones.find(z => z.id === selectedComp.zoneId)?.name || t("Zóna", "Zone")}</div>
                   </div>
                 </div>
 
                 {/* Associated Data Flows */}
                 <div className="pt-4 border-t border-slate-100">
                   <span className="font-bold text-slate-700 block mb-2">
-                    Prepojené toky dát
+                    {t("Prepojené toky dát", "Connected data flows")}
                   </span>
                   <div className="space-y-1.5">
                     {flows.filter(f => f.from === selectedComp.id || f.to === selectedComp.id).map(f => (
@@ -1715,14 +1723,14 @@ export function ArchitectureModel() {
                           {(f.cipherSuite || f.keyExchange || usesTlsCrypto(f.protocol, f.encrypted)) && (
                             <div className="text-[10px] text-slate-500 break-all">
                               {f.cipherSuite && <div><strong>Cipher suite:</strong> {f.cipherSuite}</div>}
-                              {f.keyExchange && <div><strong>Výmena kľúčov / KEM:</strong> {f.keyExchange}</div>}
+                              {f.keyExchange && <div><strong>{t("Výmena kľúčov / KEM:", "Key exchange / KEM:")}</strong> {f.keyExchange}</div>}
                               {usesTlsCrypto(f.protocol, f.encrypted) && (
-                                <div><strong>PQC stav návrhu:</strong> {getPqcDesignStatusLabel(f.pqcStatus ?? getPqcDesignStatus(f.keyExchange))}</div>
+                                <div><strong>{t("PQC stav návrhu:", "PQC design status:")}</strong> {getPqcDesignStatusLabel(f.pqcStatus ?? getPqcDesignStatus(f.keyExchange), language)}</div>
                               )}
                             </div>
                           )}
                           <div className="text-[10px] text-slate-500">
-                            {f.encrypted ? "Šifrovaný" : "Nešifrovaný"} · {f.authenticated ? "Autentifikovaný" : "Bez autentifikácie"}
+                            {f.encrypted ? t("Šifrovaný", "Encrypted") : t("Nešifrovaný", "Unencrypted")} · {f.authenticated ? t("Autentifikovaný", "Authenticated") : t("Bez autentifikácie", "Unauthenticated")}
                           </div>
                         </div>
                         <div className="flex items-center">
@@ -1730,8 +1738,8 @@ export function ArchitectureModel() {
                             type="button"
                             onClick={() => openEditFlowModal(f)}
                             className="text-slate-400 hover:text-blue-600 p-1"
-                            title="Upraviť tok"
-                            aria-label={`Upraviť tok ${f.from} do ${f.to}`}
+                            title={t("Upraviť tok", "Edit flow")}
+                            aria-label={t(`Upraviť tok ${f.from} do ${f.to}`, `Edit flow from ${f.from} to ${f.to}`)}
                           >
                             <Pencil size={12} />
                           </button>
@@ -1739,8 +1747,8 @@ export function ArchitectureModel() {
                             type="button"
                             onClick={() => handleDeleteFlow(f.id)}
                             className="text-slate-400 hover:text-red-600 p-1"
-                            title="Zmazať tok"
-                            aria-label={`Zmazať tok ${f.from} do ${f.to}`}
+                            title={t("Zmazať tok", "Delete flow")}
+                            aria-label={t(`Zmazať tok ${f.from} do ${f.to}`, `Delete flow from ${f.from} to ${f.to}`)}
                           >
                             <Trash2 size={12} />
                           </button>
@@ -1755,13 +1763,13 @@ export function ArchitectureModel() {
                   <div className="flex items-center justify-between mb-2">
                     <span className="font-bold text-slate-700 flex items-center gap-1.5">
                       <ShieldAlert size={14} className="text-purple-600" />
-                      <span>STRIDE Hrozby</span>
+                      <span>{t("STRIDE Hrozby", "STRIDE Threats")}</span>
                     </span>
                     <Link
                       to={`/analysis/${analysisId}/threats`}
                       className="text-[10px] text-blue-600 hover:underline flex items-center gap-0.5"
                     >
-                      <span>Všetky</span>
+                      <span>{t("Všetky", "All")}</span>
                       <ArrowRight size={10} />
                     </Link>
                   </div>
@@ -1782,7 +1790,7 @@ export function ArchitectureModel() {
                     </div>
                   ) : (
                     <div className="p-3 bg-slate-50 rounded border border-dashed border-slate-200 text-slate-400 text-center text-[11px]">
-                      Žiadne špecifické hrozby naviazané priamo na tento komponent.
+                      {t("Žiadne špecifické hrozby naviazané priamo na tento komponent.", "No specific threats are linked directly to this component.")}
                     </div>
                   )}
 
@@ -1791,7 +1799,7 @@ export function ArchitectureModel() {
                     className="mt-2 w-full py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors block text-center"
                   >
                     <Plus size={12} />
-                    <span>Zadať hrozbu v registri</span>
+                    <span>{t("Zadať hrozbu v registri", "Add threat in register")}</span>
                   </Link>
                 </div>
 
@@ -1800,20 +1808,20 @@ export function ArchitectureModel() {
                   <div className="flex items-center justify-between mb-1.5">
                     <span className="font-bold text-slate-700 flex items-center gap-1.5">
                       <FileCode2 size={14} className="text-blue-600" />
-                      <span>ASVS Požiadavky</span>
+                      <span>{t("ASVS Požiadavky", "ASVS Requirements")}</span>
                     </span>
                     <span className="px-1.5 py-0.2 bg-blue-100 text-blue-800 font-bold text-[10px] rounded">
-                      {asvsMappedCount} kontrol
+                      {asvsMappedCount} {t("kontrol", "controls")}
                     </span>
                   </div>
                   <p className="text-[11px] text-slate-500 mb-2">
-                    Požiadavky overenia ASVS namapované na tento komponent v záložke ASVS Workspace.
+                    {t("Požiadavky overenia ASVS namapované na tento komponent v záložke ASVS Workspace.", "ASVS verification requirements linked to this component in the ASVS Workspace.")}
                   </p>
                   <Link
                     to={`/analysis/${analysisId}/asvs`}
                     className="w-full py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded text-[11px] font-semibold flex items-center justify-center gap-1.5 transition-colors block text-center"
                   >
-                    <span>Otvoriť ASVS Workspace</span>
+                    <span>{t("Otvoriť ASVS Workspace", "Open ASVS Workspace")}</span>
                     <ArrowRight size={12} />
                   </Link>
                 </div>
@@ -1822,9 +1830,9 @@ export function ArchitectureModel() {
             ) : (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
                 <Info size={32} className="mb-2 text-slate-300" />
-                <p className="font-bold text-slate-600">Nebol vybraný žiadny komponent</p>
+                <p className="font-bold text-slate-600">{t("Nebol vybraný žiadny komponent", "No component selected")}</p>
                 <p className="text-[11px] text-slate-400 mt-1">
-                  Kliknite na ľubovoľný komponent na plátne pre zobrazenie jeho parametrov, STRIDE hrozieb a ASVS prepojení.
+                  {t("Kliknite na ľubovoľný komponent na plátne pre zobrazenie jeho parametrov, STRIDE hrozieb a ASVS prepojení.", "Select a component on the canvas to view its properties, STRIDE threats and ASVS links.")}
                 </p>
               </div>
             )}
@@ -1843,10 +1851,10 @@ export function ArchitectureModel() {
             className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-xl max-h-[85vh] flex flex-col p-6"
           >
             <div className="flex items-center justify-between mb-3">
-              <h3 id="dfd-review-title" className="font-bold text-slate-800 text-sm">Voliteľná kontrola návrhu DFD</h3>
+              <h3 id="dfd-review-title" className="font-bold text-slate-800 text-sm">{t("Voliteľná kontrola návrhu DFD", "Optional DFD design review")}</h3>
               <button
                 type="button"
-                aria-label="Zavrieť kontrolu návrhu"
+                aria-label={t("Zavrieť kontrolu návrhu", "Close design review")}
                 onClick={() => setIsDfdReviewOpen(false)}
                 className="text-slate-400 hover:text-slate-600"
               >
@@ -1854,14 +1862,14 @@ export function ArchitectureModel() {
               </button>
             </div>
             <p className="text-[11px] text-slate-500 mb-3">
-              Kontrola je nezáväzná, nič nemení ani neblokuje uloženie. Upozornenia sú návrhy na preverenie, nie potvrdené zraniteľnosti.
+              {t("Kontrola je nezáväzná, nič nemení ani neblokuje uloženie. Upozornenia sú návrhy na preverenie, nie potvrdené zraniteľnosti.", "This optional review changes nothing and does not block saving. Warnings are suggestions for investigation, not confirmed vulnerabilities.")}
             </p>
             <div className="overflow-y-auto space-y-2 flex-1">
-              {dfdReviewIssues.filter(issue => !dismissedReviewIssues.has(`${issue.flowId}-${issue.message}`)).length ? dfdReviewIssues
-                .filter(issue => !dismissedReviewIssues.has(`${issue.flowId}-${issue.message}`))
+              {dfdReviewIssues.filter(issue => !dismissedReviewIssues.has(`${issue.flowId}-${issue.kind}`)).length ? dfdReviewIssues
+                .filter(issue => !dismissedReviewIssues.has(`${issue.flowId}-${issue.kind}`))
                 .map(issue => (
                 <div
-                  key={`${issue.flowId}-${issue.message}`}
+                  key={`${issue.flowId}-${issue.kind}`}
                   className={`rounded-lg border p-3 text-xs ${
                     issue.severity === "warning"
                       ? "border-amber-200 bg-amber-50 text-amber-900"
@@ -1880,20 +1888,20 @@ export function ArchitectureModel() {
                       }}
                       className="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
                     >
-                      Upraviť tok
+                      {t("Upraviť tok", "Edit flow")}
                     </button>
                     <button
                       type="button"
-                      onClick={() => setDismissedReviewIssues(current => new Set(current).add(`${issue.flowId}-${issue.message}`))}
+                      onClick={() => setDismissedReviewIssues(current => new Set(current).add(`${issue.flowId}-${issue.kind}`))}
                       className="rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100"
                     >
-                      Označiť preskúmané
+                      {t("Označiť preskúmané", "Mark reviewed")}
                     </button>
                   </div>
                 </div>
               )) : (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">
-                  Nenašli sa upozornenia podľa dostupných pravidiel. To samo osebe nepotvrdzuje bezpečnosť návrhu.
+                  {t("Nenašli sa upozornenia podľa dostupných pravidiel. To samo osebe nepotvrdzuje bezpečnosť návrhu.", "No warnings were found using the available rules. This alone does not confirm the design is secure.")}
                 </div>
               )}
             </div>
@@ -1903,7 +1911,7 @@ export function ArchitectureModel() {
                 onClick={() => setIsDfdReviewOpen(false)}
                 className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium"
               >
-                Zrušiť kontrolu
+                {t("Zrušiť kontrolu", "Close review")}
               </button>
             </div>
           </div>
@@ -1916,15 +1924,15 @@ export function ArchitectureModel() {
           <div role="dialog" aria-modal="true" aria-labelledby="zone-modal-title" className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 id="zone-modal-title" className="font-bold text-slate-800 text-sm">
-                {editingZoneId ? "Upraviť trust zónu" : "Pridať trust zónu"}
+                {editingZoneId ? t("Upraviť trust zónu", "Edit trust zone") : t("Pridať trust zónu", "Add trust zone")}
               </h3>
-              <button type="button" aria-label="Zavrieť formulár trust zóny" onClick={() => setIsZoneModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button type="button" aria-label={t("Zavrieť formulár trust zóny", "Close trust zone form")} onClick={() => setIsZoneModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
             <form onSubmit={handleSaveZone} className="space-y-3.5 text-xs">
               <div>
-                <label htmlFor="trust-zone-name" className="block font-semibold text-slate-700 mb-1">Názov zóny *</label>
+                <label htmlFor="trust-zone-name" className="block font-semibold text-slate-700 mb-1">{t("Názov zóny *", "Zone name *")}</label>
                 <input
                   id="trust-zone-name"
                   type="text"
@@ -1932,12 +1940,12 @@ export function ArchitectureModel() {
                   maxLength={80}
                   value={newZoneName}
                   onChange={event => setNewZoneName(event.target.value)}
-                  placeholder="napr. Verejný internet"
+                  placeholder={t("napr. Verejný internet", "e.g. Public internet")}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label htmlFor="trust-zone-color" className="block font-semibold text-slate-700 mb-1">Farba zóny</label>
+                <label htmlFor="trust-zone-color" className="block font-semibold text-slate-700 mb-1">{t("Farba zóny", "Zone colour")}</label>
                 <select
                   id="trust-zone-color"
                   value={newZoneColor}
@@ -1950,14 +1958,14 @@ export function ArchitectureModel() {
                 </select>
               </div>
               <p className="text-[11px] text-slate-500">
-                Zónu môžete presúvať potiahnutím jej názvu a meniť jej veľkosť potiahnutím pravého dolného rohu. Komponenty zostávajú v priradenej zóne.
+                {t("Zónu môžete presúvať potiahnutím jej názvu a meniť jej veľkosť potiahnutím pravého dolného rohu. Komponenty zostávajú v priradenej zóne.", "Drag the zone title to move it and the bottom-right corner to resize it. Components remain in their assigned zone.")}
               </p>
               <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
                 <button type="button" onClick={() => setIsZoneModalOpen(false)} className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium">
-                  Zrušiť
+                  {t("Zrušiť", "Cancel")}
                 </button>
                 <button type="submit" className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-xs">
-                  {editingZoneId ? "Uložiť zmeny" : "Vytvoriť zónu"}
+                  {editingZoneId ? t("Uložiť zmeny", "Save changes") : t("Vytvoriť zónu", "Create zone")}
                 </button>
               </div>
             </form>
@@ -1970,43 +1978,43 @@ export function ArchitectureModel() {
           <div role="dialog" aria-modal="true" aria-labelledby="component-modal-title" className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-md p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 id="component-modal-title" className="font-bold text-slate-800 text-sm">
-                {editingCompId ? "Upraviť architektonický komponent" : "Pridať nový architektonický komponent"}
+                {editingCompId ? t("Upraviť architektonický komponent", "Edit architecture component") : t("Pridať nový architektonický komponent", "Add architecture component")}
               </h3>
-              <button type="button" aria-label="Zavrieť formulár komponentu" onClick={() => setIsComponentModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <button type="button" aria-label={t("Zavrieť formulár komponentu", "Close component form")} onClick={() => setIsComponentModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleSaveComponent} className="space-y-3.5 text-xs">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Názov komponentu *</label>
+                <label className="block font-semibold text-slate-700 mb-1">{t("Názov komponentu *", "Component name *")}</label>
                 <input
                   type="text"
                   required
                   value={newCompName}
                   onChange={e => setNewCompName(e.target.value)}
-                  placeholder="napr. Customer Order Service"
+                  placeholder={t("napr. Customer Order Service", "e.g. Customer Order Service")}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Typ komponentu</label>
+                <label className="block font-semibold text-slate-700 mb-1">{t("Typ komponentu", "Component type")}</label>
                 <select
                   value={newCompType}
                   onChange={e => setNewCompType(e.target.value as any)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
-                  <option value="service">Interná služba / API (Microservice)</option>
-                  <option value="client">Webový alebo mobilný klient (Frontend)</option>
+                  <option value="service">{t("Interná služba / API (Microservice)", "Internal service / API (Microservice)")}</option>
+                  <option value="client">{t("Webový alebo mobilný klient (Frontend)", "Web or mobile client (Frontend)")}</option>
                   <option value="api_gateway">API Gateway / WAF / Reverse Proxy</option>
-                  <option value="database">Databáza / Úložisko dát</option>
-                  <option value="external">Externá služba 3. strany</option>
+                  <option value="database">{t("Databáza / Úložisko dát", "Database / Data storage")}</option>
+                  <option value="external">{t("Externá služba 3. strany", "External third-party service")}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Zóna dôvery (Trust Boundary)</label>
+                <label className="block font-semibold text-slate-700 mb-1">{t("Zóna dôvery (Trust Boundary)", "Trust zone (Trust Boundary)")}</label>
                 <select
                   value={newCompZone}
                   onChange={e => setNewCompZone(e.target.value)}
@@ -2019,26 +2027,26 @@ export function ArchitectureModel() {
               </div>
 
               <div>
-                <label htmlFor="component-tech" className="block font-semibold text-slate-700 mb-1">Technologický stack</label>
+                <label htmlFor="component-tech" className="block font-semibold text-slate-700 mb-1">{t("Technologický stack", "Technology stack")}</label>
                 <select
                   id="component-tech"
                   value={newCompTech}
                   onChange={e => setNewCompTech(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:ring-1 focus:ring-blue-500 focus:outline-none"
                 >
-                  <option value="">Vyberte technológiu</option>
+                  <option value="">{t("Vyberte technológiu", "Select technology")}</option>
                   {TECHNOLOGY_STACK_OPTIONS.map(technology => (
-                    <option key={technology} value={technology}>{technology}</option>
+                    <option key={technology} value={technology}>{technology === "Všeobecná služba" ? t("Všeobecná služba", "General service") : technology}</option>
                   ))}
-                  <option value={CUSTOM_TECH_STACK}>Iný / vlastný stack</option>
+                  <option value={CUSTOM_TECH_STACK}>{t("Iný / vlastný stack", "Other / custom stack")}</option>
                 </select>
-                <p className="mt-1 text-[11px] text-slate-500">V roletke môžete písať písmená a rýchlo skočiť na zodpovedajúcu technológiu.</p>
+                <p className="mt-1 text-[11px] text-slate-500">{t("V roletke môžete písať písmená a rýchlo skočiť na zodpovedajúcu technológiu.", "Type letters in the dropdown to jump to a matching technology.")}</p>
                 {newCompTech === CUSTOM_TECH_STACK && (
                   <input
                     type="text"
                     value={newCompCustomTech}
                     onChange={e => setNewCompCustomTech(e.target.value)}
-                    placeholder="Zadajte vlastný technologický stack"
+                    placeholder={t("Zadajte vlastný technologický stack", "Enter a custom technology stack")}
                     className="mt-2 w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:ring-1 focus:ring-blue-500 focus:outline-none"
                   />
                 )}
@@ -2050,13 +2058,13 @@ export function ArchitectureModel() {
                   onClick={() => setIsComponentModalOpen(false)}
                   className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium"
                 >
-                  Zrušiť
+                  {t("Zrušiť", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-xs"
                 >
-                  {editingCompId ? "Uložiť zmeny" : "Pridať komponent"}
+                  {editingCompId ? t("Uložiť zmeny", "Save changes") : t("Pridať komponent", "Add component")}
                 </button>
               </div>
             </form>
@@ -2069,8 +2077,8 @@ export function ArchitectureModel() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
           <div role="dialog" aria-modal="true" aria-labelledby="flow-modal-title" className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[90vh] overflow-y-auto p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 id="flow-modal-title" className="font-bold text-slate-800 text-sm">{editingFlowId ? "Upraviť tok dát" : "Pridať tok dát (Data Flow)"}</h3>
-              <button type="button" aria-label="Zavrieť formulár toku" onClick={() => setIsAddFlowOpen(false)} className="text-slate-400 hover:text-slate-600">
+              <h3 id="flow-modal-title" className="font-bold text-slate-800 text-sm">{editingFlowId ? t("Upraviť tok dát", "Edit data flow") : t("Pridať tok dát (Data Flow)", "Add data flow")}</h3>
+              <button type="button" aria-label={t("Zavrieť formulár toku", "Close flow form")} onClick={() => setIsAddFlowOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
@@ -2078,7 +2086,7 @@ export function ArchitectureModel() {
             <form onSubmit={handleAddFlow} className="space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Odkiaľ (Zdroj)</label>
+                  <label className="block font-semibold text-slate-700 mb-1">{t("Odkiaľ (Zdroj)", "From (Source)")}</label>
                   <select
                     value={newFlowFrom}
                     onChange={e => setNewFlowFrom(e.target.value)}
@@ -2091,7 +2099,7 @@ export function ArchitectureModel() {
                 </div>
 
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">Kam (Cieľ)</label>
+                  <label className="block font-semibold text-slate-700 mb-1">{t("Kam (Cieľ)", "To (Destination)")}</label>
                   <select
                     value={newFlowTo}
                     onChange={e => setNewFlowTo(e.target.value)}
@@ -2105,7 +2113,7 @@ export function ArchitectureModel() {
               </div>
 
               <div>
-                <label htmlFor="flow-protocol" className="block font-semibold text-slate-700 mb-1">Protokol / spôsob komunikácie</label>
+                <label htmlFor="flow-protocol" className="block font-semibold text-slate-700 mb-1">{t("Protokol / spôsob komunikácie", "Protocol / communication method")}</label>
                 <select
                   id="flow-protocol"
                   required
@@ -2113,20 +2121,20 @@ export function ArchitectureModel() {
                   onChange={e => setNewFlowProtocol(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
                 >
-                  <option value="">Vyberte protokol alebo spôsob komunikácie</option>
+                  <option value="">{t("Vyberte protokol alebo spôsob komunikácie", "Select a protocol or communication method")}</option>
                   {FLOW_PROTOCOL_OPTIONS.map(protocol => (
                     <option key={protocol} value={protocol}>{protocol}</option>
                   ))}
-                  <option value={CUSTOM_FLOW_PROTOCOL}>Iný / vlastný protokol</option>
+                  <option value={CUSTOM_FLOW_PROTOCOL}>{t("Iný / vlastný protokol", "Other / custom protocol")}</option>
                 </select>
-                <p className="mt-1 text-[11px] text-slate-500">V roletke môžete písať písmená a rýchlo skočiť na zodpovedajúci protokol.</p>
+                <p className="mt-1 text-[11px] text-slate-500">{t("V roletke môžete písať písmená a rýchlo skočiť na zodpovedajúci protokol.", "Type letters in the dropdown to jump to a matching protocol.")}</p>
                 {newFlowProtocol === CUSTOM_FLOW_PROTOCOL && (
                   <input
                     type="text"
                     required
                     value={newFlowCustomProtocol}
                     onChange={e => setNewFlowCustomProtocol(e.target.value)}
-                    placeholder="Zadajte vlastný protokol alebo spôsob komunikácie"
+                    placeholder={t("Zadajte vlastný protokol alebo spôsob komunikácie", "Enter a custom protocol or communication method")}
                     className="mt-2 w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none"
                   />
                 )}
@@ -2142,7 +2150,7 @@ export function ArchitectureModel() {
                       onChange={e => setNewFlowCipherSuite(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
                     >
-                      <option value="">Nezistené / neurčené</option>
+                      <option value="">{t("Nezistené / neurčené", "Unknown / unspecified")}</option>
                       {NIST_CIPHER_SUITES.map(cipherSuite => (
                         <option key={cipherSuite} value={cipherSuite}>{cipherSuite}</option>
                       ))}
@@ -2150,74 +2158,74 @@ export function ArchitectureModel() {
                   </div>
 
                   <div>
-                    <label htmlFor="flow-key-exchange" className="block font-semibold text-slate-700 mb-1">Výmena kľúčov / KEM (PQC)</label>
+                    <label htmlFor="flow-key-exchange" className="block font-semibold text-slate-700 mb-1">{t("Výmena kľúčov / KEM (PQC)", "Key exchange / KEM (PQC)")}</label>
                     <select
                       id="flow-key-exchange"
                       value={newFlowKeyExchange}
                       onChange={e => setNewFlowKeyExchange(e.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
                     >
-                      <option value="">Nezistené / neurčené</option>
+                      <option value="">{t("Nezistené / neurčené", "Unknown / unspecified")}</option>
                       {NIST_KEY_EXCHANGE_OPTIONS.map(keyExchange => (
                         <option key={keyExchange} value={keyExchange}>{keyExchange}</option>
                       ))}
                     </select>
                   </div>
                   <p className="text-[11px] text-slate-500">
-                    Cipher suite neurčuje výmenu kľúčov. ML-KEM je samostatný NIST KEM; jeho použitie v TLS závisí od podpory TLS endpointu.
+                    {t("Cipher suite neurčuje výmenu kľúčov. ML-KEM je samostatný NIST KEM; jeho použitie v TLS závisí od podpory TLS endpointu.", "The cipher suite does not determine key exchange. ML-KEM is a separate NIST KEM; its use in TLS depends on endpoint support.")}
                   </p>
                   <p className="text-[11px] text-slate-600">
-                    Stav PQC návrhu: <strong>{getPqcDesignStatusLabel(getPqcDesignStatus(newFlowKeyExchange))}</strong>
+                    {t("Stav PQC návrhu:", "PQC design status:")} <strong>{getPqcDesignStatusLabel(getPqcDesignStatus(newFlowKeyExchange), language)}</strong>
                   </p>
                 </>
               )}
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Typ prenosu</label>
+                <label className="block font-semibold text-slate-700 mb-1">{t("Typ prenosu", "Transfer type")}</label>
                 <select
                   value={newFlowTransferType}
                   onChange={e => setNewFlowTransferType(e.target.value as DataFlow["transferType"])}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
                 >
-                  <option value="Synchronous">Synchrónny (request / response)</option>
-                  <option value="Asynchronous">Asynchrónny (fronta / udalosť)</option>
+                  <option value="Synchronous">{t("Synchrónny (request / response)", "Synchronous (request / response)")}</option>
+                  <option value="Asynchronous">{t("Asynchrónny (fronta / udalosť)", "Asynchronous (queue / event)")}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Popis prenášaných údajov</label>
+                <label className="block font-semibold text-slate-700 mb-1">{t("Popis prenášaných údajov", "Description of transferred data")}</label>
                 <textarea
                   value={newFlowDataDescription}
                   onChange={e => setNewFlowDataDescription(e.target.value)}
                   maxLength={500}
                   rows={2}
-                  placeholder="napr. prihlasovacie údaje, osobné údaje alebo platobné udalosti"
+                  placeholder={t("napr. prihlasovacie údaje, osobné údaje alebo platobné udalosti", "e.g. credentials, personal data or payment events")}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs focus:outline-none resize-y"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Klasifikácia prenášaných dát</label>
+                <label className="block font-semibold text-slate-700 mb-1">{t("Klasifikácia prenášaných dát", "Transferred data classification")}</label>
                 <select
                   value={newFlowClassification}
                   onChange={e => setNewFlowClassification(e.target.value as DataFlow["dataClassification"])}
                   className="w-full px-3 py-2 border border-slate-200 rounded-lg text-xs bg-white focus:outline-none"
                 >
-                  <option value="Public">Verejné (Public)</option>
-                  <option value="Internal">Interné (Internal)</option>
-                  <option value="Confidential">Dôverné (Confidential)</option>
-                  <option value="Restricted">Prísne tajné / Citlivé (Restricted)</option>
+                  <option value="Public">{t("Verejné (Public)", "Public")}</option>
+                  <option value="Internal">{t("Interné (Internal)", "Internal")}</option>
+                  <option value="Confidential">{t("Dôverné (Confidential)", "Confidential")}</option>
+                  <option value="Restricted">{t("Prísne tajné / Citlivé (Restricted)", "Restricted / Sensitive")}</option>
                 </select>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2.5 text-slate-700">
                   <input type="checkbox" checked={newFlowEncrypted} onChange={e => setNewFlowEncrypted(e.target.checked)} />
-                  <span>Šifrovaný prenos</span>
+                  <span>{t("Šifrovaný prenos", "Encrypted transfer")}</span>
                 </label>
                 <label className="flex items-center gap-2 rounded-lg border border-slate-200 p-2.5 text-slate-700">
                   <input type="checkbox" checked={newFlowAuthenticated} onChange={e => setNewFlowAuthenticated(e.target.checked)} />
-                  <span>Autentifikovaný odosielateľ</span>
+                  <span>{t("Autentifikovaný odosielateľ", "Authenticated sender")}</span>
                 </label>
               </div>
 
@@ -2227,13 +2235,13 @@ export function ArchitectureModel() {
                   onClick={() => setIsAddFlowOpen(false)}
                   className="px-3 py-1.5 border border-slate-200 text-slate-600 rounded-lg hover:bg-slate-50 font-medium"
                 >
-                  Zrušiť
+                  {t("Zrušiť", "Cancel")}
                 </button>
                 <button
                   type="submit"
                   className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold shadow-xs"
                 >
-                  {editingFlowId ? "Uložiť zmeny" : "Vytvoriť tok"}
+                  {editingFlowId ? t("Uložiť zmeny", "Save changes") : t("Vytvoriť tok", "Create flow")}
                 </button>
               </div>
             </form>

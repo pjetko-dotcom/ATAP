@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Lightbulb, CheckCircle2, Search, ExternalLink, HelpCircle } from "lucide-react";
 import { getVerificationGuide, VerificationGuide } from "../utils/verificationGuide";
+import { useLanguage } from "../context/LanguageContext";
 
 interface VerificationHintTooltipProps {
   req: {
@@ -13,8 +14,9 @@ interface VerificationHintTooltipProps {
 }
 
 export function VerificationHintTooltip({ req, children }: VerificationHintTooltipProps) {
+  const { language, t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
-  const guide: VerificationGuide = getVerificationGuide(req);
+  const guide: VerificationGuide = getVerificationGuide(req, language);
 
   return (
     <div 
@@ -27,10 +29,10 @@ export function VerificationHintTooltip({ req, children }: VerificationHintToolt
           type="button"
           onClick={(e) => { e.stopPropagation(); setIsOpen(!isOpen); }}
           className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded transition-colors cursor-pointer ml-2 shrink-0"
-          title="Zobraziť pomôcku na overenie požiadavky"
+          title={t("Zobraziť pomôcku na overenie požiadavky", "Show requirement verification guidance")}
         >
           <Lightbulb size={12} className="text-amber-500 fill-amber-400" />
-          <span>Pomôcka k overeniu</span>
+          <span>{t("Pomôcka k overeniu", "Verification guidance")}</span>
         </button>
       )}
 
@@ -46,7 +48,7 @@ export function VerificationHintTooltip({ req, children }: VerificationHintToolt
                 <Lightbulb size={15} />
               </span>
               <div>
-                <h4 className="text-xs font-bold text-slate-800">Ako overiť požiadavku {req.id}?</h4>
+                <h4 className="text-xs font-bold text-slate-800">{t(`Ako overiť požiadavku ${req.id}?`, `How to verify requirement ${req.id}?`)}</h4>
                 <p className="text-[10px] text-amber-700 font-medium">{guide.method}</p>
               </div>
             </div>
@@ -67,7 +69,7 @@ export function VerificationHintTooltip({ req, children }: VerificationHintToolt
           <div className="mb-3">
             <h5 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
               <Search size={12} className="text-blue-500" />
-              Čo kontrolovať v kóde / konfigurácii:
+              {t("Čo kontrolovať v kóde / konfigurácii:", "What to inspect in code / configuration:")}
             </h5>
             <ul className="space-y-1">
               {guide.whatToInspect.map((step, idx) => (
@@ -83,7 +85,7 @@ export function VerificationHintTooltip({ req, children }: VerificationHintToolt
           <div className="mb-2">
             <h5 className="text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1 flex items-center gap-1">
               <CheckCircle2 size={12} className="text-green-600" />
-              Príklad overenia / testu:
+              {t("Príklad overenia / testu:", "Example verification / test:")}
             </h5>
             <p className="text-xs text-slate-600 bg-slate-50 p-2 rounded border border-slate-100 leading-relaxed">
               {guide.exampleTest}
@@ -93,7 +95,7 @@ export function VerificationHintTooltip({ req, children }: VerificationHintToolt
           {/* Footer Reference */}
           {guide.owaspReference && (
             <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400">
-              <span>Referencia: {guide.owaspReference}</span>
+              <span>{t("Referencia:", "Reference:")} {guide.owaspReference}</span>
               <ExternalLink size={10} className="text-slate-400" />
             </div>
           )}

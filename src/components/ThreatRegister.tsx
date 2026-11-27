@@ -23,6 +23,21 @@ import {
   type ThreatStatus
 } from "../utils/threatModel";
 import { safeSetItem, writeJson } from "../utils/storage";
+import { useLanguage } from "../context/LanguageContext";
+import type { ReportLanguage } from "../utils/reportLanguage";
+
+const slovakThreatLabels: Record<string, string> = {
+  "Open": "Otvorená", "Mitigated": "Zmiernená", "Remediated": "Odstránená", "Accepted": "Akceptovaná",
+  "Very Low": "Veľmi nízke", "Low": "Nízke", "Medium": "Stredné", "High": "Vysoké", "Critical": "Kritické",
+  "Minor": "Malý", "Moderate": "Stredný", "Major": "Významný",
+  "Frequently": "Často", "Probably": "Pravdepodobne", "Unlikely": "Nepravdepodobne", "Exceptionally": "Výnimočne",
+  "Spoofing": "Podvrhnutie identity", "Tampering": "Manipulácia", "Repudiation": "Popretie",
+  "Information Disclosure": "Prezradenie informácií", "Denial of Service": "Odmietnutie služby", "Elevation of Privilege": "Zvýšenie oprávnení",
+};
+
+function threatLabel(value: string, language: ReportLanguage): string {
+  return language === "sk" ? slovakThreatLabels[value] || value : value;
+}
 
 function getThreatAsvsReferences(threat: Threat): string[] {
   const references = threat.asvsRefs || (threat.mitigation.match(/V\d+(?:\.\d+)*/g) || []);
@@ -53,6 +68,7 @@ const RISK_CELL_STYLES: Record<RiskLevel, string> = {
 };
 
 function RiskMatrix({ threats }: { threats: Threat[] }) {
+  const { language, t } = useLanguage();
   const levels: LikelihoodLevel[] = ["Frequently", "Probably", "Unlikely", "Exceptionally"];
   const impacts: ImpactLevel[] = ["Minor", "Moderate", "Major", "Critical"];
 
@@ -62,14 +78,14 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
         {/* Y Axis Label */}
         <div className="flex flex-col items-center justify-center w-6 mr-1">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider -rotate-90 whitespace-nowrap">
-            Likelihood
+            {t("Pravdepodobnosť", "Likelihood")}
           </span>
         </div>
         <div className="flex flex-col justify-between items-end py-2 pr-2 text-[10px] font-bold text-slate-400">
-          <span>Freq</span>
-          <span>Prob</span>
-          <span>Unlk</span>
-          <span>Excp</span>
+          <span>{t("Často", "Freq")}</span>
+          <span>{t("Pravd.", "Prob")}</span>
+          <span>{t("Nepravd.", "Unlk")}</span>
+          <span>{t("Výn.", "Excp")}</span>
         </div>
         
         {/* Matrix Grid */}
@@ -86,7 +102,7 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
                     <div 
                       key={`${likelihood}-${impact}`}
                       className={`w-9 h-9 md:w-11 md:h-11 flex flex-col items-center justify-center rounded transition-all cursor-help ${RISK_CELL_STYLES[riskLevel]} ${count > 0 ? 'ring-2 ring-slate-900/30 shadow-md font-extrabold scale-105 z-10' : 'opacity-60 hover:opacity-100'}`}
-                      title={`Likelihood: ${likelihood}\nImpact: ${impact}\nRisk: ${riskLevel}\n${count} Open Threats`}
+                      title={`${t("Pravdepodobnosť", "Likelihood")}: ${threatLabel(likelihood, language)}\n${t("Dopad", "Impact")}: ${threatLabel(impact, language)}\n${t("Riziko", "Risk")}: ${threatLabel(riskLevel, language)}\n${count} ${t("otvorených hrozieb", "Open Threats")}`}
                     >
                       <span className="text-xs">{count > 0 ? count : ""}</span>
                     </div>
@@ -97,13 +113,13 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
           </div>
           {/* X Axis Label */}
           <div className="flex justify-between items-center pt-3 text-[10px] font-bold text-slate-400">
-            <span>Minor</span>
-            <span>Mod</span>
-            <span>Maj</span>
-            <span>Crit</span>
+            <span>{t("Malý", "Minor")}</span>
+            <span>{t("Str.", "Mod")}</span>
+            <span>{t("Význ.", "Maj")}</span>
+            <span>{t("Krit.", "Crit")}</span>
           </div>
           <div className="text-center pt-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-            Business Impact
+            {t("Obchodný dopad", "Business Impact")}
           </div>
         </div>
       </div>
@@ -112,6 +128,7 @@ function RiskMatrix({ threats }: { threats: Threat[] }) {
 }
 
 function EvaluationCriteriaGuide() {
+  const { language, t } = useLanguage();
   const [activeTab, setActiveTab] = useState<"impact" | "likelihood">("impact");
   const [expandedCriteria, setExpandedCriteria] = useState<string | null>("Critical");
 
@@ -124,14 +141,14 @@ function EvaluationCriteriaGuide() {
       grade: "Critical",
       color: "border-red-200 bg-red-50 text-red-900",
       pill: "bg-red-500 text-white",
-      quant: "Exceeds 100 mil. EUR",
-      qual: "The consequences of the risk may jeopardize the existence of the institution and consequently affect the entire group.",
-      reputational: "Permanent negative media reports (including social media) for more than 20 days and/or dramatic reduction of counterpart confidence.",
+      quant: t("Viac ako 100 mil. EUR", "Exceeds 100 mil. EUR"),
+      qual: t("Následky rizika môžu ohroziť existenciu inštitúcie a následne ovplyvniť celú skupinu.", "The consequences of the risk may jeopardize the existence of the institution and consequently affect the entire group."),
+      reputational: t("Trvalé negatívne mediálne správy vrátane sociálnych médií viac ako 20 dní a/alebo dramatický pokles dôvery protistrán.", "Permanent negative media reports (including social media) for more than 20 days and/or dramatic reduction of counterpart confidence."),
       compliance: [
-        "Potential withdrawal of a license as a regular sanction",
-        "Criminal sanctions against companies / employees with an international dimension",
-        "Massive loss of client confidence",
-        "Recurrence factor: Standard would be high risk, but since the entity had a similar problem in the past, the impact is elevated to Critical."
+        t("Možné odobratie licencie ako bežná sankcia", "Potential withdrawal of a license as a regular sanction"),
+        t("Trestné sankcie voči spoločnostiam alebo zamestnancom s medzinárodným dosahom", "Criminal sanctions against companies / employees with an international dimension"),
+        t("Masívna strata dôvery klientov", "Massive loss of client confidence"),
+        t("Opakovaný výskyt: bežne by šlo o vysoké riziko, ale pre podobný problém v minulosti sa dopad zvyšuje na kritický.", "Recurrence factor: Standard would be high risk, but since the entity had a similar problem in the past, the impact is elevated to Critical.")
       ]
     },
     {
@@ -139,14 +156,14 @@ function EvaluationCriteriaGuide() {
       color: "border-orange-200 bg-orange-50 text-orange-900",
       pill: "bg-orange-400 text-slate-900",
       quant: "≥ 10 mil. EUR and < 100 mil. EUR",
-      qual: "The consequences of the risk may jeopardize the achievement of the objectives of the entire institution.",
-      reputational: "Permanent negative media reports (including social media) for more than 7 days and/or significant decrease in counterpart trust.",
+      qual: t("Následky rizika môžu ohroziť dosiahnutie cieľov celej inštitúcie.", "The consequences of the risk may jeopardize the achievement of the objectives of the entire institution."),
+      reputational: t("Trvalé negatívne mediálne správy vrátane sociálnych médií viac ako 7 dní a/alebo významný pokles dôvery protistrán.", "Permanent negative media reports (including social media) for more than 7 days and/or significant decrease in counterpart trust."),
       compliance: [
-        "Infringement of the law with criminal sanctions",
-        "Criminal offense of a company or manager / employee",
-        "Possible limitation of the bank license",
-        "High fine on the controller side",
-        "Loss of client confidence on a large scale"
+        t("Porušenie zákona s trestnými sankciami", "Infringement of the law with criminal sanctions"),
+        t("Trestný čin spoločnosti, manažéra alebo zamestnanca", "Criminal offense of a company or manager / employee"),
+        t("Možné obmedzenie bankovej licencie", "Possible limitation of the bank license"),
+        t("Vysoká pokuta na strane prevádzkovateľa", "High fine on the controller side"),
+        t("Rozsiahla strata dôvery klientov", "Loss of client confidence on a large scale")
       ]
     },
     {
@@ -154,26 +171,26 @@ function EvaluationCriteriaGuide() {
       color: "border-yellow-200 bg-yellow-50 text-yellow-900",
       pill: "bg-yellow-300 text-yellow-900",
       quant: "≥ 1 mil. EUR and < 10 mil. EUR",
-      qual: "The consequences of the risk may jeopardize the achievement of the objectives of the process. This may result in financial or reputational impact relevant to the process.",
-      reputational: "Permanent negative media reports (including social media) for more than 2 days and/or slightly reducing counterpart confidence.",
+      qual: t("Následky rizika môžu ohroziť dosiahnutie cieľov procesu a viesť k finančnému alebo reputačnému dopadu na proces.", "The consequences of the risk may jeopardize the achievement of the objectives of the process. This may result in financial or reputational impact relevant to the process."),
+      reputational: t("Trvalé negatívne mediálne správy vrátane sociálnych médií viac ako 2 dni a/alebo mierny pokles dôvery protistrán.", "Permanent negative media reports (including social media) for more than 2 days and/or slightly reducing counterpart confidence."),
       compliance: [
-        "Infringement of the Civil Penalty Act",
-        "The threat of withdrawal of a bank license is only potential",
-        "The regulator's penalties correspond to a qualitative financial impact",
-        "Loss of low-trust clients"
+        t("Porušenie zákona s občianskoprávnou sankciou", "Infringement of the Civil Penalty Act"),
+        t("Hrozba odobratia bankovej licencie je iba potenciálna", "The threat of withdrawal of a bank license is only potential"),
+        t("Sankcie regulátora zodpovedajú kvalitatívnemu finančnému dopadu", "The regulator's penalties correspond to a qualitative financial impact"),
+        t("Strata klientov s nízkou dôverou", "Loss of low-trust clients")
       ]
     },
     {
       grade: "Minor",
       color: "border-green-200 bg-green-50 text-green-900",
       pill: "bg-green-200 text-green-900",
-      quant: "Less than 1 mil. EUR",
-      qual: "The consequences of the risk may jeopardize the achievement of the objectives of the process. The financial or reputational impact is manageable.",
-      reputational: "Permanent negative media reports (including social media) for less than 2 days and/or minimal decrease of counterpart trust.",
+      quant: t("Menej ako 1 mil. EUR", "Less than 1 mil. EUR"),
+      qual: t("Následky rizika môžu ohroziť dosiahnutie cieľov procesu. Finančný alebo reputačný dopad je zvládnuteľný.", "The consequences of the risk may jeopardize the achievement of the objectives of the process. The financial or reputational impact is manageable."),
+      reputational: t("Trvalé negatívne mediálne správy vrátane sociálnych médií menej ako 2 dni a/alebo minimálny pokles dôvery protistrán.", "Permanent negative media reports (including social media) for less than 2 days and/or minimal decrease of counterpart trust."),
       compliance: [
-        "Standard requirements are not strictly adhered to, but standard practice is applied and tolerated by the regulator.",
-        "The regulator's penalties correspond to a qualitative financial impact",
-        "No impact on client trust"
+        t("Štandardné požiadavky nie sú striktne dodržané, ale používa sa bežná prax tolerovaná regulátorom.", "Standard requirements are not strictly adhered to, but standard practice is applied and tolerated by the regulator."),
+        t("Sankcie regulátora zodpovedajú kvalitatívnemu finančnému dopadu", "The regulator's penalties correspond to a qualitative financial impact"),
+        t("Bez dopadu na dôveru klientov", "No impact on client trust")
       ]
     }
   ];
@@ -183,50 +200,50 @@ function EvaluationCriteriaGuide() {
       grade: "Frequently",
       color: "border-red-200 bg-red-50 text-red-900",
       pill: "bg-red-500 text-white",
-      freq: "> 0.5 expected frequency / year",
-      desc: "It may occur more than once every 2 years. Probability of occurrence for 1 year is greater than 50%."
+      freq: t("> 0,5 očakávaná frekvencia / rok", "> 0.5 expected frequency / year"),
+      desc: t("Môže nastať viac než raz za 2 roky. Pravdepodobnosť výskytu za rok je viac ako 50 %.", "It may occur more than once every 2 years. Probability of occurrence for 1 year is greater than 50%.")
     },
     {
       grade: "Probably",
       color: "border-orange-200 bg-orange-50 text-orange-900",
       pill: "bg-orange-400 text-slate-900",
-      freq: "Between 0.2 and 0.5 expected frequency / year",
-      desc: "It may occur once every 2 - 5 years. Probability of occurrence for 1 year is between 20% and 50%."
+      freq: t("Očakávaná frekvencia 0,2 až 0,5 / rok", "Between 0.2 and 0.5 expected frequency / year"),
+      desc: t("Môže nastať raz za 2 až 5 rokov. Pravdepodobnosť výskytu za rok je 20 až 50 %.", "It may occur once every 2 - 5 years. Probability of occurrence for 1 year is between 20% and 50%.")
     },
     {
       grade: "Unlikely",
       color: "border-yellow-200 bg-yellow-50 text-yellow-900",
       pill: "bg-yellow-300 text-yellow-900",
-      freq: "Between 0.04 and 0.2 expected frequency / year",
-      desc: "It may occur once every 5 - 25 years. Probability of occurrence in 1 year is between 4% and 20%."
+      freq: t("Očakávaná frekvencia 0,04 až 0,2 / rok", "Between 0.04 and 0.2 expected frequency / year"),
+      desc: t("Môže nastať raz za 5 až 25 rokov. Pravdepodobnosť výskytu za rok je 4 až 20 %.", "It may occur once every 5 - 25 years. Probability of occurrence in 1 year is between 4% and 20%.")
     },
     {
       grade: "Exceptionally",
       color: "border-green-200 bg-green-50 text-green-900",
       pill: "bg-green-200 text-green-900",
-      freq: "< 0.04 expected frequency / year",
-      desc: "It may occur less than once every 25 years. Probability of occurrence in 1 year is less than 4%."
+      freq: t("< 0,04 očakávaná frekvencia / rok", "< 0.04 expected frequency / year"),
+      desc: t("Môže nastať menej než raz za 25 rokov. Pravdepodobnosť výskytu za rok je menej ako 4 %.", "It may occur less than once every 25 years. Probability of occurrence in 1 year is less than 4%.")
     }
   ];
 
   return (
     <div className="flex flex-col h-full min-h-[240px]">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-100 pb-2 mb-3 gap-2 flex-shrink-0">
-        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">Evaluation Reference Manual</h3>
+        <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wider">{t("Referenčná príručka hodnotenia", "Evaluation Reference Manual")}</h3>
         <div className="flex bg-slate-100 p-0.5 rounded-lg border border-slate-200">
           <button
             type="button"
             onClick={() => { setActiveTab("impact"); setExpandedCriteria("Critical"); }}
             className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-colors cursor-pointer ${activeTab === "impact" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
           >
-            Impact
+            {t("Dopad", "Impact")}
           </button>
           <button
             type="button"
             onClick={() => { setActiveTab("likelihood"); setExpandedCriteria("Frequently"); }}
             className={`px-2.5 py-1 text-[11px] font-bold rounded-md transition-colors cursor-pointer ${activeTab === "likelihood" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-800"}`}
           >
-            Likelihood
+            {t("Pravdepodobnosť", "Likelihood")}
           </button>
         </div>
       </div>
@@ -244,7 +261,7 @@ function EvaluationCriteriaGuide() {
                 >
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${imp.pill}`}>
-                      {imp.grade}
+                      {threatLabel(imp.grade, language)}
                     </span>
                     <span className="text-[11px] font-bold text-slate-500">
                       {imp.quant}
@@ -256,15 +273,15 @@ function EvaluationCriteriaGuide() {
                 {isExpanded && (
                   <div className="px-3 pb-3 pt-1 border-t border-slate-200/50 space-y-2 text-[11px] bg-white/50">
                     <div>
-                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">Qualitative Financial Impact</span>
+                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">{t("Kvalitatívny finančný dopad", "Qualitative Financial Impact")}</span>
                       <p className="mt-0.5 text-slate-700 leading-relaxed font-medium">{imp.qual}</p>
                     </div>
                     <div>
-                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">Reputational Impact</span>
+                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">{t("Dopad na reputáciu", "Reputational Impact")}</span>
                       <p className="mt-0.5 text-slate-700 leading-relaxed font-medium">{imp.reputational}</p>
                     </div>
                     <div>
-                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">Impact on Compliance</span>
+                      <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">{t("Dopad na súlad", "Impact on Compliance")}</span>
                       <ul className="list-disc pl-4 mt-1 space-y-0.5 text-slate-700 font-medium">
                         {imp.compliance.map((item, i) => (
                           <li key={i} className="leading-relaxed">{item}</li>
@@ -288,7 +305,7 @@ function EvaluationCriteriaGuide() {
                 >
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-0.5 rounded text-[9px] uppercase font-bold tracking-wider ${lh.pill}`}>
-                      {lh.grade}
+                      {threatLabel(lh.grade, language)}
                     </span>
                     <span className="text-[11px] font-bold text-slate-500">
                       {lh.freq}
@@ -299,7 +316,7 @@ function EvaluationCriteriaGuide() {
                 
                 {isExpanded && (
                   <div className="px-3 pb-3 pt-1.5 border-t border-slate-200/50 text-[11px] bg-white/50 space-y-1">
-                    <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">Probability & Period</span>
+                    <span className="font-bold block text-[9px] uppercase text-slate-400 tracking-wider">{t("Pravdepodobnosť a obdobie", "Probability & Period")}</span>
                     <p className="text-slate-700 leading-relaxed font-medium">{lh.desc}</p>
                   </div>
                 )}
@@ -313,6 +330,7 @@ function EvaluationCriteriaGuide() {
 }
 
 export function ThreatRegister() {
+  const { language, t } = useLanguage();
   const { id: analysisId } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const requestedThreat = searchParams.get("search");
@@ -407,7 +425,7 @@ export function ThreatRegister() {
   });
 
   const handleDelete = (id: string) => {
-    if(confirm("Are you sure you want to delete this threat?")) {
+    if(confirm(t("Naozaj chcete odstrániť túto hrozbu?", "Are you sure you want to delete this threat?"))) {
       setThreats(threats.filter(t => t.id !== id));
     }
   };
@@ -490,8 +508,8 @@ export function ThreatRegister() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white px-5 py-3 rounded-xl border border-slate-200 shadow-sm mb-4 flex-shrink-0">
         <div className="flex flex-wrap items-center gap-2">
           <ShieldAlert className="text-blue-600" size={18} />
-          <h2 className="text-sm font-bold text-slate-800">Threat Landscape & Risk Matrix</h2>
-          <span className="text-xs text-slate-400 font-medium hidden md:inline-block">• {threatSummary.total} logged, {threatSummary.open} open</span>
+          <h2 className="text-sm font-bold text-slate-800">{t("Prehľad hrozieb a matica rizík", "Threat Landscape & Risk Matrix")}</h2>
+          <span className="text-xs text-slate-400 font-medium hidden md:inline-block">• {t(`${threatSummary.total} evidovaných, ${threatSummary.open} otvorených`, `${threatSummary.total} logged, ${threatSummary.open} open`)}</span>
         </div>
         <button
           onClick={() => {
@@ -504,12 +522,12 @@ export function ThreatRegister() {
           {isSummaryExpanded ? (
             <>
               <ChevronUp size={14} />
-              <span>Hide Dashboard & Matrix</span>
+              <span>{t("Skryť prehľad a maticu", "Hide Dashboard & Matrix")}</span>
             </>
           ) : (
             <>
               <ChevronDown size={14} />
-              <span>Show Dashboard & Matrix</span>
+              <span>{t("Zobraziť prehľad a maticu", "Show Dashboard & Matrix")}</span>
             </>
           )}
         </button>
@@ -528,7 +546,7 @@ export function ThreatRegister() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">{threatSummary.openHighOrCritical}</p>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Open High/Critical Risks</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500">{t("Otvorené vysoké/kritické riziká", "Open High/Critical Risks")}</p>
                 </div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -537,7 +555,7 @@ export function ThreatRegister() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">{threatSummary.open}</p>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Total Open Threats</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500">{t("Otvorené hrozby celkom", "Total Open Threats")}</p>
                 </div>
               </div>
               <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">
@@ -546,7 +564,7 @@ export function ThreatRegister() {
                 </div>
                 <div>
                   <p className="text-2xl font-bold text-slate-800">{threatSummary.mitigated}</p>
-                  <p className="text-xs font-semibold uppercase text-slate-500">Mitigated Threats</p>
+                  <p className="text-xs font-semibold uppercase text-slate-500">{t("Zmiernené hrozby", "Mitigated Threats")}</p>
                 </div>
               </div>
             </div>
@@ -573,7 +591,7 @@ export function ThreatRegister() {
               <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
               <input 
                 type="text" 
-                placeholder="Search threats by ID or title..." 
+                placeholder={t("Hľadať hrozby podľa ID alebo názvu...", "Search threats by ID or title...")}
                 className="w-full pl-9 pr-4 py-2 text-sm border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -586,11 +604,8 @@ export function ThreatRegister() {
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value as ThreatStatus | "All")}
               >
-                <option value="All">Status: All</option>
-                <option value="Open">Open</option>
-                <option value="Mitigated">Mitigated</option>
-                <option value="Remediated">Remediated</option>
-                <option value="Accepted">Accepted</option>
+                <option value="All">{t("Stav: všetky", "Status: All")}</option>
+                {(["Open", "Mitigated", "Remediated", "Accepted"] as const).map(status => <option key={status} value={status}>{threatLabel(status, language)}</option>)}
               </select>
             </div>
             <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
@@ -599,13 +614,8 @@ export function ThreatRegister() {
                 value={strideFilter}
                 onChange={(e) => setStrideFilter(e.target.value)}
               >
-                <option value="All">STRIDE: All</option>
-                <option value="Spoofing">Spoofing</option>
-                <option value="Tampering">Tampering</option>
-                <option value="Repudiation">Repudiation</option>
-                <option value="Information Disclosure">Information Disclosure</option>
-                <option value="Denial of Service">Denial of Service</option>
-                <option value="Elevation of Privilege">Elevation of Privilege</option>
+                <option value="All">{t("STRIDE: všetky", "STRIDE: All")}</option>
+                {["Spoofing", "Tampering", "Repudiation", "Information Disclosure", "Denial of Service", "Elevation of Privilege"].map(category => <option key={category} value={category}>{threatLabel(category, language)}</option>)}
               </select>
             </div>
             <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
@@ -614,12 +624,8 @@ export function ThreatRegister() {
                 value={riskFilter}
                 onChange={(e) => setRiskFilter(e.target.value as RiskLevel | "All")}
               >
-                <option value="All">Risk: All</option>
-                <option value="Critical">Critical</option>
-                <option value="High">High</option>
-                <option value="Medium">Medium</option>
-                <option value="Low">Low</option>
-                <option value="Very Low">Very Low</option>
+                <option value="All">{t("Riziko: všetky", "Risk: All")}</option>
+                {(["Critical", "High", "Medium", "Low", "Very Low"] as const).map(risk => <option key={risk} value={risk}>{threatLabel(risk, language)}</option>)}
               </select>
             </div>
             <label className="flex items-center gap-2 border-l border-slate-200 pl-3 text-xs font-medium text-slate-600">
@@ -628,13 +634,13 @@ export function ThreatRegister() {
                 checked={unreviewedOnly}
                 onChange={event => setUnreviewedOnly(event.target.checked)}
               />
-              Iba na kontrolu
+              {t("Iba na kontrolu", "Needs review only")}
             </label>
             {selectedThreatIds.length > 0 && (
               <button
                 type="button"
                 onClick={() => {
-                  if (!window.confirm(`Označiť ${selectedThreatIds.length} vybraných hrozieb ako skontrolované?`)) return;
+                  if (!window.confirm(t(`Označiť ${selectedThreatIds.length} vybraných hrozieb ako skontrolované?`, `Mark ${selectedThreatIds.length} selected threats reviewed?`))) return;
                   setThreats(current => current.map(threat =>
                     selectedThreatIds.includes(threat.id) ? { ...threat, architectureReviewed: true } : threat
                   ));
@@ -642,7 +648,7 @@ export function ThreatRegister() {
                 }}
                 className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
               >
-                Označiť {selectedThreatIds.length} ako skontrolované
+                {t(`Označiť ${selectedThreatIds.length} ako skontrolované`, `Mark ${selectedThreatIds.length} reviewed`)}
               </button>
             )}
           </div>
@@ -652,7 +658,7 @@ export function ThreatRegister() {
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700 transition-colors"
           >
             <Plus size={16} />
-            Add Threat
+            {t("Pridať hrozbu", "Add Threat")}
           </button>
         </div>
 
@@ -664,26 +670,26 @@ export function ThreatRegister() {
                 <th className="px-3 py-3 border-b border-slate-100 w-10">
                   <input
                     type="checkbox"
-                    aria-label="Vybrať všetky zobrazené hrozby"
+                    aria-label={t("Vybrať všetky zobrazené hrozby", "Select all visible threats")}
                     checked={filteredThreats.length > 0 && filteredThreats.every(threat => selectedThreatIds.includes(threat.id))}
                     onChange={event => setSelectedThreatIds(event.target.checked ? filteredThreats.map(threat => threat.id) : [])}
                   />
                 </th>
                 <th className="px-6 py-3 border-b border-slate-100 w-24">ID</th>
-                <th className="px-6 py-3 border-b border-slate-100 min-w-[250px]">Threat Details</th>
+                <th className="px-6 py-3 border-b border-slate-100 min-w-[250px]">{t("Detail hrozby", "Threat Details")}</th>
                 <th className="px-6 py-3 border-b border-slate-100 w-32">
                   <div className="flex items-center">
-                    STRIDE <HelpTooltip text="Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, or Elevation of Privilege." position="bottom" />
+                    STRIDE <HelpTooltip text={t("Podvrhnutie identity, manipulácia, popretie, prezradenie informácií, odmietnutie služby alebo zvýšenie oprávnení.", "Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, or Elevation of Privilege.")} position="bottom" />
                   </div>
                 </th>
                 <th className="px-6 py-3 border-b border-slate-100 w-32">
                   <div className="flex items-center">
-                    Risk Level <HelpTooltip text="Calculated based on Likelihood and Impact." position="bottom" />
+                    {t("Úroveň rizika", "Risk Level")} <HelpTooltip text={t("Vypočíta sa z pravdepodobnosti a dopadu.", "Calculated based on Likelihood and Impact.")} position="bottom" />
                   </div>
                 </th>
-                <th className="px-6 py-3 border-b border-slate-100 w-48">Mitigation (ASVS)</th>
-                <th className="px-6 py-3 border-b border-slate-100 w-32">Status</th>
-                <th className="px-6 py-3 border-b border-slate-100 w-20 text-right">Actions</th>
+                <th className="px-6 py-3 border-b border-slate-100 w-48">{t("Mitigácia (ASVS)", "Mitigation (ASVS)")}</th>
+                <th className="px-6 py-3 border-b border-slate-100 w-32">{t("Stav", "Status")}</th>
+                <th className="px-6 py-3 border-b border-slate-100 w-20 text-right">{t("Akcie", "Actions")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 text-sm">
@@ -692,7 +698,7 @@ export function ThreatRegister() {
                   <td className="px-3 py-4">
                     <input
                       type="checkbox"
-                      aria-label={`Vybrať hrozbu ${threat.id}`}
+                      aria-label={t(`Vybrať hrozbu ${threat.id}`, `Select threat ${threat.id}`)}
                       checked={selectedThreatIds.includes(threat.id)}
                       onChange={event => setSelectedThreatIds(current =>
                         event.target.checked ? [...current, threat.id] : current.filter(id => id !== threat.id)
@@ -704,24 +710,24 @@ export function ThreatRegister() {
                     <p className="font-bold text-slate-800">{threat.title}</p>
                     {threat.architectureFlowId && (
                       <div className="mt-1 flex flex-wrap items-center gap-1">
-                        <span title="Automaticky vytvorený návrh scenára podľa toku cez hranicu trust zón. Overte jeho relevantnosť." className="inline-block rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
-                          Architecture
+                        <span title={t("Automaticky vytvorený návrh scenára podľa toku cez hranicu trust zón. Overte jeho relevantnosť.", "Automatically generated scenario based on a cross-boundary flow. Verify its relevance.")} className="inline-block rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+                          {t("Architektúra", "Architecture")}
                         </span>
                         {threat.architectureCustomized && (
-                          <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">Upravené</span>
+                          <span className="rounded bg-violet-50 px-1.5 py-0.5 text-[10px] font-semibold text-violet-700">{t("Upravené", "Customized")}</span>
                         )}
                         {threat.architectureReviewed ? (
-                          <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">Skontrolované</span>
+                          <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">{t("Skontrolované", "Reviewed")}</span>
                         ) : (
                           <button
                             type="button"
                             onClick={() => setThreats(current => current.map(item =>
                               item.id === threat.id ? { ...item, architectureReviewed: true } : item
                             ))}
-                            title="Označiť STRIDE návrh ako skontrolovaný"
+                            title={t("Označiť STRIDE návrh ako skontrolovaný", "Mark STRIDE suggestion reviewed")}
                             className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-semibold text-amber-800 hover:bg-amber-100"
                           >
-                            Vyžaduje kontrolu · Označiť
+                            {t("Vyžaduje kontrolu · Označiť", "Needs review · Mark reviewed")}
                           </button>
                         )}
                       </div>
@@ -729,16 +735,16 @@ export function ThreatRegister() {
                     <p className="text-xs text-slate-500 mt-1 line-clamp-2">{threat.description}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="text-xs font-medium text-slate-600">{threat.stride}</span>
+                    <span className="text-xs font-medium text-slate-600">{threatLabel(threat.stride, language)}</span>
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full tracking-wide ${riskStyles[threat.risk]}`}>
-                      {threat.risk}
+                      {threatLabel(threat.risk, language)}
                     </span>
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-xs text-slate-600 font-mono truncate max-w-[180px]" title={threat.mitigation}>
-                      {threat.mitigation || "None assigned"}
+                      {threat.mitigation || t("Nepriradená", "None assigned")}
                     </p>
                     {(threat.componentIds?.length || threat.asvsRefs?.length) ? (
                       <div className="mt-1 flex flex-wrap gap-1">
@@ -751,7 +757,7 @@ export function ThreatRegister() {
                           <Link
                             key={reference}
                             to={`/analysis/${analysisId}/asvs?chapter=${asvsRequirements.find(requirement => requirement.id === reference)?.chapterId || 1}&search=${encodeURIComponent(reference)}`}
-                            title={`Otvoriť ASVS požiadavku ${reference}`}
+                            title={t(`Otvoriť ASVS požiadavku ${reference}`, `Open ASVS requirement ${reference}`)}
                             className="rounded bg-indigo-50 px-1.5 py-0.5 text-[10px] font-medium text-indigo-700 hover:bg-indigo-100"
                           >
                             {reference}
@@ -762,7 +768,7 @@ export function ThreatRegister() {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded border ${statusStyles[threat.status]}`}>
-                      {threat.status}
+                      {threatLabel(threat.status, language)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right">
@@ -781,8 +787,8 @@ export function ThreatRegister() {
                 <tr>
                   <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     <ShieldAlert size={48} className="mx-auto text-slate-300 mb-3" />
-                    <p className="text-sm font-medium">No threats found.</p>
-                    <p className="text-xs mt-1">Adjust your filters or add a new threat to get started.</p>
+                    <p className="text-sm font-medium">{t("Nenašli sa žiadne hrozby.", "No threats found.")}</p>
+                    <p className="text-xs mt-1">{t("Upravte filtre alebo pridajte novú hrozbu.", "Adjust your filters or add a new threat to get started.")}</p>
                   </td>
                 </tr>
               )}
@@ -797,7 +803,7 @@ export function ThreatRegister() {
           <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <h2 className="text-lg font-bold text-slate-800">
-                {editingThreat ? "Edit Threat" : "Log New Threat"}
+                {editingThreat ? t("Upraviť hrozbu", "Edit Threat") : t("Zaznamenať novú hrozbu", "Log New Threat")}
               </h2>
               <button 
                 onClick={() => setIsModalOpen(false)}
@@ -810,33 +816,33 @@ export function ThreatRegister() {
             <div className="p-6 overflow-y-auto flex-1">
               <form id="threat-form" onSubmit={handleSaveThreat} className="space-y-5">
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Threat Title</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Názov hrozby", "Threat Title")}</label>
                   <input 
                     name="title"
                     type="text" 
                     required
                     value={threatTitle}
                     onChange={event => setThreatTitle(event.target.value)}
-                    placeholder="e.g. SQL Injection in Login form" 
+                    placeholder={t("napr. SQL injection v prihlasovacom formulári", "e.g. SQL Injection in Login form")}
                     className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm"
                   />
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-semibold text-slate-700 mb-1">Description</label>
+                  <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Popis", "Description")}</label>
                   <textarea 
                     name="description"
                     required
                     value={threatDescription}
                     onChange={event => setThreatDescription(event.target.value)}
-                    placeholder="Describe how the threat is executed and its impact..." 
+                    placeholder={t("Opíšte realizáciu hrozby a jej dopad...", "Describe how the threat is executed and its impact...")}
                     className="w-full h-24 px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm resize-none"
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">STRIDE Category</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Kategória STRIDE", "STRIDE Category")}</label>
                     <select 
                       name="stride"
                       required
@@ -844,33 +850,25 @@ export function ThreatRegister() {
                       onChange={event => setThreatStride(event.target.value)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
-                      <option value="Spoofing">Spoofing</option>
-                      <option value="Tampering">Tampering</option>
-                      <option value="Repudiation">Repudiation</option>
-                      <option value="Information Disclosure">Information Disclosure</option>
-                      <option value="Denial of Service">Denial of Service</option>
-                      <option value="Elevation of Privilege">Elevation of Privilege</option>
+                      {["Spoofing", "Tampering", "Repudiation", "Information Disclosure", "Denial of Service", "Elevation of Privilege"].map(category => <option key={category} value={category}>{threatLabel(category, language)}</option>)}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Status</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Stav", "Status")}</label>
                     <select 
                       name="status"
                       required
                       defaultValue={editingThreat?.status || "Open"}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
-                      <option value="Open">Open</option>
-                      <option value="Mitigated">Mitigated</option>
-                      <option value="Remediated">Remediated</option>
-                      <option value="Accepted">Accepted</option>
+                      {(["Open", "Mitigated", "Remediated", "Accepted"] as const).map(status => <option key={status} value={status}>{threatLabel(status, language)}</option>)}
                     </select>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg border border-slate-100">
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Likelihood</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Pravdepodobnosť", "Likelihood")}</label>
                     <select 
                       name="likelihood"
                       required
@@ -878,14 +876,14 @@ export function ThreatRegister() {
                       onChange={event => setThreatLikelihood(event.target.value as LikelihoodLevel)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
-                      <option value="Exceptionally">Exceptionally (&lt; 0.04)</option>
-                      <option value="Unlikely">Unlikely (0.04 - 0.2)</option>
-                      <option value="Probably">Probably (0.2 - 0.5)</option>
-                      <option value="Frequently">Frequently (&gt; 0.5)</option>
+                      <option value="Exceptionally">{threatLabel("Exceptionally", language)} (&lt; 0.04)</option>
+                      <option value="Unlikely">{threatLabel("Unlikely", language)} (0.04 - 0.2)</option>
+                      <option value="Probably">{threatLabel("Probably", language)} (0.2 - 0.5)</option>
+                      <option value="Frequently">{threatLabel("Frequently", language)} (&gt; 0.5)</option>
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-semibold text-slate-700 mb-1">Business Impact</label>
+                    <label className="block text-sm font-semibold text-slate-700 mb-1">{t("Obchodný dopad", "Business Impact")}</label>
                     <select 
                       name="impact"
                       required
@@ -893,20 +891,20 @@ export function ThreatRegister() {
                       onChange={event => setThreatImpact(event.target.value as ImpactLevel)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
-                      <option value="Minor">Minor (&lt; 1M EUR)</option>
-                      <option value="Moderate">Moderate (1M - 10M EUR)</option>
-                      <option value="Major">Major (10M - 100M EUR)</option>
-                      <option value="Critical">Critical (&gt; 100M EUR)</option>
+                      <option value="Minor">{threatLabel("Minor", language)} (&lt; 1M EUR)</option>
+                      <option value="Moderate">{threatLabel("Moderate", language)} (1M - 10M EUR)</option>
+                      <option value="Major">{threatLabel("Major", language)} (10M - 100M EUR)</option>
+                      <option value="Critical">{threatLabel("Critical", language)} (&gt; 100M EUR)</option>
                     </select>
                   </div>
                   <div className="col-span-2">
                     <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2" role="status" aria-live="polite">
                       <div>
-                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Aktuálna úroveň rizika</p>
-                        <p className="mt-0.5 text-xs text-slate-600">Likelihood × Impact</p>
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">{t("Aktuálna úroveň rizika", "Current risk level")}</p>
+                        <p className="mt-0.5 text-xs text-slate-600">{t("Pravdepodobnosť × Dopad", "Likelihood × Impact")}</p>
                       </div>
                       <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${riskStyles[calculateRisk(threatLikelihood, threatImpact)]}`}>
-                        {calculateRisk(threatLikelihood, threatImpact)}
+                        {threatLabel(calculateRisk(threatLikelihood, threatImpact), language)}
                       </span>
                     </div>
                   </div>
@@ -914,20 +912,20 @@ export function ThreatRegister() {
 
                 <div>
                   <label className="mb-1 flex items-center text-sm font-semibold text-slate-700">
-                    Mitigation Plan / Notes
-                    <HelpTooltip text="Enter the planned remediation or notes in plain text. ASVS requirement links are managed separately below." position="right" />
+                    {t("Plán mitigácie / Poznámky", "Mitigation Plan / Notes")}
+                    <HelpTooltip text={t("Zadajte plánované opatrenie alebo poznámky ako text. Prepojenia na ASVS požiadavky sa spravujú samostatne nižšie.", "Enter the planned remediation or notes in plain text. ASVS requirement links are managed separately below.")} position="right" />
                   </label>
                   <input 
                     name="mitigation"
                     type="text" 
                     defaultValue={editingThreat?.mitigation}
-                    placeholder="e.g. Enforce MFA and rate-limit login attempts"
+                    placeholder={t("napr. Vynútiť MFA a obmedziť počet pokusov o prihlásenie", "e.g. Enforce MFA and rate-limit login attempts")}
                     className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm"
                   />
-                  <p className="mt-1 text-xs text-slate-500">ASVS controls are suggested and linked separately below.</p>
+                  <p className="mt-1 text-xs text-slate-500">{t("ASVS kontroly sa navrhujú a prepájajú samostatne nižšie.", "ASVS controls are suggested and linked separately below.")}</p>
                 </div>
                 <fieldset className="space-y-2">
-                  <legend className="text-sm font-semibold text-slate-700">Prepojené architektonické komponenty</legend>
+                  <legend className="text-sm font-semibold text-slate-700">{t("Prepojené architektonické komponenty", "Linked architecture components")}</legend>
                   {availableComponents.length ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 rounded-lg border border-slate-200 p-3">
                       {availableComponents.map(component => (
@@ -946,13 +944,13 @@ export function ThreatRegister() {
                       ))}
                     </div>
                   ) : (
-                    <p className="text-xs text-slate-500">Najprv pridajte komponenty v časti Architektúra.</p>
+                    <p className="text-xs text-slate-500">{t("Najprv pridajte komponenty v časti Architektúra.", "First add components in Architecture.")}</p>
                   )}
                 </fieldset>
                 <div>
                   <label htmlFor="threat-asvs-references" className="mb-1 flex items-center text-sm font-semibold text-slate-700">
-                    Prepojené ASVS požiadavky
-                    <HelpTooltip text="For a new threat, up to five ASVS controls are suggested from its STRIDE category, title and description. These are heuristic suggestions, not verified findings. Review and edit the IDs manually; editing existing links stops automatic replacement. Use “Pridať návrhy” to append suggestions without removing your links." position="top" />
+                    {t("Prepojené ASVS požiadavky", "Linked ASVS requirements")}
+                    <HelpTooltip text={t("Pre novú hrozbu sa navrhne až päť ASVS kontrol podľa kategórie STRIDE, názvu a popisu. Ide o heuristické návrhy, nie overené nálezy. ID skontrolujte a upravte ručne; úpravou sa zastaví automatická náhrada. Použite „Pridať návrhy“ na doplnenie bez odstránenia existujúcich prepojení.", "For a new threat, up to five ASVS controls are suggested from its STRIDE category, title and description. These are heuristic suggestions, not verified findings. Review and edit the IDs manually; editing existing links stops automatic replacement. Use “Add suggestions” to append suggestions without removing your links.")} position="top" />
                   </label>
                   <input
                     id="threat-asvs-references"
@@ -970,15 +968,15 @@ export function ThreatRegister() {
                   </datalist>
                   <p className="mt-1 text-xs text-slate-500">
                     {hasManualAsvsRefs
-                      ? "Prepojenia upravte ručne alebo pridajte automatické návrhy."
-                      : "Návrhy sa priebežne vyberajú podľa STRIDE kategórie, názvu a opisu hrozby. Môžete ich upraviť."}
+                      ? t("Prepojenia upravte ručne alebo pridajte automatické návrhy.", "Edit links manually or add automatic suggestions.")
+                      : t("Návrhy sa priebežne vyberajú podľa STRIDE kategórie, názvu a opisu hrozby. Môžete ich upraviť.", "Suggestions are updated from the STRIDE category, title and description. You can edit them.")}
                   </p>
-                  {invalidAsvsRefs.length > 0 && <p role="status" className="mt-1 text-xs text-amber-700">Neznáme ID sa neuložia: {invalidAsvsRefs.join(", ")}</p>}
+                  {invalidAsvsRefs.length > 0 && <p role="status" className="mt-1 text-xs text-amber-700">{t("Neznáme ID sa neuložia:", "Unknown IDs will not be saved:")} {invalidAsvsRefs.join(", ")}</p>}
                   {suggestedAsvsRequirements.length > 0 && (
                     <div className="mt-2 rounded-lg border border-blue-100 bg-blue-50/50 p-3">
                       <div className="flex items-center justify-between gap-2">
                         <p className="text-[11px] font-semibold text-slate-700">
-                          Automatické návrhy z ASVS{hasManualAsvsRefs ? " (možno pridať)" : " (automaticky vybrané)"}
+                          {t("Automatické návrhy z ASVS", "Automatic ASVS suggestions")}{hasManualAsvsRefs ? t(" (možno pridať)", " (can be added)") : t(" (automaticky vybrané)", " (automatically selected)")}
                         </p>
                         {hasManualAsvsRefs && (
                           <button
@@ -986,7 +984,7 @@ export function ThreatRegister() {
                             onClick={addSuggestedAsvsReferences}
                             className="text-[11px] font-semibold text-blue-700 hover:text-blue-900 underline cursor-pointer"
                           >
-                            Pridať návrhy
+                            {t("Pridať návrhy", "Add suggestions")}
                           </button>
                         )}
                       </div>
@@ -1011,14 +1009,14 @@ export function ThreatRegister() {
                 onClick={() => setIsModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors"
               >
-                Cancel
+                {t("Zrušiť", "Cancel")}
               </button>
               <button 
                 type="submit"
                 form="threat-form"
                 className="px-6 py-2 bg-blue-600 text-white text-sm font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors"
               >
-                {editingThreat ? "Save Changes" : "Log Threat"}
+                {editingThreat ? t("Uložiť zmeny", "Save Changes") : t("Zaznamenať hrozbu", "Log Threat")}
               </button>
             </div>
           </div>

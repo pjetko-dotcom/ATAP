@@ -24,6 +24,8 @@ import {
   getRequirementsForTriage
 } from "../data/asvsData";
 import { useDialogFocus } from "../hooks/useDialogFocus";
+import { useLanguage } from "../context/LanguageContext";
+import { englishTriageQuestions } from "../data/asvsTriageEnglish";
 
 interface ASVSTriageModalProps {
   isOpen: boolean;
@@ -49,6 +51,7 @@ export function ASVSTriageModal({
   onApplyLevel,
   analysisId,
 }: ASVSTriageModalProps) {
+  const { t, language } = useLanguage();
   const [searchQuery, setSearchQuery] = useState("");
   const [filterState, setFilterState] = useState<"all" | "unanswered" | "excluded" | "relevant">("all");
   const [expandedPreview, setExpandedPreview] = useState<string | null>(null);
@@ -66,7 +69,8 @@ export function ASVSTriageModal({
   // Total scoped-out requirements from triage
   const scopedOutReqCount = reqs.filter(r => r.triageReason).length;
 
-  const filteredQuestions = asvsTriageQuestions.filter(q => {
+  const questions = language === "en" ? englishTriageQuestions : asvsTriageQuestions;
+  const filteredQuestions = questions.filter(q => {
     const matchesSearch = 
       q.question.toLowerCase().includes(searchQuery.toLowerCase()) ||
       q.category.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -101,22 +105,22 @@ export function ASVSTriageModal({
             </div>
             <div>
               <h2 id="asvs-triage-title" className="text-base font-bold flex items-center gap-2">
-                ASVS 5.0 Triage & Scoping Sprievodca
+                {t("ASVS 5.0 Triage & Scoping Sprievodca", "ASVS 5.0 Triage & Scoping Guide")}
                 {scopedOutReqCount > 0 && (
                   <span className="text-xs font-normal px-2 py-0.5 bg-blue-500/30 text-blue-200 rounded-full border border-blue-400/30">
-                    {scopedOutReqCount} kontrol označených ako N/A
+                    {scopedOutReqCount} {t("kontrol označených ako N/A", "controls marked N/A")}
                   </span>
                 )}
               </h2>
               <p className="text-xs text-slate-300 mt-0.5">
-                Technologická triáž pre vylúčenie nepoužitých oblastí (V1–V17).
+                {t("Technologická triáž pre vylúčenie nepoužitých oblastí (V1–V17).", "Technology triage to exclude unused areas (V1–V17).")}
               </p>
             </div>
           </div>
           <button 
             onClick={onClose}
             type="button"
-            aria-label="Zavrieť ASVS triáž"
+            aria-label={t("Zavrieť ASVS triáž", "Close ASVS triage")}
             className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
           >
             <X size={20} />
@@ -130,15 +134,15 @@ export function ASVSTriageModal({
             <div className="flex items-center gap-2 flex-wrap text-xs">
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-white border border-slate-200 rounded-lg shadow-xs font-medium text-slate-600">
                 <span className="w-2 h-2 rounded-full bg-slate-300"></span>
-                Nezodpovedané: <span className="font-bold text-slate-800">{unanswered}</span>
+                {t("Nezodpovedané:", "Unanswered:")} <span className="font-bold text-slate-800">{unanswered}</span>
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-lg shadow-xs font-medium text-emerald-800">
                 <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-                Zahrnuté v scope: <span className="font-bold text-emerald-900">{answeredRelevant}</span>
+                {t("Zahrnuté v scope:", "In scope:")} <span className="font-bold text-emerald-900">{answeredRelevant}</span>
               </div>
               <div className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 border border-slate-200 rounded-lg shadow-xs font-medium text-slate-600">
                 <Ban size={12} className="text-slate-400" />
-                Vylúčené (N/A): <span className="font-bold text-slate-800">{answeredExcluded}</span>
+                {t("Vylúčené (N/A):", "Excluded (N/A):")} <span className="font-bold text-slate-800">{answeredExcluded}</span>
               </div>
             </div>
           </div>
@@ -150,20 +154,20 @@ export function ASVSTriageModal({
                 <Search size={14} className="absolute left-3 top-2.5 text-slate-400 pointer-events-none" />
                 <input 
                   type="text"
-                  aria-label="Hľadať triáž otázky"
-                  placeholder="Hľadať technológiu..."
+                  aria-label={t("Hľadať triáž otázky", "Search triage questions")}
+                  placeholder={t("Hľadať technológiu...", "Search technology...")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full pl-8 pr-3 py-2 bg-white text-xs border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                 />
               </div>
-              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">Stav zodpovedania</h4>
+              <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-2">{t("Stav zodpovedania", "Answer status")}</h4>
               <div className="space-y-1">
                 {[
-                  { id: "all", label: "Všetky otázky", count: totalQuestions },
-                  { id: "unanswered", label: "Nezodpovedané", count: unanswered },
-                  { id: "relevant", label: "Zahrnuté (Áno)", count: answeredRelevant },
-                  { id: "excluded", label: "Vylúčené (Nie)", count: answeredExcluded }
+                  { id: "all", label: t("Všetky otázky", "All questions"), count: totalQuestions },
+                  { id: "unanswered", label: t("Nezodpovedané", "Unanswered"), count: unanswered },
+                  { id: "relevant", label: t("Zahrnuté (Áno)", "Included (Yes)"), count: answeredRelevant },
+                  { id: "excluded", label: t("Vylúčené (Nie)", "Excluded (No)"), count: answeredExcluded }
                 ].map(f => (
                   <button
                     key={f.id}
@@ -187,7 +191,7 @@ export function ASVSTriageModal({
             <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar bg-white">
               {filteredQuestions.length === 0 ? (
                 <div className="text-center py-12 text-slate-400 text-sm">
-                  Nenašli sa žiadne triage otázky pre zvolený filter.
+                  {t("Nenašli sa žiadne triage otázky pre zvolený filter.", "No triage questions match the selected filter.")}
                 </div>
               ) : (
                 filteredQuestions.map((q) => {
@@ -225,12 +229,12 @@ export function ASVSTriageModal({
                             </span>
                             {isExcluded && (
                               <span className="text-[11px] font-bold text-slate-600 bg-slate-200/80 px-2 py-0.5 rounded flex items-center gap-1">
-                                <Ban size={12} /> Vylúčené (N/A)
+                                <Ban size={12} /> {t("Vylúčené (N/A)", "Excluded (N/A)")}
                               </span>
                             )}
                             {isRelevant && (
                               <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded flex items-center gap-1">
-                                <Check size={12} /> Zahrnuté v scope
+                                <Check size={12} /> {t("Zahrnuté v scope", "In scope")}
                               </span>
                             )}
                           </div>
@@ -252,10 +256,10 @@ export function ASVSTriageModal({
                                 ? "bg-emerald-600 text-white shadow-xs" 
                                 : "bg-white text-slate-700 border border-slate-200 hover:border-emerald-300 hover:text-emerald-700 hover:bg-emerald-50/50"
                             }`}
-                            title="Aplikácia túto technológiu používa, kontroly zostávajú v scope"
+                            title={t("Aplikácia túto technológiu používa, kontroly zostávajú v scope", "The application uses this technology; controls remain in scope")}
                           >
                             <Check size={14} />
-                            <span>Áno, relevantné</span>
+                            <span>{t("Áno, relevantné", "Yes, relevant")}</span>
                           </button>
                           
                           <button
@@ -265,17 +269,17 @@ export function ASVSTriageModal({
                                 ? "bg-slate-700 text-white shadow-xs" 
                                 : "bg-white text-slate-700 border border-slate-200 hover:border-red-300 hover:text-red-700 hover:bg-red-50/50"
                             }`}
-                            title="Aplikácia túto technológiu nepoužíva, označiť kontroly ako N/A"
+                            title={t("Aplikácia túto technológiu nepoužíva, označiť kontroly ako N/A", "The application does not use this technology; mark controls N/A")}
                           >
                             <Ban size={14} />
-                            <span>Nie, nepotrebné (N/A)</span>
+                            <span>{t("Nie, nepotrebné (N/A)", "No, not applicable (N/A)")}</span>
                           </button>
 
                           {isAnswered && (
                             <button
                               onClick={() => onResetAnswer(q.id)}
                               className="p-1.5 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
-                              title="Resetovať odpoveď"
+                              title={t("Resetovať odpoveď", "Reset answer")}
                             >
                               <RotateCcw size={14} />
                             </button>
@@ -290,11 +294,11 @@ export function ASVSTriageModal({
                           className="text-slate-500 hover:text-blue-600 flex items-center gap-1 font-medium transition-colors cursor-pointer"
                         >
                           {isPreviewOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                          <span>{isPreviewOpen ? "Skryť zoznam kontrol" : `Zobraziť ${affectedIds.length} dotknutých kontrol`}</span>
+                          <span>{isPreviewOpen ? t("Skryť zoznam kontrol", "Hide controls") : t(`Zobraziť ${affectedIds.length} dotknutých kontrol`, `Show ${affectedIds.length} affected controls`)}</span>
                         </button>
                         {isExcluded && (
                           <span className="text-[11px] text-slate-400 italic">
-                            Všetky kontroly nižšie sú v analýze označené ako N/A
+                            {t("Všetky kontroly nižšie sú v analýze označené ako N/A", "All controls below are marked N/A in the analysis")}
                           </span>
                         )}
                       </div>
@@ -325,14 +329,14 @@ export function ASVSTriageModal({
         {/* Footer */}
         <div className="px-6 py-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <div className="text-xs text-slate-500">
-            Vylúčenia technológií okamžite označia kontroly ako N/A s evidovaným dôvodom.
+            {t("Vylúčenia technológií okamžite označia kontroly ako N/A s evidovaným dôvodom.", "Excluding technologies immediately marks controls N/A and records the reason.")}
           </div>
           <button
             onClick={onClose}
             type="button"
             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-lg transition-colors cursor-pointer shadow-xs"
           >
-            Hotovo, zavrieť
+            {t("Hotovo, zavrieť", "Done, close")}
           </button>
         </div>
       </div>
