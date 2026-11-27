@@ -2,6 +2,13 @@
 
 ## Implementované v aktuálnej iterácii
 
+### Verzia 1.1
+
+1. **Robustnejšie lokálne úložisko:** spoločná dátová vrstva ošetruje čítanie, zápis, JSON parsing a kvótu úložiska bez tichého zlyhania.
+2. **Bezpečnejšie identifikátory:** nové projekty používajú UUID alebo kryptograficky generovanú lokálnu náhodnú identifikáciu namiesto časovej pečiatky.
+3. **Migrácia schémy:** startup vykonáva migráciu starších ASVS kľúčov na aktuálny `atap_asvs_v5_<id>` namespace a zaznamenáva schému `1.1`.
+4. **Upozornenie na citlivé zálohy:** exportné dialógy jasne uvádzajú citlivý charakter architektúry, dôkazov, hrozieb a poznámok.
+
 1. **Bind servera a API:** Express štandardne binduje na `0.0.0.0` (port `3000`), nie iba na localhost. Nastavte `HOST=127.0.0.1` pre lokálne použitie. API zostáva bez autentifikácie a nie je určené na vzdialené zdieľané nasadenie.
 2. **Electron navigácia a sandbox:** renderer používa sandbox, bez Node integrácie a s izolovaným kontextom. Produkčné navigácie sú obmedzené na aplikáciu; HTTPS externé odkazy sa otvárajú v predvolenom prehliadači.
 3. **Content Security Policy:** centrálna CSP sa poskytuje serverovou hlavičkou aj HTML meta tagom. Vývojové zdroje Vite/HMR sú odlíšené od produkcie.

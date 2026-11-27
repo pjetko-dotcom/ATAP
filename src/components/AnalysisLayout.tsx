@@ -6,7 +6,7 @@
  * @module AnalysisLayout
  */
 import React, { useState, useEffect } from "react";
-import { Outlet, useParams } from "react-router-dom";
+import { Link, Outlet, useParams } from "react-router-dom";
 import { useAnalyses } from "../hooks/useAnalyses";
 import { ASVSRequirement, asvsRequirements } from "../data/asvsData";
 import { 
@@ -72,6 +72,7 @@ function AnalysisLayoutInner() {
   const [isInfoPanelOpen, setIsInfoPanelOpen] = useState(false);
   const [isHeaderActionsOpen, setIsHeaderActionsOpen] = useState(false);
   const [isSaved, setIsSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "unsaved" | "error">("saved");
   const [saveToast, setSaveToast] = useState<string | null>(null);
   const [saveToastType, setSaveToastType] = useState<"success" | "error">("success");
   const [renameModalTarget, setRenameModalTarget] = useState<{ id: string; name: string } | null>(null);
@@ -122,6 +123,16 @@ function AnalysisLayoutInner() {
       window.removeEventListener("storage_workspace_update", handler);
       window.removeEventListener("storage", handler);
     };
+  }, []);
+
+  useEffect(() => {
+    const handleStorageEvent = (event: Event) => {
+      const detail = (event as CustomEvent<{ type?: string }>).detail;
+      if (detail?.type === "storage-error") setSaveStatus("error");
+      else setSaveStatus("saved");
+    };
+    window.addEventListener("storage_workspace_update", handleStorageEvent);
+    return () => window.removeEventListener("storage_workspace_update", handleStorageEvent);
   }, []);
 
   useEffect(() => {
@@ -178,6 +189,54 @@ function AnalysisLayoutInner() {
   const totalReqs = evaluatedRequirements.length;
   const implementedCount = evaluatedRequirements.filter(requirement => requirement.status === "Implemented").length;
   const progressPercentage = calculateAsvsCoverage(scopedRequirements);
+  const contextData = (() => {
+    try {
+      return JSON.parse(localStorage.getItem(`atap_context_${currentAnalysis.id}`) || "{}");
+    } catch {
+      return {};
+    }
+  })();
+  const architectureData = (() => {
+    try {
+      return JSON.parse(localStorage.getItem(`atap_architecture_${currentAnalysis.id}`) || "{}");
+    } catch {
+      return {};
+    }
+  })();
+  const threatData = (() => {
+    try {
+      return JSON.parse(localStorage.getItem(`atap_threats_${currentAnalysis.id}`) || "[]");
+    } catch {
+      return [];
+    }
+  })();
+  const progressSteps = [
+    {
+      label: "Kontext",
+      path: "context",
+      state: contextData?.businessPurpose ? "In progress" : "Not started",
+    },
+    {
+      label: "DFD",
+      path: "architecture",
+      state: Array.isArray(architectureData?.components) && architectureData.components.length >= 2 ? "In progress" : "Not started",
+    },
+    {
+      label: "STRIDE",
+      path: "stride",
+      state: Array.isArray(threatData) && threatData.length > 0 ? "In progress" : "Not started",
+    },
+    {
+      label: "ASVS",
+      path: "asvs",
+      state: implementedCount > 0 ? (progressPercentage === 100 ? "Complete" : "In progress") : "Not started",
+    },
+    {
+      label: "Nálezy",
+      path: "findings",
+      state: evaluatedRequirements.some(requirement => requirement.status === "Missing" || requirement.status === "Partial") ? "Needs review" : "Not started",
+    },
+  ];
 
   // Components mapping for Right Sidebar
   const componentsList = [
@@ -238,6 +297,7 @@ function AnalysisLayoutInner() {
       if (!updated) throw new Error("Analysis metadata could not be saved.");
 
       setIsSaved(true);
+      setSaveStatus("saved");
       setSaveToastType("success");
       setSaveToast(`Analýza "${currentAnalysis.name}" (v${currentWorkingVersion}) bola uložená v tomto zariadení.`);
       window.dispatchEvent(new Event("storage"));
@@ -246,6 +306,7 @@ function AnalysisLayoutInner() {
     } catch (error) {
       console.error("Failed to save workspace in layout", error);
       setIsSaved(false);
+      setSaveStatus("error");
       setSaveToastType("error");
       setSaveToast("Uloženie zlyhalo. Skontrolujte úložisko zariadenia a skúste to znova.");
       setTimeout(() => setSaveToast(null), 6000);
@@ -287,6 +348,16 @@ function AnalysisLayoutInner() {
             </span>
             <ChevronDown size={12} className="text-slate-400 ml-0.5" />
           </button>
+          <span
+            role="status"
+            aria-live="polite"
+            className={`hidden sm:inline-flex items-center rounded-full px-2 py-1 text-[10px] font-bold ${
+              saveStatus === "saved" ? "bg-emerald-50 text-emerald-700" :
+              saveStatus === "error" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"
+            }`}
+          >
+            {saveStatus === "saved" ? "Uložené" : saveStatus === "error" ? "Chyba úložiska" : "Neuložené"}
+          </span>
 
           {/* Project Switcher & Inline Rename */}
           <ProjectSwitcher 
@@ -478,6 +549,24 @@ function AnalysisLayoutInner() {
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Workspace */}
         <section className="flex-1 p-3 sm:p-4 md:p-6 flex flex-col overflow-y-auto min-h-0 z-0 custom-scrollbar">
+          <nav aria-label="Pokrok analýzy" className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-5 shrink-0">
+            {progressSteps.map(step => (
+              <Link
+                key={step.path}
+                to={`/analysis/${currentAnalysis.id}/${step.path}`}
+                className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs shadow-xs hover:border-blue-300 hover:bg-blue-50"
+              >
+                <span className="block font-bold text-slate-800">{step.label}</span>
+                <span className={`mt-1 block text-[10px] font-semibold ${
+                  step.state === "Complete" ? "text-emerald-700" :
+                  step.state === "Needs review" ? "text-amber-700" :
+                  step.state === "In progress" ? "text-blue-700" : "text-slate-500"
+                }`}>
+                  {step.state}
+                </span>
+              </Link>
+            ))}
+          </nav>
           <Outlet />
         </section>
 

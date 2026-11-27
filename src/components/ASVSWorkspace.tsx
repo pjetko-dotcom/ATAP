@@ -5,7 +5,7 @@
  * @module ASVSWorkspace
  */
 import React, { useState, useEffect, useRef } from "react";
-import { useParams, useSearchParams } from "react-router-dom";
+import { Link, useParams, useSearchParams } from "react-router-dom";
 import { 
   Info, ChevronDown, 
   ChevronUp, 
@@ -139,6 +139,14 @@ export function ASVSWorkspace() {
   const isReadOnly = versionCtx?.isReadOnly || false;
   const activeSnapshot = versionCtx?.activeSnapshot;
   const effectiveReqs = (isHistorical && activeSnapshot?.data?.asvsReqs) ? activeSnapshot.data.asvsReqs : reqs;
+  const linkedThreats = useState<Array<{ id: string; title: string; asvsRefs?: string[]; mitigation?: string }>>(() => {
+    try {
+      const stored = localStorage.getItem(`atap_threats_${analysisId || "default"}`);
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  })[0];
 
   const [activeChapterId, setActiveChapterId] = useState<number>(() => readASVSViewPreferences(analysisId).activeChapterId);
   const [activeSectionId, setActiveSectionId] = useState<string | "all">(() => readASVSViewPreferences(analysisId).activeSectionId);
@@ -1476,23 +1484,32 @@ export function ASVSWorkspace() {
                                         {TRACE_COMPONENTS.map(comp => {
                                           const isLinked = req.traceability?.some(t => t.id === comp.id) || (req as any).traceComponents?.includes(comp.id);
                                           return (
-                                            <button
-                                              key={comp.id}
-                                              type="button"
-                                              onClick={() => toggleRequirementTraceability(req.id, comp.id, comp.color)}
-                                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-all border cursor-pointer w-full ${
-                                                isLinked 
-                                                  ? "bg-blue-50 border-blue-200 text-blue-700 font-medium shadow-2xs" 
-                                                  : "bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100"
-                                              }`}
-                                            >
-                                              <span className="truncate">{comp.id}</span>
-                                              <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ml-1.5 ${
-                                                isLinked ? "border-blue-500 bg-blue-500 text-white" : "border-slate-300 bg-white"
-                                              }`}>
-                                                {isLinked && <Check size={11} strokeWidth={3} />}
-                                              </div>
-                                            </button>
+                                            <React.Fragment key={comp.id}>
+                                              <button
+                                                type="button"
+                                                onClick={() => toggleRequirementTraceability(req.id, comp.id, comp.color)}
+                                                className={`flex items-center justify-between px-2.5 py-1.5 rounded-md text-xs transition-all border cursor-pointer w-full ${
+                                                  isLinked
+                                                    ? "bg-blue-50 border-blue-200 text-blue-700 font-medium shadow-2xs"
+                                                    : "bg-slate-50 border-slate-200/80 text-slate-600 hover:bg-slate-100"
+                                                }`}
+                                              >
+                                                <span className="truncate">{comp.id}</span>
+                                                <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 ml-1.5 ${
+                                                  isLinked ? "border-blue-500 bg-blue-500 text-white" : "border-slate-300 bg-white"
+                                                }`}>
+                                                  {isLinked && <Check size={11} strokeWidth={3} />}
+                                                </div>
+                                              </button>
+                                              {isLinked && (
+                                                <Link
+                                                  to={`/analysis/${analysisId}/architecture?component=${encodeURIComponent(comp.id)}`}
+                                                  className="block px-2 py-0.5 text-right text-[10px] font-semibold text-blue-700 hover:underline"
+                                                >
+                                                  Otvoriť komponent v DFD →
+                                                </Link>
+                                              )}
+                                            </React.Fragment>
                                           );
                                         })}
                                       </div>

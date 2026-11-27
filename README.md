@@ -80,6 +80,13 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 
 ## 🛡️ Kľúčové Funkcie Platformy
 
+### Verzia 1.1
+- Pridané vyznačenie stavu pokroku analýzy a prepojené kroky Kontext / DFD / STRIDE / ASVS / Nálezy.
+- Pridaný stav uloženia a viditeľné chyby lokálneho úložiska.
+- Threat Register má filter neoverených architektonických návrhov a hromadné označenie review.
+- DFD obsahuje klávesové presúvanie, zoom-to-fit, zameranie prekrývajúcich sa prvkov a preskúmanie upozornení.
+- ASVS, hrozby a architektúra sú prepojené obojsmernými odkazmi na súvisiace záznamy.
+
 - **OWASP ASVS 5.0 Workspace:** Kompletná integrácia všetkých 17 kapitol a 350+ bezpečnostných požiadaviek pokrývajúcich úrovne L1 až L3 s mapovaním na komponenty architektúry a správou výnimiek.
 - **STRIDE Threat Modeling:** Analýza systémovej architektúry podľa metodiky Microsoft STRIDE (Spoofing, Tampering, Repudiation, Information Disclosure, Denial of Service, Elevation of Privilege).
 - **Threat Register & 4×4 Matica Rizík:** Matica štyroch úrovní pravdepodobnosti a štyroch úrovní dopadu (Likelihood × Impact) s filtrovaním hrozieb podľa kategórie a stavu mitigácie.

@@ -94,13 +94,17 @@ Use the JSON backup/restore feature when moving local workspace data between bro
 
 `PORT`, `HOST`, and `NODE_ENV` control the Express server. The server defaults to port `3000` and host `0.0.0.0`; its API is unauthenticated. For a local-only server, explicitly bind `HOST=127.0.0.1`. Review the deployment and security implications before using a network-reachable host.
 
-The optional PostgreSQL connection uses `SQL_HOST`, `SQL_USER`, `SQL_PASSWORD`, and `SQL_DB_NAME`; Drizzle configuration may also use `SQL_ADMIN_USER` and `SQL_ADMIN_PASSWORD`. Database schema lives in `src/db/schema.ts`. The current package scripts do not provide a database migration command. The `.env.example` contains AI Studio placeholders and is not a complete PostgreSQL setup guide; do not put real secrets in tracked files.
+The optional PostgreSQL connection uses `SQL_HOST`, `SQL_USER`, `SQL_PASSWORD`, and `SQL_DB_NAME`; Drizzle configuration may also use `SQL_ADMIN_USER` and `SQL_ADMIN_PASSWORD`. Database schema lives in `src/db/schema.ts`. The current package scripts do not provide a database migration command. The `.env.example` contains server, host, and optional PostgreSQL placeholders; it is not a complete deployment guide. Do not put real secrets in tracked files.
 
 ## Tests and changes
 
 The current automated suite covers backup validation/rollback, CSV sanitization, CSP behavior, local profile/activity data, findings generation, version diffs, DFD flow geometry/overlaps, and architecture STRIDE synchronization. Add a regression test when changing these utilities. For UI work, also test the affected route and interaction in a browser; a successful TypeScript check alone does not verify user behavior.
 
 Keep changes focused. Do not edit generated output under `dist/` or `release/`. Preserve local-storage compatibility and backup import compatibility when changing persisted data shapes.
+
+## Verzia 1.1
+
+The 1.1 release adds centralized local-storage helpers, a workspace schema migration marker, save-status/error feedback, guided assessment progress, threat bulk-review controls, component/ASVS/threat traceability links, and keyboard/zoom improvements for the DFD. Bundle splitting for ExcelJS remains out of scope.
 
 ## Versioning and releases
 

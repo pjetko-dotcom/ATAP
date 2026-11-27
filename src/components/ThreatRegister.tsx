@@ -22,6 +22,7 @@ import {
   type Threat,
   type ThreatStatus
 } from "../utils/threatModel";
+import { safeSetItem, writeJson } from "../utils/storage";
 
 function getThreatAsvsReferences(threat: Threat): string[] {
   const references = threat.asvsRefs || (threat.mitigation.match(/V\d+(?:\.\d+)*/g) || []);
@@ -347,13 +348,15 @@ export function ThreatRegister() {
   });
 
   useEffect(() => {
-    localStorage.setItem(storageKey, JSON.stringify(threats));
+    writeJson(storageKey, threats);
   }, [threats, storageKey]);
 
   const [searchQuery, setSearchQuery] = useState(requestedThreat || "");
   const [statusFilter, setStatusFilter] = useState<ThreatStatus | "All">("All");
   const [strideFilter, setStrideFilter] = useState<string | "All">("All");
   const [riskFilter, setRiskFilter] = useState<RiskLevel | "All">("All");
+  const [unreviewedOnly, setUnreviewedOnly] = useState(false);
+  const [selectedThreatIds, setSelectedThreatIds] = useState<string[]>([]);
 
   useEffect(() => {
     if (requestedThreat) setSearchQuery(requestedThreat);
@@ -368,6 +371,8 @@ export function ThreatRegister() {
   const [threatTitle, setThreatTitle] = useState("");
   const [threatDescription, setThreatDescription] = useState("");
   const [threatStride, setThreatStride] = useState("Spoofing");
+  const [threatLikelihood, setThreatLikelihood] = useState<LikelihoodLevel>("Probably");
+  const [threatImpact, setThreatImpact] = useState<ImpactLevel>("Moderate");
   const suggestedAsvsRequirements = useMemo(
     () => suggestThreatAsvsRequirements(threatStride, threatTitle, threatDescription),
     [threatStride, threatTitle, threatDescription]
@@ -397,7 +402,8 @@ export function ThreatRegister() {
     const matchesStatus = statusFilter === "All" || t.status === statusFilter;
     const matchesStride = strideFilter === "All" || t.stride === strideFilter;
     const matchesRisk = riskFilter === "All" || t.risk === riskFilter;
-    return matchesSearch && matchesStatus && matchesStride && matchesRisk;
+    const matchesReview = !unreviewedOnly || (t.architectureFlowId && !t.architectureReviewed);
+    return matchesSearch && matchesStatus && matchesStride && matchesRisk && matchesReview;
   });
 
   const handleDelete = (id: string) => {
@@ -412,6 +418,8 @@ export function ThreatRegister() {
     setThreatTitle("");
     setThreatDescription("");
     setThreatStride("Spoofing");
+    setThreatLikelihood("Probably");
+    setThreatImpact("Moderate");
     setAsvsReferenceText("");
     setHasManualAsvsRefs(false);
     setIsModalOpen(true);
@@ -423,6 +431,8 @@ export function ThreatRegister() {
     setThreatTitle(threat.title);
     setThreatDescription(threat.description);
     setThreatStride(threat.stride);
+    setThreatLikelihood(threat.likelihood);
+    setThreatImpact(threat.impact);
     setAsvsReferenceText((threat.asvsRefs || (threat.mitigation.match(/V\d+(?:\.\d+)*/g) || [])).join(", "));
     setHasManualAsvsRefs(true);
     setIsModalOpen(true);
@@ -612,6 +622,29 @@ export function ThreatRegister() {
                 <option value="Very Low">Very Low</option>
               </select>
             </div>
+            <label className="flex items-center gap-2 border-l border-slate-200 pl-3 text-xs font-medium text-slate-600">
+              <input
+                type="checkbox"
+                checked={unreviewedOnly}
+                onChange={event => setUnreviewedOnly(event.target.checked)}
+              />
+              Iba na kontrolu
+            </label>
+            {selectedThreatIds.length > 0 && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!window.confirm(`Označiť ${selectedThreatIds.length} vybraných hrozieb ako skontrolované?`)) return;
+                  setThreats(current => current.map(threat =>
+                    selectedThreatIds.includes(threat.id) ? { ...threat, architectureReviewed: true } : threat
+                  ));
+                  setSelectedThreatIds([]);
+                }}
+                className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-bold text-emerald-700 hover:bg-emerald-100"
+              >
+                Označiť {selectedThreatIds.length} ako skontrolované
+              </button>
+            )}
           </div>
           
           <button 
@@ -628,6 +661,14 @@ export function ThreatRegister() {
           <table className="w-full text-left border-collapse">
             <thead className="bg-slate-50 text-slate-500 uppercase text-[10px] font-bold sticky top-0 z-10 shadow-sm">
               <tr>
+                <th className="px-3 py-3 border-b border-slate-100 w-10">
+                  <input
+                    type="checkbox"
+                    aria-label="Vybrať všetky zobrazené hrozby"
+                    checked={filteredThreats.length > 0 && filteredThreats.every(threat => selectedThreatIds.includes(threat.id))}
+                    onChange={event => setSelectedThreatIds(event.target.checked ? filteredThreats.map(threat => threat.id) : [])}
+                  />
+                </th>
                 <th className="px-6 py-3 border-b border-slate-100 w-24">ID</th>
                 <th className="px-6 py-3 border-b border-slate-100 min-w-[250px]">Threat Details</th>
                 <th className="px-6 py-3 border-b border-slate-100 w-32">
@@ -648,6 +689,16 @@ export function ThreatRegister() {
             <tbody className="divide-y divide-slate-100 text-sm">
               {filteredThreats.map((threat) => (
                 <tr key={threat.id} className="hover:bg-slate-50 transition-colors group">
+                  <td className="px-3 py-4">
+                    <input
+                      type="checkbox"
+                      aria-label={`Vybrať hrozbu ${threat.id}`}
+                      checked={selectedThreatIds.includes(threat.id)}
+                      onChange={event => setSelectedThreatIds(current =>
+                        event.target.checked ? [...current, threat.id] : current.filter(id => id !== threat.id)
+                      )}
+                    />
+                  </td>
                   <td className="px-6 py-4 font-mono text-xs text-slate-400 font-medium">{threat.id}</td>
                   <td className="px-6 py-4">
                     <p className="font-bold text-slate-800">{threat.title}</p>
@@ -692,7 +743,7 @@ export function ThreatRegister() {
                     {(threat.componentIds?.length || threat.asvsRefs?.length) ? (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {(threat.componentIds || []).map(componentId => (
-                          <Link key={componentId} to={`/analysis/${analysisId}/architecture`} className="inline-flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100">
+                          <Link key={componentId} to={`/analysis/${analysisId}/architecture?component=${encodeURIComponent(componentId)}`} className="inline-flex items-center gap-1 rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100">
                             <Link2 size={10} />{availableComponents.find(component => component.id === componentId)?.name || componentId}
                           </Link>
                         ))}
@@ -728,7 +779,7 @@ export function ThreatRegister() {
               ))}
               {filteredThreats.length === 0 && (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-slate-500">
                     <ShieldAlert size={48} className="mx-auto text-slate-300 mb-3" />
                     <p className="text-sm font-medium">No threats found.</p>
                     <p className="text-xs mt-1">Adjust your filters or add a new threat to get started.</p>
@@ -823,7 +874,8 @@ export function ThreatRegister() {
                     <select 
                       name="likelihood"
                       required
-                      defaultValue={editingThreat?.likelihood || "Probably"}
+                      value={threatLikelihood}
+                      onChange={event => setThreatLikelihood(event.target.value as LikelihoodLevel)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
                       <option value="Exceptionally">Exceptionally (&lt; 0.04)</option>
@@ -837,7 +889,8 @@ export function ThreatRegister() {
                     <select 
                       name="impact"
                       required
-                      defaultValue={editingThreat?.impact || "Moderate"}
+                      value={threatImpact}
+                      onChange={event => setThreatImpact(event.target.value as ImpactLevel)}
                       className="w-full px-3 py-2 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500/20 text-sm bg-white"
                     >
                       <option value="Minor">Minor (&lt; 1M EUR)</option>
@@ -847,7 +900,15 @@ export function ThreatRegister() {
                     </select>
                   </div>
                   <div className="col-span-2">
-                    <p className="text-[10px] text-slate-500 uppercase tracking-wide">Risk level will be automatically calculated based on Likelihood and Impact.</p>
+                    <div className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2" role="status" aria-live="polite">
+                      <div>
+                        <p className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Aktuálna úroveň rizika</p>
+                        <p className="mt-0.5 text-xs text-slate-600">Likelihood × Impact</p>
+                      </div>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${riskStyles[calculateRisk(threatLikelihood, threatImpact)]}`}>
+                        {calculateRisk(threatLikelihood, threatImpact)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

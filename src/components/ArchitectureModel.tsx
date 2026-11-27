@@ -36,6 +36,7 @@ import {
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
 import { getInitialThreatsForAnalysis, syncArchitectureThreats, type Threat } from "../utils/threatModel";
 import { getDiagramLayoutIssues, getFlowPathGeometry } from "../utils/dfd";
+import { writeJson } from "../utils/storage";
 
 export interface ArchComponent {
   id: string;
@@ -530,6 +531,7 @@ export function ArchitectureModel() {
   const [editingFlowId, setEditingFlowId] = useState<string | null>(null);
   const [isDfdReviewOpen, setIsDfdReviewOpen] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [dismissedReviewIssues, setDismissedReviewIssues] = useState<Set<string>>(new Set());
 
   // New component form state
   const [newCompName, setNewCompName] = useState("");
@@ -553,6 +555,12 @@ export function ArchitectureModel() {
 
   const canvasRef = useRef<HTMLDivElement>(null);
   const [canvasZoom, setCanvasZoom] = useState(1);
+  const fitCanvasToViewport = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const fit = (canvas.clientWidth - 24) / CANVAS_WIDTH;
+    setCanvasZoom(clamp(fit, MIN_CANVAS_ZOOM, 1));
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -685,7 +693,7 @@ export function ArchitectureModel() {
       zones
     };
     try {
-      localStorage.setItem(storageKey, JSON.stringify(data));
+      writeJson(storageKey, data);
     } catch (error) {
       console.error("Failed to save architecture model", error);
       setToastMessage("Model architektúry sa nepodarilo uložiť do lokálneho úložiska.");
@@ -714,7 +722,7 @@ export function ArchitectureModel() {
     const syncedThreats = syncArchitectureThreats(threats, flows, components, zones);
     if (JSON.stringify(syncedThreats) !== JSON.stringify(threats)) {
       try {
-        localStorage.setItem(threatStorageKey, JSON.stringify(syncedThreats));
+        writeJson(threatStorageKey, syncedThreats);
       } catch (error) {
         console.error("Failed to save architecture-generated threats", error);
         setToastMessage("Automatické hrozby sa nepodarilo uložiť do registra hrozieb.");
@@ -1249,7 +1257,7 @@ export function ArchitectureModel() {
       </div>
 
       {toastMessage && (
-        <div className="mx-6 mt-3 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
+        <div role="status" aria-live="polite" className="mx-6 mt-3 p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-lg text-xs flex items-center gap-2">
           <Check size={14} className="text-emerald-600 shrink-0" />
           <span>{toastMessage}</span>
         </div>
@@ -1267,7 +1275,21 @@ export function ArchitectureModel() {
               <p className="mt-1">Trust zóny: {layoutIssues.overlappingZones.map(([a, b]) => `${a.name} / ${b.name}`).join(", ")}</p>
             )}
             {layoutIssues.overlappingComponents.length > 0 && (
-              <p className="mt-1">Komponenty: {layoutIssues.overlappingComponents.map(([a, b]) => `${a.name} / ${b.name}`).join(", ")}</p>
+              <div className="mt-1 flex flex-wrap items-center gap-2">
+                <span>Komponenty:</span>
+                {layoutIssues.overlappingComponents.flatMap(([a, b]) => [a, b]).filter((component, index, items) =>
+                  items.findIndex(item => item.id === component.id) === index
+                ).map(component => (
+                  <button
+                    key={component.id}
+                    type="button"
+                    onClick={() => setSelectedCompId(component.id)}
+                    className="rounded border border-amber-300 bg-white px-2 py-0.5 font-semibold text-amber-900 hover:bg-amber-100"
+                  >
+                    Zamerať {component.name}
+                  </button>
+                ))}
+              </div>
             )}
             {obstructedFlowIds.length > 0 && (
               <p className="mt-1">
@@ -1520,8 +1542,32 @@ export function ArchitectureModel() {
             return (
               <div
                 key={comp.id}
+                role="button"
+                tabIndex={0}
+                aria-label={`Komponent ${comp.name}, typ ${comp.type}, technológia ${comp.tech}`}
+                aria-pressed={isSelected}
                 onMouseDown={(e) => handleMouseDown(e, comp.id)}
                 onClick={(e) => { e.stopPropagation(); setSelectedCompId(comp.id); }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    setSelectedCompId(comp.id);
+                  }
+                  const moveStep = event.shiftKey ? 20 : 5;
+                  if (["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key)) {
+                    event.preventDefault();
+                    const delta = {
+                      ArrowLeft: { x: -moveStep, y: 0 },
+                      ArrowRight: { x: moveStep, y: 0 },
+                      ArrowUp: { x: 0, y: -moveStep },
+                      ArrowDown: { x: 0, y: moveStep },
+                    }[event.key];
+                    setComponents(current => current.map(component => component.id === comp.id
+                      ? constrainComponentToZone({ ...component, x: component.x + delta.x, y: component.y + delta.y }, zones.find(zone => zone.id === component.zoneId) ?? zones[0])
+                      : component
+                    ));
+                  }
+                }}
                 style={{
                   left: comp.x,
                   top: comp.y,
@@ -1589,10 +1635,9 @@ export function ArchitectureModel() {
             </button>
             <button
               type="button"
-              onClick={() => setCanvasZoom(1)}
-              disabled={canvasZoom === 1}
-              aria-label="Obnoviť mierku DFD diagramu"
-              title="Obnoviť mierku"
+              onClick={fitCanvasToViewport}
+              aria-label="Prispôsobiť DFD diagram šírke plátna"
+              title="Prispôsobiť plátnu"
               className="rounded p-1.5 text-slate-600 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-40"
             >
               <Maximize2 size={15} />
@@ -1812,7 +1857,9 @@ export function ArchitectureModel() {
               Kontrola je nezáväzná, nič nemení ani neblokuje uloženie. Upozornenia sú návrhy na preverenie, nie potvrdené zraniteľnosti.
             </p>
             <div className="overflow-y-auto space-y-2 flex-1">
-              {dfdReviewIssues.length ? dfdReviewIssues.map(issue => (
+              {dfdReviewIssues.filter(issue => !dismissedReviewIssues.has(`${issue.flowId}-${issue.message}`)).length ? dfdReviewIssues
+                .filter(issue => !dismissedReviewIssues.has(`${issue.flowId}-${issue.message}`))
+                .map(issue => (
                 <div
                   key={`${issue.flowId}-${issue.message}`}
                   className={`rounded-lg border p-3 text-xs ${
@@ -1823,6 +1870,26 @@ export function ArchitectureModel() {
                 >
                   <div className="font-semibold">{issue.flowName}</div>
                   <div className="mt-0.5">{issue.message}</div>
+                  <div className="mt-2 flex justify-end gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const flow = flows.find(item => item.id === issue.flowId);
+                        if (flow) openEditFlowModal(flow);
+                        setIsDfdReviewOpen(false);
+                      }}
+                      className="rounded border border-slate-300 bg-white px-2 py-1 text-[11px] font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      Upraviť tok
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDismissedReviewIssues(current => new Set(current).add(`${issue.flowId}-${issue.message}`))}
+                      className="rounded border border-emerald-300 bg-emerald-50 px-2 py-1 text-[11px] font-semibold text-emerald-800 hover:bg-emerald-100"
+                    >
+                      Označiť preskúmané
+                    </button>
+                  </div>
                 </div>
               )) : (
                 <div className="rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-600">

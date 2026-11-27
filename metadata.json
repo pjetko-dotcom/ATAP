@@ -2,5 +2,5 @@
   "name": "AVERT - Application Security Assessment Platform",
   "description": "Architecture modeling, STRIDE threat analysis, risk assessment, OWASP ASVS verification, and security reporting.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": []
 }

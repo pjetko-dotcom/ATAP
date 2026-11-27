@@ -4,6 +4,7 @@ import { asvsRequirements, type ASVSRequirement } from '../data/asvsData';
 import { getCurrentUserName, LOCAL_ACTIVITY_ACTOR } from '../utils/activityLog';
 import { getInitialThreatsForAnalysis, summarizeThreats, type Threat } from '../utils/threatModel';
 import { calculateAsvsCoverage } from '../utils/asvsMetrics';
+import { createLocalId, readJson, safeGetItem, safeSetItem, writeJson } from '../utils/storage';
 
 export interface Analysis {
   id: string;
@@ -138,12 +139,12 @@ export function useAnalyses() {
   const [analyses, setAnalyses] = useState<Analysis[]>(() => {
     if (typeof window === 'undefined') return [DEFAULT_ANALYSIS];
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      const stored = safeGetItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
         if (Array.isArray(parsed) && parsed.length > 0) {
           const normalized = normalizeAnalyses(parsed);
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
+          writeJson(STORAGE_KEY, normalized);
           return normalized;
         }
       }
@@ -152,7 +153,7 @@ export function useAnalyses() {
     }
     const initial: Analysis[] = [DEFAULT_ANALYSIS];
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(initial));
+      writeJson(STORAGE_KEY, initial);
     } catch (e) {}
     return initial;
   });
@@ -181,7 +182,7 @@ export function useAnalyses() {
   const saveAnalysis = (analysis: Omit<Analysis, 'id' | 'createdAt' | 'status' | 'currentVersion' | 'versions'>) => {
     const newAnalysis: Analysis = {
       ...analysis,
-      id: Date.now().toString(),
+      id: createLocalId("analysis"),
       createdAt: new Date().toISOString(),
       status: 'Draft',
       currentVersion: '1.0',
@@ -190,7 +191,7 @@ export function useAnalyses() {
     const updated = [...analyses, newAnalysis];
     setAnalyses(updated);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      if (!writeJson(STORAGE_KEY, updated)) return;
     } catch (e) {}
     window.dispatchEvent(new Event('storage_workspace_update'));
     return newAnalysis;
@@ -199,7 +200,7 @@ export function useAnalyses() {
   const updateAnalysis = useCallback((id: string, updates: Partial<Analysis>) => {
     const updated = analyses.map(a => a.id === id ? { ...a, ...updates } : a);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      if (!writeJson(STORAGE_KEY, updated)) return false;
     } catch (error) {
       console.error("Failed to save updated analysis", error);
       return false;
@@ -216,7 +217,7 @@ export function useAnalyses() {
     const updated = analyses.filter(a => a.id !== id);
     setAnalyses(updated);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      writeJson(STORAGE_KEY, updated);
     } catch (e) {}
     window.dispatchEvent(new Event('storage_workspace_update'));
   };

@@ -2,6 +2,13 @@
 
 ## Current usability improvements included
 
+- Verzia 1.1 pridáva stavy pokroku pre kontext, DFD, STRIDE, ASVS a findings priamo do analýzy.
+- Zobrazuje stav uloženia a explicitne upozorňuje na chyby lokálneho úložiska alebo jeho kvóty.
+- Záloha upozorňuje na citlivý obsah a zaznamenáva čas poslednej exportovanej zálohy.
+- Threat register podporuje filter na neoverené návrhy, výber viacerých hrozieb a hromadné označenie ako skontrolované.
+- ASVS a Threat Register obsahujú odkazy na súvisiace komponenty, hrozby a ASVS kontroly.
+- DFD podporuje klávesové presúvanie komponentov, zameranie prekrývajúcich sa prvkov, zoom-to-fit a preskúmanie voliteľných upozornení.
+
 - Help now describes AVERT's architecture, STRIDE, risk, ASVS, findings, reporting, and backups, and clarifies that generated scenarios require human review.
 - Newly created analyses no longer inherit the seeded example threat register. The default sample analysis remains identifiable as the example.
 - Threat totals consistently distinguish open items from open High/Critical items.

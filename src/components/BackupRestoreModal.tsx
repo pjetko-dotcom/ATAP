@@ -48,6 +48,9 @@ export function BackupRestoreModal({
   const [parsedPreview, setParsedPreview] = useState<any | null>(null);
   const [importMode, setImportMode] = useState<"new_id" | "overwrite">("new_id");
   const [statusMessage, setStatusMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [lastBackupTime, setLastBackupTime] = useState<string | null>(() => {
+    try { return localStorage.getItem("atap_last_backup_time"); } catch { return null; }
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
@@ -104,6 +107,9 @@ export function BackupRestoreModal({
     if (!currentAnalysisId) return;
     const ok = exportSingleProjectBackup(currentAnalysisId);
     if (ok) {
+      const timestamp = new Date().toISOString();
+      try { localStorage.setItem("atap_last_backup_time", timestamp); } catch {}
+      setLastBackupTime(timestamp);
       setStatusMessage({
         type: "success",
         text: `Záloha projektu "${currentAnalysisName || currentAnalysisId}" bola stiahnutá.`
@@ -119,6 +125,9 @@ export function BackupRestoreModal({
   const handleExportAll = () => {
     const ok = exportAllProjectsBackup();
     if (ok) {
+      const timestamp = new Date().toISOString();
+      try { localStorage.setItem("atap_last_backup_time", timestamp); } catch {}
+      setLastBackupTime(timestamp);
       setStatusMessage({
         type: "success",
         text: "Kompletný JSON archív všetkých projektov bol úspešne stiahnutý."
@@ -321,6 +330,13 @@ export function BackupRestoreModal({
 
           {activeTab === "backup" ? (
             <div className="space-y-4">
+              <div role="alert" className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-900">
+                Záloha môže obsahovať citlivú architektúru, dôkazový materiál, hrozby a poznámky.
+                Uchovávajte ju šifrovanú a neodesielajte cez nedôveryhodný kanál.
+              </div>
+              <p className="text-[11px] text-slate-500">
+                Posledná vytvorená záloha: {lastBackupTime ? new Date(lastBackupTime).toLocaleString("sk-SK") : "ešte nebola zaznamenaná"}
+              </p>
               {currentAnalysisId && (
                 <div className="p-4 rounded-xl border border-blue-100 bg-blue-50/40 flex items-start justify-between gap-4">
                   <div>

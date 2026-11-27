@@ -19,7 +19,6 @@ function createWindow() {
     minWidth: 1024,
     minHeight: 700,
     title: 'AVERT - Application Security Assessment Platform',
-    icon: path.join(__dirname, '../public/favicon.ico'),
     webPreferences: {
       preload: path.join(__dirname, 'preload.cjs'),
       nodeIntegration: false,

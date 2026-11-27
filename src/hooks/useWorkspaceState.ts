@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { asvsRequirements, ASVSRequirement, asvsTriageQuestions, getRequirementsForTriage } from "../data/asvsData";
 import { getCurrentUserName } from "../utils/activityLog";
+import { safeGetItem, safeSetItem, writeJson } from "../utils/storage";
 
 export interface AuditLog {
   id: string;
@@ -107,14 +108,9 @@ export function useWorkspaceState(analysisId: string | undefined) {
   const [hasStorageError, setHasStorageError] = useState(false);
 
   const persistItem = (key: string, value: string) => {
-    try {
-      localStorage.setItem(key, value);
-      return true;
-    } catch (error) {
-      console.error(`Failed to save local workspace data (${key})`, error);
-      setHasStorageError(true);
-      return false;
-    }
+    const success = safeSetItem(key, value);
+    setHasStorageError(!success);
+    return success;
   };
 
   // Sync if analysisId changes
@@ -164,9 +160,9 @@ export function useWorkspaceState(analysisId: string | undefined) {
 
   const saveWorkspace = () => {
     try {
-      localStorage.setItem(asvsKey, JSON.stringify(reqs));
-      localStorage.setItem(triageKey, JSON.stringify(triageAnswers));
-      localStorage.setItem(targetLevelKey, targetLevel.toString());
+      const reqSaved = writeJson(asvsKey, reqs);
+      const triageSaved = writeJson(triageKey, triageAnswers);
+      const levelSaved = safeSetItem(targetLevelKey, targetLevel.toString());
       if (targetLevel !== "all" && analysisId) {
         const storedAnalyses = localStorage.getItem("atap_analyses");
         if (storedAnalyses) {
@@ -174,7 +170,7 @@ export function useWorkspaceState(analysisId: string | undefined) {
           const updated = analyses.map((a: any) => 
             a.id === analysisId ? { ...a, asvsLevel: targetLevel.toString() } : a
           );
-          localStorage.setItem("atap_analyses", JSON.stringify(updated));
+          writeJson("atap_analyses", updated);
         }
       }
       const saveLog: AuditLog = {
@@ -184,7 +180,8 @@ export function useWorkspaceState(analysisId: string | undefined) {
         time: "Just now"
       };
       const updatedLogs = [saveLog, ...logs];
-      localStorage.setItem(logsKey, JSON.stringify(updatedLogs));
+      const logSaved = writeJson(logsKey, updatedLogs);
+      if (!reqSaved || !triageSaved || !levelSaved || !logSaved) throw new Error("One or more workspace values could not be saved.");
       setLogs(updatedLogs);
       notifyWorkspaceUpdate();
       setHasStorageError(false);
