@@ -47,6 +47,7 @@ Before submitting changes, run `npm run lint`, `npm test`, and `npm run build`. 
 - `src/hooks/`: local workspace and analysis state.
 - `src/context/`: version history and snapshot navigation state.
 - `src/data/asvsData.ts`: ASVS 5.0.0 catalog and triage data used by the UI. The source CSV is `asvs_5.0.0_en.csv`.
+- `src/data/userGuide.ts` and `src/components/UserGuide.tsx`: bilingual in-app guide content and accessible expandable topic navigation.
 - `src/utils/`: backup/restore, exports, CSV sanitization, findings, version comparisons, and other shared logic.
 - `src/db/` and `server.ts`: Drizzle/PostgreSQL schema and the Express server/API.
 - `start.cjs`: forces production mode before loading the bundled server for `npm run start`.
@@ -89,6 +90,14 @@ A flow crosses a trust boundary when its source and target components belong to 
 Threat metrics use one shared definition: **open** means status `Open`; **open high/critical** additionally requires a `High` or `Critical` risk. `Mitigated`, `Remediated`, and `Accepted` threats do not contribute to open-risk totals. The seeded example analysis (`id=1`) has sample threats; newly created analyses start without sample threats. See the [product manual](./PRODUCT_DESIGN_MANUAL.md) for risk and ASVS formulas.
 
 Use the JSON backup/restore feature when moving local workspace data between browsers or machines. A production deployment of the Express API is not, by itself, a synchronized multi-user workspace: the React workspace uses local storage, and the API/database integration is limited. The API has no authentication or authorization and must not be exposed to an untrusted network without adding them.
+
+JSON project backups and version snapshots do not contain the separate `atap_findings_<id>` list or its statuses. Export findings as CSV before migration or regeneration when a record is needed; CSV is not a restorable JSON backup.
+
+## In-app user guide
+
+The **Help & Documentation** navigation link opens the SPA guide independently of a project. From an open project, the `analysis` query parameter preserves its context and enables links back to that project's screens. `topic` deep-links to an expanded guide section in both browser and Electron routing; ordinary expandable sections work with mouse and keyboard.
+
+Maintain both languages and cross-topic IDs in `src/data/userGuide.ts`. The ASVS overview uses canonical English chapter names from `asvsData.ts`; add or update the explanations for both languages when those chapters change. Keep the guidance aligned with actual behavior, especially risk formulas, generated suggestions, backup limitations, and the difference between a report and a certification.
 
 ## Environment and database
 

@@ -157,7 +157,6 @@ export function Layout() {
     setSearchIndexRevision(revision => revision + 1);
     setIsSearchOpen(true);
   };
-  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isBackupModalOpen, setIsBackupModalOpen] = useState(false);
   const [userName, setUserName] = useState(getCurrentUserName);
@@ -170,7 +169,6 @@ export function Layout() {
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
   const mobileSearchButtonRef = useRef<HTMLButtonElement>(null);
   const mobileOverlayButtonRef = useRef<HTMLButtonElement>(null);
-  const helpModalRef = useRef<HTMLDivElement>(null);
   const profileModalRef = useRef<HTMLFormElement>(null);
   
   // Sidebar state
@@ -329,38 +327,6 @@ export function Layout() {
     };
   }, [isProfileEditorOpen]);
 
-  useEffect(() => {
-    if (!isHelpOpen) return;
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const focusableElements = Array.from(
-      helpModalRef.current?.querySelectorAll<HTMLElement>(
-        'button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
-      ) || []
-    );
-    focusableElements[0]?.focus();
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsHelpOpen(false);
-        return;
-      }
-      if (event.key !== "Tab" || focusableElements.length === 0) return;
-      const first = focusableElements[0];
-      const last = focusableElements[focusableElements.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.removeEventListener("keydown", handleKeyDown);
-      previousFocus?.focus();
-    };
-  }, [isHelpOpen]);
-
   const openProfileEditor = () => {
     setUserNameDraft(userName);
     setProfileError(null);
@@ -399,7 +365,10 @@ export function Layout() {
   // Extract analysis ID from the current route path to maintain contextual links.
   const match = location.pathname.match(/\/analysis\/([^\/]+)/);
   const pathId = match ? match[1] : null;
-  const activeAnalysisId = pathId && pathId !== "new" ? pathId : null;
+  const guideAnalysisId = location.pathname === "/guide" ? new URLSearchParams(location.search).get("analysis") : null;
+  const activeAnalysisId = pathId && pathId !== "new"
+    ? pathId
+    : analyses.find(analysis => analysis.id === guideAnalysisId)?.id || null;
 
   const navLinks = [
     { name: t("Prehľad", "Dashboard"), path: "/", icon: LayoutDashboard },
@@ -595,13 +564,17 @@ export function Layout() {
             <div className="shrink-0"><Database size={16} /></div>
             <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{t("Záloha a obnova", "Backup & Restore")}</span>
           </button>
-          <button 
-            onClick={() => setIsHelpOpen(true)}
+          <Link
+            to={activeAnalysisId ? `/guide?${new URLSearchParams({ analysis: activeAnalysisId })}` : "/guide"}
+            onClick={() => setIsMobileMenuOpen(false)}
+            aria-label={t("Pomoc a dokumentácia", "Help & Documentation")}
+            title={t("Pomoc a dokumentácia", "Help & Documentation")}
+            aria-current={location.pathname === "/guide" ? "page" : undefined}
             className="w-full flex items-center gap-3 px-6 py-4 text-sm font-medium hover:bg-slate-800 hover:text-white transition-colors text-slate-400"
           >
             <div className="shrink-0"><HelpCircle size={16} /></div>
             <span className={`whitespace-nowrap transition-opacity duration-300 ${isExpanded ? "opacity-100" : "opacity-0 w-0 md:w-auto overflow-hidden"}`}>{t("Pomoc a dokumentácia", "Help & Documentation")}</span>
-          </button>
+          </Link>
           <div className="p-4 pt-2 flex items-center gap-2">
             <button
               type="button"
@@ -631,7 +604,7 @@ export function Layout() {
 
       {/* Main Content Area */}
       <main id="main-content" tabIndex={-1} className="flex-1 flex flex-col min-w-0 bg-slate-50 relative z-0">
-        <Outlet />
+        <Outlet context={{ activeAnalysisId }} />
       </main>
 
       {isSearchOpen && (
@@ -693,73 +666,6 @@ export function Layout() {
               )}
             </div>
           </section>
-        </div>
-      )}
-
-      {/* Help Modal */}
-      {isHelpOpen && (
-        <div className="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center p-4">
-          <div ref={helpModalRef} role="dialog" aria-modal="true" aria-labelledby="help-modal-title" className="bg-white rounded-xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-blue-600">
-                <HelpCircle size={20} />
-                <h2 id="help-modal-title" className="text-lg font-bold text-slate-800">AVERT V{appVersion} — {t("Pomoc a dokumentácia", "Help and documentation")}</h2>
-              </div>
-              <button 
-                onClick={() => setIsHelpOpen(false)}
-                aria-label={t("Zavrieť pomoc", "Close help")}
-                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-full transition-colors"
-              >
-                <X size={20} />
-              </button>
-            </div>
-            <div className="p-4 overflow-y-auto flex-1 space-y-6 text-sm text-slate-600">
-              <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">AVERT — Application Security Assessment Platform</h3>
-                <p>
-                  {t("Modelujte architektúru a dátové toky, analyzujte hrozby podľa STRIDE, vyhodnocujte riziká, overujte požiadavky OWASP ASVS 5.0 a pripravujte zistenia, reporty aj zálohy. Automaticky navrhnuté scenáre sú podnety na ľudské posúdenie, nie potvrdené zraniteľnosti.", "Model architecture and data flows, analyse STRIDE threats, assess risks, verify OWASP ASVS 5.0 requirements, and prepare findings, reports and backups. Automatically suggested scenarios require human review and are not confirmed vulnerabilities.")}
-                </p>
-              </section>
-              
-              <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">{t("Priebeh analýzy", "Analysis Lifecycle")}</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>{t("Kontext aplikácie: Definujte účel, klasifikáciu údajov a regulačné požiadavky systému.", "Application Context: Define the business purpose, data classification, and regulatory requirements of the target system.")}</li>
-                  <li>{t("Model architektúry: Zaznamenajte komponenty, dátové toky a hranice dôvery tvoriace útočnú plochu.", "Architecture Model: Detail the system components, data flows, and trust boundaries that form your attack surface.")}</li>
-                  <li>{t("Analýza STRIDE: Na základe architektúry identifikujte hrozby podľa kategórií Spoofing, Tampering, Repudiation, Information Disclosure, DoS a EoP.", "STRIDE Analysis: Use the Microsoft STRIDE reference dashboard to systematically identify Spoofing, Tampering, Repudiation, Information Disclosure, DoS and EoP threats based on your architecture.")}</li>
-                  <li>{t("Pracovný priestor ASVS: Hodnoťte aplikáciu podľa všetkých 17 kapitol a viac ako 350 požiadaviek OWASP ASVS 5.0. Filtrujte podľa cieľovej úrovne L1–L3 a sledujte stav implementácie.", "ASVS Workspace: Evaluate the application against all 17 chapters and over 350 controls of OWASP ASVS 5.0. Filter by target level (L1–L3) and track implementation status.")}</li>
-                  <li>{t("Register hrozieb: Spravujte hrozby, kategórie STRIDE a priority pomocou matice rizík 4×4. Pravdepodobnosť aj dopad majú štyri úrovne.", "Threat Register: Manage identified threats and STRIDE categories and prioritize them using the 4×4 risk matrix. Likelihood and impact each have four levels.")}</li>
-                  <li>{t("Zistenia a nedostatky: Prepojte architektúru a ASVS a vytvárajte úlohy pre chýbajúce alebo čiastočne splnené požiadavky.", "Findings & Gaps: Cross-reference architecture and ASVS and generate actionable tasks from missing or partially implemented requirements.")}</li>
-                </ul>
-              </section>
-
-              <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">{t("Tipy pre analýzu a reporty", "Tips for Analysis & Reporting")}</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>{t("V pracovnom priestore ASVS filtrujte požiadavky podľa cieľovej úrovne.", "In the ASVS Workspace, filter requirements using Target Level.")}</li>
-                  <li>{t("V registri hrozieb zobrazíte prejdením nad bunkou matice 4×4 počet otvorených hrozieb.", "In the Threat Register, hover over a cell in the 4×4 risk matrix to see the number of open threats.")}</li>
-                  <li>{t("V časti Zistenia a nedostatky vytvorte analýzu nedostatkov z kontrol označených Missing alebo Partial vrátane ich závažnosti.", "In Findings & Gaps, generate a gap analysis with severities from controls marked Missing or Partial.")}</li>
-                </ul>
-              </section>
-              <section>
-                <h3 className="font-bold text-slate-800 text-base mb-2">{t("Lokálne údaje a navigácia", "Local data & navigation")}</h3>
-                <ul className="list-disc pl-5 space-y-2">
-                  <li>{t("Filtre kapitol, sekcií, hľadania a stavov ASVS sa ukladajú pre každú analýzu.", "ASVS chapter, section, search, and status filters are remembered per analysis.")}</li>
-                  <li>{t("ASVS: kláves / zameria hľadanie, šípky vyberajú kapitoly a Escape vymaže hľadaný text.", "ASVS: press / to focus search, use arrows to select chapters, and Escape to clear the search.")}</li>
-                  <li>{t("Údaje sú uložené v prehliadači tohto zariadenia. Na export alebo obnovu použite Zálohu a obnovu.", "Workspace data is stored in this device's browser storage. Use Backup & Restore to export or restore project data.")}</li>
-                  <li>{t("Nastavenie pripnutia navigácie sa zachová po reštarte.", "The sidebar pin preference persists after restarting the app.")}</li>
-                </ul>
-              </section>
-            </div>
-            <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex justify-end rounded-b-xl">
-              <button 
-                onClick={() => setIsHelpOpen(false)}
-                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded shadow-sm hover:bg-blue-700"
-              >
-                {t("Zavrieť", "Close")}
-              </button>
-            </div>
-          </div>
         </div>
       )}
 

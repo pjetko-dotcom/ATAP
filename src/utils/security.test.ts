@@ -21,8 +21,9 @@ import {
 import { getDiagramLayoutIssues, getFlowPathGeometry } from "./dfd";
 import { getContentSecurityPolicy } from "../../contentSecurityPolicy";
 import { getCurrentUserName, parseActivityLogs, setCurrentUserName } from "./activityLog";
-import { asvsRequirements, asvsTriageQuestions } from "../data/asvsData";
+import { asvsChapters, asvsRequirements, asvsTriageQuestions } from "../data/asvsData";
 import { englishTriageQuestions } from "../data/asvsTriageEnglish";
+import { guideChapterDescriptions, guideTopics } from "../data/userGuide";
 import { AnalysisVersionSnapshot } from "../types/versioning";
 import FileSaver from "file-saver";
 import ExcelJS from "exceljs";
@@ -30,6 +31,8 @@ import { getVerificationGuide } from "./verificationGuide";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { LanguageProvider, useLanguage } from "../context/LanguageContext";
+import { UserGuide } from "../components/UserGuide";
+import { MemoryRouter, Outlet, Route, Routes } from "react-router-dom";
 import { evaluateProjectCategorization, projectCategorizationQuestions } from "../data/projectCategorizationData";
 import { englishCategorizationQuestions } from "../data/projectCategorizationEnglish";
 
@@ -189,6 +192,40 @@ test("verification guidance localizes every generated field in each category", (
     en.whatToInspect.forEach((step, index) => assert.notEqual(step, sk.whatToInspect[index]));
     assert.notEqual(en.exampleTest, sk.exampleTest);
     assert.notEqual(en.expectedEvidence, sk.expectedEvidence);
+  }
+});
+
+test("user guide links resolve and both languages cover every ASVS chapter", () => {
+  const topicIds = new Set(guideTopics.map(topic => topic.id));
+  assert.equal(topicIds.size, guideTopics.length);
+  assert.deepEqual(Object.keys(guideChapterDescriptions).map(Number).sort((a, b) => a - b), asvsChapters.map(chapter => chapter.id));
+  for (const topic of guideTopics) {
+    assert.ok(topic.title.sk && topic.title.en && topic.intro.sk && topic.intro.en);
+    for (const step of topic.steps) assert.ok(step.sk && step.en);
+    for (const related of topic.related) assert.ok(topicIds.has(related), `Unknown guide topic: ${related}`);
+  }
+  for (const chapter of asvsChapters) {
+    assert.ok(guideChapterDescriptions[chapter.id].sk && guideChapterDescriptions[chapter.id].en);
+  }
+
+  for (const language of ["sk", "en"] as const) {
+    storage.setItem("atap_ui_language", language);
+    const markup = renderToStaticMarkup(createElement(
+      LanguageProvider,
+      null,
+      createElement(MemoryRouter, { initialEntries: ["/guide?analysis=project-1"] },
+        createElement(Routes, null,
+          createElement(Route, { element: createElement(Outlet, { context: { activeAnalysisId: "project-1" } }) },
+            createElement(Route, { path: "/guide", element: createElement(UserGuide) })
+          )
+        )
+      )
+    ));
+    assert.match(markup, language === "sk" ? /Príručka používateľa/ : /User guide/);
+    assert.match(markup, /V17: WebRTC/);
+    assert.match(markup, /\/guide\?topic=asvs&amp;analysis=project-1/);
+    assert.match(markup, /\/analysis\/project-1\/asvs/);
+    assert.equal((markup.match(/<details/g) || []).length, guideTopics.length);
   }
 });
 

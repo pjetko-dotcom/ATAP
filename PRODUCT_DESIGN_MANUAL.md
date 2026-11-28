@@ -94,6 +94,7 @@ Requirements above the target level and those marked `N/A` are excluded. If ther
 - The printable report covers all 17 ASVS chapters. Its prioritized list puts `Missing` before `Partial`, then higher ASVS levels first, with requirement ID as a stable tie-breaker.
 - CSV columns remain a stable data schema; AVERT is identified in the downloaded filename. CSV cells are sanitized against spreadsheet formula injection.
 - Downloaded backup files use AVERT branding, but backup structure identifiers and local storage keys intentionally retain `atap_*` names for compatibility with existing user data and ATAP backups. The Electron `appId` and old `userData` directory are also retained to avoid breaking upgrades.
+- JSON backups and version snapshots do not include the separate saved findings list or its statuses. Findings CSV is a record, not a restorable JSON backup; disclose this limitation in user-facing guidance.
 
 ## Interaction, visual, and accessibility rules
 
@@ -106,5 +107,6 @@ Requirements above the target level and those marked `N/A` are excluded. If ther
 - Keep forms short and grouped by task. Explain defaults and security assumptions where the user makes a decision.
 - Make dense DFDs usable at supported viewport sizes; retain readable labels, selectability, and an alternative path to inspect linked threats.
 - Treat local activity history as editable client-side traceability, not an immutable audit log.
+- The bilingual in-app guide is a standalone SPA route with native expandable sections, keyboard focus, cross-topic links and optional current-project context. Document every navigation section and keep English ASVS chapter names unchanged.
 
 See [UX_RECOMMENDATIONS.md](./UX_RECOMMENDATIONS.md) for prioritized usability work.

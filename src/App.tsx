@@ -27,6 +27,7 @@ const StrideModel = lazy(() => import("./components/StrideModel.tsx").then(modul
 const FindingsAndGaps = lazy(() => import("./components/FindingsAndGaps.tsx").then(module => ({ default: module.FindingsAndGaps })));
 const Export = lazy(() => import("./components/Export.tsx").then(module => ({ default: module.Export })));
 const AuditTrail = lazy(() => import("./components/AuditTrail.tsx").then(module => ({ default: module.AuditTrail })));
+const UserGuide = lazy(() => import("./components/UserGuide.tsx").then(module => ({ default: module.UserGuide })));
 
 /**
  * Main App Component.
@@ -44,6 +45,7 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Layout />}>
               <Route index element={<Dashboard />} />
+              <Route path="guide" element={<UserGuide />} />
               <Route path="analysis/new" element={<NewAnalysis />} />
               <Route path="analysis/:id" element={<AnalysisLayout />}>
                 <Route index element={<Navigate to="asvs" replace />} />

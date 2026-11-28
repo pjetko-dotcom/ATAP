@@ -10,6 +10,10 @@ Aplikácia je navrhnutá pre duálne nasadenie: ako **moderná webová full-stac
 
 ## 📚 Kompletná Dokumentácia a Sprievodcovia
 
+V aplikácii otvorte **Pomoc a dokumentácia** v ľavom menu. Dvojjazyčná príručka funguje aj offline, obsahuje rozbaľovacie témy a odkazy medzi nimi a vysvetľuje celý postup od kontextu cez STRIDE, riziká a ASVS až po export. Pri otvorenom projekte ponúka aj odkazy späť do jeho sekcií. Názvy 17 kapitol ASVS zostávajú v angličtine.
+
+Open **Help & Documentation** in the left navigation for the offline-capable Slovak/English guide. Its expandable, cross-linked topics cover the complete assessment workflow, including all 17 ASVS chapters. When opened from a project, it links back to that project's sections.
+
 V repozitári sú pripravené podrobné sprievodcovské dokumenty:
 
 * **[🖥️ Návod na Build Electron aplikácie pre Windows 11 (BUILD_ELECTRON.md)](./BUILD_ELECTRON.md)**:
@@ -80,6 +84,10 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 
 ## 🛡️ Kľúčové Funkcie Platformy
 
+### Verzia 1.3.0
+
+Dvojjazyčná príručka pre začiatočníkov s prehľadom modelovania hrozieb, STRIDE, analýzy rizík, ASVS, všetkých kapitol ASVS a jednotlivých obrazoviek. Obsahuje odkazy medzi témami, praktický postup a upozornenia na hranice automatických návrhov a zálohovania.
+
 ### Verzia 1.2.1
 
 Zjednotený vzhľad posuvníkov a slovenská terminológia „zistenia a nedostatky“ v rozhraní, nápovede a reportoch.
@@ -106,7 +114,7 @@ Samostatný prepínač s vlajkou v navigácii mení jazyk rozhrania bez obnoveni
 - **Architecture Model:** Vizuálne modelovanie komponentov, trust zón a dátových tokov s abecedným výberom technológií a protokolov. TLS toky môžu evidovať NIST cipher suite, samostatnú výmenu kľúčov/KEM a odvodený PQC stav návrhu. Kliknutím na šípku sa otvorí editor toku; plátno podporuje posúvanie aj zoom. Voliteľná DFD kontrola poskytuje nezáväzné upozornenia bez blokovania práce. Paralelné spojenia sú vizuálne rozlíšené, prekrytia a prekážky označené a toky cez hranice zón vytvárajú STRIDE návrhy na kontrolu.
 - **Audit Trail & Správa Verzií:** Sledovanie histórie zmien, snapshoty stavov a bezpečný import/export dát do JSON formátu.
 - **Excel & CSV Export:** Excel obsahuje voliteľný súhrn, ASVS požiadavky a STRIDE register (hárok hrozieb sa pridá, ak existujú záznamy); CSV zachováva poradie stĺpcov s hlavičkami vo vybranom jazyku. Vážené pokrytie počíta Partial ako 0,5 a ignoruje Pending/N/A.
-- **Reporty a zálohy:** Tlačiteľný PDF report sumarizuje všetkých 17 kapitol ASVS. Ide o výstup aplikácie, nie o certifikáciu ani oficiálne potvrdenie OWASP. JSON zálohy AVERT možno obnoviť aj zo starších záloh ATAP.
+- **Reporty a zálohy:** Tlačiteľný PDF report sumarizuje všetkých 17 kapitol ASVS. Ide o výstup aplikácie, nie o certifikáciu ani oficiálne potvrdenie OWASP. JSON zálohy AVERT možno obnoviť aj zo starších záloh ATAP; neobsahujú samostatný zoznam zistení ani ich stavy, ktoré možno exportovať do CSV (CSV nemožno obnoviť ako JSON zálohu).
 
 ### Produktové označenie a kompatibilita
 
