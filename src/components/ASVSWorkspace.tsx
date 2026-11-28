@@ -168,6 +168,7 @@ export function ASVSWorkspace() {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [isExportingExcel, setIsExportingExcel] = useState(false);
   const [exportNotice, setExportNotice] = useState<string | null>(null);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const [isCategorizationModalOpen, setIsCategorizationModalOpen] = useState(false);
 
@@ -495,6 +496,7 @@ export function ASVSWorkspace() {
   const handleExportExcel = async () => {
     setIsExportingExcel(true);
     setExportNotice(null);
+    setExportError(null);
     try {
       await exportASVSToExcel(reqs, {
         analysisId,
@@ -505,6 +507,7 @@ export function ASVSWorkspace() {
       setTimeout(() => setExportNotice(null), 4000);
     } catch (err) {
       console.error("Export to Excel failed:", err);
+      setExportError(t("Excel sa nepodarilo exportovať. Skontrolujte údaje a skúste to znova.", "Could not export Excel. Check the data and try again."));
     } finally {
       setIsExportingExcel(false);
       setIsExportMenuOpen(false);
@@ -513,6 +516,7 @@ export function ASVSWorkspace() {
 
   const handleExportCSV = () => {
     setExportNotice(null);
+    setExportError(null);
     try {
       exportASVSToCSV(reqs, {
         analysisId,
@@ -523,6 +527,7 @@ export function ASVSWorkspace() {
       setTimeout(() => setExportNotice(null), 4000);
     } catch (err) {
       console.error("Export to CSV failed:", err);
+      setExportError(t("CSV sa nepodarilo exportovať. Skúste to znova.", "Could not export CSV. Please try again."));
     } finally {
       setIsExportMenuOpen(false);
     }
@@ -847,6 +852,7 @@ export function ASVSWorkspace() {
                     <div className="px-3 py-1.5 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       {t("Formát exportu", "Export format")} · {language.toUpperCase()}
                     </div>
+                    <p className="px-3 py-2 text-[11px] leading-relaxed text-slate-600">{t("Použije zvolenú úroveň ASVS, nie filtre kapitoly, stavu ani vyhľadávania. Jazyk sa riadi rozhraním.", "Uses the selected ASVS level, not chapter, status or search filters. Language follows the interface.")}</p>
                     <button
                       onClick={handleExportExcel}
                       className="w-full text-left px-3 py-2.5 hover:bg-emerald-50/60 flex items-start gap-2.5 text-slate-700 transition-colors cursor-pointer"
@@ -870,6 +876,7 @@ export function ASVSWorkspace() {
                         <div className="text-[11px] text-slate-500 mt-0.5">{t("UTF-8 s BOM pre tabuľkové procesory a skripty", "UTF-8 with BOM for spreadsheets and scripts")}</div>
                       </div>
                     </button>
+                    <Link to={`/analysis/${encodeURIComponent(analysisId || "")}/export`} className="block px-3 py-2.5 font-semibold text-blue-700 hover:bg-blue-50">{t("Ďalšie možnosti a PDF report", "More options and PDF report")}</Link>
                   </div>
                 </>
               )}
@@ -1234,11 +1241,12 @@ export function ASVSWorkspace() {
           )}
           {/* Export notification toast if active */}
           {exportNotice && (
-            <div className="mx-4 mb-2 p-2 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800 flex items-center gap-1.5">
+            <div role="status" className="mx-4 mb-2 p-2 bg-emerald-50 border border-emerald-200 rounded text-xs text-emerald-800 flex items-center gap-1.5">
               <Check size={14} className="text-emerald-600 shrink-0" />
               <span>{exportNotice}</span>
             </div>
           )}
+          {exportError && <div role="alert" className="mx-4 mb-2 rounded border border-red-200 bg-red-50 p-2 text-xs text-red-800">{exportError}</div>}
           {/* Data Table */}
           <div className="flex-1 overflow-auto relative custom-scrollbar">
             <div className="hidden xl:block">

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { 
   FileSpreadsheet, 
   Download, 
@@ -17,7 +17,7 @@ import {
 import { asvsRequirements } from "../data/asvsData";
 import { useWorkspaceState } from "../hooks/useWorkspaceState";
 import { useAnalyses } from "../hooks/useAnalyses";
-import { exportASVSToExcel, exportASVSToCSV } from "../utils/exportToExcel";
+import { exportASVSToExcel, exportASVSToCSV, getExportRequirements } from "../utils/exportToExcel";
 import { ExecutiveReportModal } from "./ExecutiveReportModal";
 import { BackupRestoreModal } from "./BackupRestoreModal";
 import type { ReportLanguage } from "../utils/reportLanguage";
@@ -49,13 +49,7 @@ export function Export() {
   const activeReqs = reqs.length > 0 ? reqs : asvsRequirements;
 
   // Filter preview calculation
-  let previewList = [...activeReqs];
-  if (targetLevel !== "all") {
-    previewList = previewList.filter(r => r.level <= targetLevel);
-  }
-  if (onlyGaps) {
-    previewList = previewList.filter(r => r.status === "Partial" || r.status === "Missing");
-  }
+  const { detail: previewList } = getExportRequirements(activeReqs, targetLevel, onlyGaps);
 
   const totalCount = previewList.length;
   const implementedCount = previewList.filter(r => r.status === "Implemented").length;
@@ -121,19 +115,9 @@ export function Export() {
             <div>
               <h1 className="text-xl font-bold text-slate-800">{t("Export a bezpečnostné reporty", "Export & Security reports")}</h1>
               <p className="text-xs text-slate-500 mt-0.5">
-                {t("Generujte exekutívne PDF reporty, podrobné audítorské Excel hárky alebo kompletné JSON zálohy pre", "Generate executive PDF reports, detailed audit Excel sheets, or complete JSON backups for")} {analysisName}.
+                {t("Vyberte výstup pre manažérov, audítorov alebo spracovanie údajov pre projekt", "Choose an executive, audit or data-processing output for")} {analysisName}.
               </p>
             </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setIsExecutiveReportOpen(true)}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs font-bold shadow-xs flex items-center gap-2 transition-colors cursor-pointer"
-            >
-              <Printer size={15} />
-              <span>{t("Exekutívny PDF Report", "Executive PDF Report")}</span>
-            </button>
           </div>
         </div>
 
@@ -145,6 +129,18 @@ export function Export() {
         )}
         {exportError && <div role="alert" className="rounded-lg border border-red-200 bg-red-50 p-3.5 text-xs font-medium text-red-800">{exportError}</div>}
 
+        <div className="rounded-xl border border-slate-200 bg-white p-5 text-sm text-slate-700 shadow-xs">
+          <label htmlFor="report-language" className="block text-xs font-semibold text-slate-600 mb-1.5">{t("Jazyk PDF, Excelu a CSV požiadaviek", "Language of PDF, Excel and requirements CSV")}</label>
+          <div className="flex items-center gap-2">
+            <LanguageFlag language={reportLanguage} />
+            <select id="report-language" value={reportLanguage} onChange={event => setReportLanguage(event.target.value === "en" ? "en" : "sk")} className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-700">
+              <option value="sk">Slovenčina</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+          <p className="mt-2 text-xs text-slate-500">{t("Názvy kapitol ASVS a texty projektu sa automaticky neprekladajú. CSV zistení používa jazyk rozhrania.", "ASVS chapter names and project text are not translated automatically. Findings CSV uses the interface language.")}</p>
+        </div>
+
         {/* Executive Banner Highlight */}
         <div className="bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 text-white p-6 rounded-xl shadow-md flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
@@ -153,7 +149,7 @@ export function Export() {
             </span>
             <h2 className="text-lg font-bold">{t("Report hodnotenia OWASP ASVS (Tlač / PDF)", "OWASP ASVS assessment report (Print / PDF)")}</h2>
             <p className="text-xs text-blue-100 max-w-xl">
-              {t("Súhrn pokrytia všetkých 17 kapitol (V1–V17), prioritné nedostatky, STRIDE hrozby a priestor na schválenie audítorom. Report je výstup aplikácie, nie certifikácia ani oficiálne potvrdenie OWASP.", "Coverage summary for all 17 chapters (V1–V17), priority gaps, STRIDE threats, and auditor sign-off. This report is an application output, not an OWASP certification or official attestation.")}
+              {t("Pre manažérov: pokrytie ASVS, vybrané nedostatky a počty otvorených hrozieb. V náhľade použite tlač a zvoľte uloženie do PDF. Filtre tabuľkového exportu nižšie naň neplatia. Nie je to certifikácia OWASP.", "For managers: ASVS coverage, selected gaps and counts of open threats. In the preview, print and choose to save as PDF. The spreadsheet filters below do not apply. This is not an OWASP certification.")}
             </p>
           </div>
           <button
@@ -167,17 +163,6 @@ export function Export() {
 
         {/* Scope Filters */}
         <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs space-y-4">
-          <div>
-            <label htmlFor="report-language" className="block text-xs font-semibold text-slate-600 mb-1.5">{t("Jazyk reportu", "Report language")}</label>
-            <div className="flex items-center gap-2">
-              <LanguageFlag language={reportLanguage} />
-              <select id="report-language" value={reportLanguage} onChange={event => setReportLanguage(event.target.value === "en" ? "en" : "sk")} className="rounded-lg border border-slate-200 bg-white p-2.5 text-xs text-slate-700">
-                <option value="sk">Slovenčina</option>
-                <option value="en">English</option>
-              </select>
-            </div>
-            <p className="mt-1 text-xs text-slate-500">{t("Údaje projektu a niektoré generované texty sa automaticky neprekladajú.", "Project data and some generated text are not translated automatically.")}</p>
-          </div>
           <h2 className="text-sm font-bold text-slate-800 flex items-center gap-2">
             <Layers size={16} className="text-blue-600" />
             {t("Nastavenie rozsahu tabuľkového exportu", "Spreadsheet export scope")}
@@ -185,10 +170,11 @@ export function Export() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+              <label htmlFor="export-level" className="block text-xs font-semibold text-slate-600 mb-1.5">
                 {t("Cieľová úroveň ASVS", "Target ASVS level")}
               </label>
               <select
+                id="export-level"
                 value={targetLevel}
                 onChange={(e) => setTargetLevel(e.target.value === "all" ? "all" : parseInt(e.target.value, 10))}
                 className="w-full text-xs border border-slate-200 rounded-lg p-2.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
@@ -212,7 +198,7 @@ export function Export() {
                     onChange={(e) => setOnlyGaps(e.target.checked)}
                     className="w-4 h-4 text-red-600 rounded border-slate-300 focus:ring-red-500"
                   />
-                  <span>{t("Exportovať iba otvorené bezpečnostné nedostatky", "Export only open security gaps")} (Partial / Missing)</span>
+                  <span>{t("Iba nedostatky ASVS", "ASVS gaps only")} (Partial / Missing)</span>
                 </label>
               </div>
             </div>
@@ -221,7 +207,7 @@ export function Export() {
           <fieldset className="border-t border-slate-100 pt-4">
             <legend className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{t("Sekcie zošita Excel (najviac tri hárky)", "Excel workbook sections (up to three sheets)")}</legend>
             <p className="mt-1 text-[11px] text-slate-500">
-              {t("Hárok STRIDE sa vytvorí iba vtedy, ak register obsahuje hrozby. Pri exporte iba nedostatkov zostáva súhrn vypočítaný z celého zvoleného rozsahu.", "The STRIDE sheet is created only when the register contains threats. When exporting gaps only, the summary still covers the entire selected scope.")}
+              {t("Zvolený hárok STRIDE môže byť prázdny. Filter nedostatkov platí iba pre detail ASVS a CSV, nie pre súhrn ani hrozby. Súhrn pokrýva celý zvolený rozsah úrovní.", "The selected STRIDE sheet may be empty. The gaps filter applies only to ASVS detail and CSV, not to the summary or threats. The summary covers all requirements in the selected level scope.")}
             </p>
             <div className="mt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
               {[
@@ -250,12 +236,13 @@ export function Export() {
                 <option value="compact">{t("Kompaktná (viac údajov na stránke)", "Compact (more data per page)")}</option>
               </select>
             </div>
+            <p className="mt-2 text-xs text-slate-500">{t("Čitateľná výška umožní prispôsobiť riadky obsahu v Exceli; kompaktné riadky môžu dlhý text skryť.", "Comfortable rows can fit content in Excel; compact rows may hide long text.")}</p>
           </fieldset>
 
           {/* Quick Metrics of the export */}
           <div className="pt-2 border-t border-slate-100">
             <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
-              {t("Náhľad obsahu vygenerovaného súboru:", "Preview of generated file contents:")}
+              {t("Náhľad filtrovaných požiadaviek (detail Excelu / CSV):", "Preview of filtered requirements (Excel detail / CSV):")}
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
               <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-100">
@@ -279,7 +266,7 @@ export function Export() {
                 <div className="text-[10px] text-blue-600">{t("Čakajúce (Pending)", "Pending")}</div>
               </div>
 
-              <div className="overflow-hidden rounded-lg border border-slate-200">
+              <div className="col-span-full overflow-hidden rounded-lg border border-slate-200">
                 <div className="border-b border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-semibold text-slate-600">
                   {t("Ukážka riadkov podľa zvoleného rozsahu", "Preview of rows in the selected scope")}{previewList.length > 4 ? t(" · prvé 4 položky", " · first 4 items") : ""}
                 </div>
@@ -307,7 +294,7 @@ export function Export() {
         </div>
 
         {/* Download Action Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           
           {/* 1. XLSX Card */}
           <div className="bg-white p-6 rounded-xl border border-emerald-200/80 shadow-xs flex flex-col justify-between relative overflow-hidden">
@@ -327,7 +314,7 @@ export function Export() {
               <div className="space-y-1.5 mb-6 text-xs text-slate-600">
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-                  <span>{t("3 hárky vrátane KPI súhrnu", "3 sheets including KPI summary")}</span>
+                  <span>{t("Až 3 voliteľné hárky vrátane KPI súhrnu", "Up to 3 optional sheets including KPI summary")}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
@@ -367,7 +354,7 @@ export function Export() {
               </div>
               <h3 className="text-base font-bold text-slate-800 mb-1">{t("CSV formát (.csv)", "CSV format (.csv)")}</h3>
               <p className="text-xs text-slate-500 mb-4">
-                {t("Štandardný tabuľkový súbor vhodný pre strojové spracovanie, CI/CD skripty a Jira import.", "Standard tabular file suitable for machine processing, CI/CD scripts and Jira import.")}
+                {t("Riadky požiadaviek ASVS pre tabuľkové procesory a skripty; neobsahuje register hrozieb ani stavy zistení.", "ASVS requirement rows for spreadsheets and scripts; excludes the threat register and findings statuses.")}
               </p>
 
               <div className="space-y-1.5 mb-6 text-xs text-slate-600">
@@ -407,7 +394,7 @@ export function Export() {
               </div>
               <h3 className="text-base font-bold text-slate-800 mb-1">{t("JSON záloha a obnova", "JSON Backup & Restore")}</h3>
               <p className="text-xs text-slate-500 mb-4">
-                {t("Kompletná nezávislá záloha stavu projektu vrátane architektúry, audit logu a verzií.", "Complete independent project backup including architecture, audit log and versions.")}
+                {t("Obnoviteľná záloha projektu vrátane architektúry, auditného logu a verzií. Neobsahuje samostatný zoznam zistení ani jeho stavy.", "Restorable project backup including architecture, audit log and versions. Excludes the separate findings list and its statuses.")}
               </p>
 
               <div className="space-y-1.5 mb-6 text-xs text-slate-600">
@@ -435,7 +422,21 @@ export function Export() {
             </button>
           </div>
 
+          <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-xs flex flex-col justify-between">
+            <div>
+              <div className="w-12 h-12 bg-amber-50 text-amber-700 rounded-xl flex items-center justify-center mb-4"><FileText size={24} /></div>
+              <h3 className="text-base font-bold text-slate-800 mb-1">{t("CSV zistení (.csv)", "Findings CSV (.csv)")}</h3>
+              <p className="text-xs text-slate-500 mb-4">{t("Samostatný zoznam vytvorených zistení vrátane závažnosti a stavu. Líši sa od CSV požiadaviek ASVS a neslúži na obnovu.", "The separate generated findings list, including severity and status. Unlike requirements CSV, it records findings and cannot be restored as a backup.")}</p>
+            </div>
+            <Link to={`/analysis/${encodeURIComponent(analysisId || "")}/findings`} className="w-full flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-700 text-white text-xs font-semibold rounded-lg hover:bg-slate-800">
+              {t("Otvoriť zistenia a exportovať CSV", "Open findings and export CSV")} <ArrowRight size={15} />
+            </Link>
+          </div>
+
         </div>
+        <p className="text-xs text-slate-600">{t("Exporty sú snímkou aktuálnych údajov, nie živým prepočtom. Po úpravách v projekte vytvorte nový report; zmeny priamo v Exceli neprepočítajú súhrn.", "Exports are snapshots, not live calculations. Generate a new report after project changes; editing Excel does not recalculate its summary.")}{" "}
+          <Link to={`/guide?${new URLSearchParams({ topic: "export", ...(analysisId ? { analysis: analysisId } : {}) })}`} className="font-semibold text-blue-700 underline">{t("Viac v príručke", "Read the guide")}</Link>
+        </p>
 
       </div>
 

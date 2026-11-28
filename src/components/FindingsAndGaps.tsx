@@ -4,8 +4,7 @@ import { FileText, ShieldAlert, CheckCircle, AlertTriangle, ArrowRight } from "l
 import { asvsRequirements, asvsChapters, ASVSRequirement } from "../data/asvsData";
 import { HelpTooltip } from "./HelpTooltip";
 import FileSaver from "file-saver";
-import { sanitizeCsvCell } from "../utils/csv";
-import { Finding, generateFindingsFromAsvs } from "../utils/findings";
+import { Finding, createFindingsCsv, generateFindingsFromAsvs } from "../utils/findings";
 import { useLanguage } from "../context/LanguageContext";
 
 const { saveAs } = FileSaver;
@@ -58,7 +57,7 @@ function loadSavedFindings(key: string): Finding[] {
  * @returns {JSX.Element} The rendered Findings and Gaps dashboard.
  */
 export function FindingsAndGaps() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const { id: analysisId } = useParams<{ id: string }>();
   const findingsStorageKey = `atap_findings_${analysisId || "default"}`;
   const [findingState, setFindingState] = useState(() => ({
@@ -133,16 +132,7 @@ export function FindingsAndGaps() {
     setExportError(null);
 
     try {
-      const headers = ["ID", "Finding", "Description", "Severity", "Status", "ASVS Reference"];
-      const rows = findings.map(finding => [
-        finding.id,
-        finding.title,
-        finding.description,
-        finding.severity,
-        finding.status,
-        finding.asvsRef,
-      ].map(sanitizeCsvCell).join(","));
-      const csv = `\uFEFF${headers.map(sanitizeCsvCell).join(",")}\n${rows.join("\n")}`;
+      const csv = createFindingsCsv(findings, language);
       const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
       const safeAnalysisId = (analysisId || "analysis").replace(/[^A-Za-z0-9_-]/g, "_");
       saveAs(blob, `avert_findings_${safeAnalysisId}_${new Date().toISOString().slice(0, 10)}.csv`);
@@ -172,7 +162,7 @@ export function FindingsAndGaps() {
           <h2 className="text-2xl font-bold text-slate-800">{t("Zistenia a nedostatky", "Findings & Gaps")}</h2>
           <p className="text-sm text-slate-500 mt-1">{t("Sledujte zistenia odvodené z kontrol ASVS označených Missing alebo Partial.", "Track findings derived from ASVS controls marked Missing or Partial.")}</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           {lastGenerated && (
             <span className="text-xs text-slate-500 font-medium hidden md:inline-block">
               {t("Naposledy vygenerované", "Last generated")}: {lastGenerated.toLocaleTimeString()}
@@ -200,6 +190,7 @@ export function FindingsAndGaps() {
           </button>
         </div>
       </div>
+      <p className="mb-4 text-xs text-slate-600">{t("CSV obsahuje uložené zistenia a ich stavy, nie všetky požiadavky ASVS. Hlavičky používajú jazyk rozhrania; nejde o obnoviteľnú zálohu.", "CSV contains saved findings and their statuses, not all ASVS requirements. Headers use the interface language; it is not a restorable backup.")}</p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center gap-4">

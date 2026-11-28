@@ -88,11 +88,12 @@ Requirements above the target level and those marked `N/A` are excluded. If ther
 
 ## Export contract
 
-- Excel can contain up to three optional sheets: audit summary, ASVS requirements, and STRIDE threat register. The STRIDE sheet is created only when the selected analysis has threats.
+- Excel can contain up to three optional sheets: audit summary, ASVS requirements, and STRIDE threat register. A selected STRIDE sheet is present even when the register is empty.
 - When “only gaps” is selected, the ASVS detail sheet and CSV contain only `Partial` and `Missing` controls. The Excel summary and chapter coverage continue to describe the full selected target-level scope, and the summary states this explicitly.
 - Excel summary and chapter coverage use the shared weighted formula above. The threat sheet includes the scenario description, STRIDE category, likelihood, impact, risk, status, ASVS references, component links, and whether a generated scenario was reviewed.
-- The printable report covers all 17 ASVS chapters. Its prioritized list puts `Missing` before `Partial`, then higher ASVS levels first, with requirement ID as a stable tie-breaker.
-- CSV columns remain a stable data schema; AVERT is identified in the downloaded filename. CSV cells are sanitized against spreadsheet formula injection.
+- The printable report uses the saved working-version target level, covers all 17 ASVS chapters, and displays a dash when no controls have been evaluated instead of implying a measured 0%. Its selected list puts `Missing` before `Partial`, then higher ASVS levels first, with requirement ID as a stable tie-breaker; it is not a risk ranking.
+- Requirements CSV and findings CSV are distinct, with stable column order and localized headers. Findings CSV follows the interface language; report-page requirements CSV follows the report language. CSV cells are sanitized against spreadsheet formula injection.
+- Reports are snapshots: Excel summary values do not recalculate when workbook cells are edited. Generate a new export after changing project data.
 - Downloaded backup files use AVERT branding, but backup structure identifiers and local storage keys intentionally retain `atap_*` names for compatibility with existing user data and ATAP backups. The Electron `appId` and old `userData` directory are also retained to avoid breaking upgrades.
 - JSON backups and version snapshots do not include the separate saved findings list or its statuses. Findings CSV is a record, not a restorable JSON backup; disclose this limitation in user-facing guidance.
 

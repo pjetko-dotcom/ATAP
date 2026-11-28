@@ -8,21 +8,9 @@
  */
 import React, { useEffect } from "react";
 import { createPortal } from "react-dom";
-import { 
-  Printer, 
-  X, 
-  ShieldCheck, 
-  AlertTriangle, 
-  FileText, 
-  Layers, 
-  CheckCircle2, 
-  Activity,
-  Calendar,
-  UserCheck
-} from "lucide-react";
-import { ASVS_VERSION, asvsChapters, asvsRequirements, ASVSRequirement } from "../data/asvsData";
-import { getInitialThreatsForAnalysis, summarizeThreats, type Threat } from "../utils/threatModel";
-import { calculateAsvsCoverage } from "../utils/asvsMetrics";
+import { Printer, X, FileText } from "lucide-react";
+import { ASVS_VERSION, asvsChapters, type ASVSRequirement } from "../data/asvsData";
+import { getExecutiveCoverage, getExecutiveReportData } from "../utils/executiveReport";
 import { reportText, type ReportLanguage } from "../utils/reportLanguage";
 
 interface ExecutiveReportModalProps {
@@ -35,6 +23,65 @@ interface ExecutiveReportModalProps {
   status?: string;
   businessOwners?: string;
   language?: ReportLanguage;
+}
+
+interface ExecutiveReportGapsProps {
+  gaps: readonly (Pick<ASVSRequirement, "id" | "title" | "description" | "notes"> & { status: string })[];
+  total: number;
+  language: ReportLanguage;
+}
+
+export function ExecutiveReportGaps({ gaps, total, language }: ExecutiveReportGapsProps) {
+  const t = (sk: string, en: string) => reportText(language, sk, en);
+  return (
+    <div className="mb-8">
+      <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
+        {t("3. Vybrané nedostatky ASVS", "3. Selected ASVS gaps")}
+      </h2>
+      {gaps.length === 0 ? (
+        <p className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
+          {t("V zvolenom rozsahu nie sú žiadne požiadavky označené Missing alebo Partial. Neznamená to, že všetky požiadavky boli vyhodnotené alebo implementované.", "No requirements in the selected scope are marked Missing or Partial. This does not mean that all requirements have been evaluated or implemented.")}
+        </p>
+      ) : (
+        <>
+          <p className="mb-3 text-xs text-slate-600">{t(`Zobrazených ${gaps.length} z ${total}. Poradie: Missing pred Partial, potom vyššia úroveň ASVS a ID; nejde o hodnotenie rizika.`, `Showing ${gaps.length} of ${total}. Ordered by Missing before Partial, then higher ASVS level and ID; this is not a risk ranking.`)}</p>
+          <div className="border border-slate-200 rounded-xl overflow-hidden print:overflow-visible">
+            <table className="w-full text-left text-xs border-collapse">
+              <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px]">
+                <tr>
+                  <th className="p-2.5 w-20">ID</th>
+                  <th className="p-2.5 w-16 text-center">{t("Stav", "Status")}</th>
+                  <th className="p-2.5">{t("Požiadavka", "Requirement")}</th>
+                  <th className="p-2.5">{t("Poznámka", "Note")}</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {gaps.map(gap => (
+                  <tr key={gap.id} className="hover:bg-slate-50/50 print:break-inside-avoid">
+                    <td className="p-2.5 font-bold text-slate-800 align-top">{gap.id}</td>
+                    <td className="p-2.5 text-center align-top">
+                      <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded uppercase ${
+                        gap.status === "Missing" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
+                      }`}>
+                        {gap.status === "Missing" ? t("Chýba", "Missing") : t("Čiastočne", "Partial")}
+                      </span>
+                    </td>
+                    <td className="p-2.5 text-slate-700 align-top">
+                      <strong className="block text-slate-800">{gap.title}</strong>
+                      <span className="text-xs text-slate-600">{gap.description}</span>
+                    </td>
+                    <td className="p-2.5 text-slate-600 text-xs align-top whitespace-pre-wrap break-words">
+                      {gap.notes || t("Poznámka nie je uvedená.", "No note provided.")}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
 }
 
 export function ExecutiveReportModal({
@@ -64,48 +111,22 @@ export function ExecutiveReportModal({
 
   if (!isOpen) return null;
 
-  // Load requirements
-  let reqs: ASVSRequirement[] = asvsRequirements;
+  let data: ReturnType<typeof getExecutiveReportData>;
   try {
-    const raw = localStorage.getItem(`atap_asvs_v5_${analysisId}`);
-    if (raw) {
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        reqs = parsed;
-      }
-    }
-  } catch (e) {}
-
-  // Filter to target level
-  const storedTargetLevel = localStorage.getItem(`atap_asvs_target_level_${analysisId}`);
-  const requestedLevel = typeof asvsLevel === "number" ? asvsLevel : parseInt(asvsLevel, 10) || 2;
-  const targetLevelNum = storedTargetLevel === "all"
-    ? "all"
-    : storedTargetLevel && [1, 2, 3].includes(Number(storedTargetLevel))
-      ? Number(storedTargetLevel)
-      : requestedLevel;
-  const targetLevelLabel = targetLevelNum === "all" ? t("Všetky úrovne (L1-L3)", "All levels (L1-L3)") : `L${targetLevelNum}`;
-  const applicableReqs = reqs.filter(r => targetLevelNum === "all" || r.level <= targetLevelNum);
-
-  // Load threats
-  let threats: Threat[] = getInitialThreatsForAnalysis(analysisId);
-  try {
-    const rawThreats = localStorage.getItem(`atap_threats_${analysisId}`);
-    if (rawThreats) {
-      threats = JSON.parse(rawThreats);
-    }
-  } catch (error) {
-    console.error("Failed to load report threats", error);
+    data = getExecutiveReportData(localStorage, analysisId, asvsLevel);
+  } catch {
+    return createPortal(
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/70 p-4">
+        <div role="dialog" aria-modal="true" aria-labelledby="report-error-title" className="max-w-lg rounded-xl bg-white p-6 shadow-xl">
+          <h2 id="report-error-title" className="font-bold text-slate-900">{t("Report sa nepodarilo načítať", "Could not load the report")}</h2>
+          <p role="alert" className="mt-3 text-sm text-slate-700">{t("Údaje ASVS alebo hrozieb sú nedostupné alebo poškodené. Skontrolujte pracovný priestor a skúste to znova.", "ASVS or threat data is unavailable or invalid. Check the workspace and try again.")}</p>
+          <button onClick={onClose} className="mt-4 rounded-lg bg-slate-900 px-4 py-2 text-sm text-white">{t("Zavrieť", "Close")}</button>
+        </div>
+      </div>, document.body
+    );
   }
-
-  // Load context
-  let context: any = {};
-  try {
-    const rawCtx = localStorage.getItem(`atap_context_${analysisId}`);
-    if (rawCtx) {
-      context = JSON.parse(rawCtx);
-    }
-  } catch (e) {}
+  const { targetLevel: targetLevelNum, scoped: applicableReqs, threatSummary } = data;
+  const targetLevelLabel = targetLevelNum === "all" ? t("Všetky úrovne (L1-L3)", "All levels (L1-L3)") : `L${targetLevelNum}`;
 
   // Computed metrics
   const totalScoped = applicableReqs.length;
@@ -114,28 +135,18 @@ export function ExecutiveReportModal({
   const partial = applicableReqs.filter(r => r.status === "Partial");
   const na = applicableReqs.filter(r => r.status === "N/A");
 
-  const complianceScore = calculateAsvsCoverage(applicableReqs);
-
-  const threatSummary = summarizeThreats(threats);
+  const coverage = getExecutiveCoverage(applicableReqs);
 
   // Chapter statistics
   const chapterStats = asvsChapters.map(ch => {
     const chReqs = applicableReqs.filter(r => r.chapterId === ch.id);
     const chImplemented = chReqs.filter(r => r.status === "Implemented").length;
-    const chPartial = chReqs.filter(r => r.status === "Partial").length;
-    const chMissing = chReqs.filter(r => r.status === "Missing").length;
-    const chNa = chReqs.filter(r => r.status === "N/A").length;
-    const score = calculateAsvsCoverage(chReqs);
-
     return {
       id: ch.id,
       name: ch.name,
       total: chReqs.length,
       implemented: chImplemented,
-      partial: chPartial,
-      missing: chMissing,
-      na: chNa,
-      score
+      ...getExecutiveCoverage(chReqs)
     };
   });
 
@@ -153,12 +164,18 @@ export function ExecutiveReportModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto"
+      id="executive-report-print-root"
+      lang={language}
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-900/70 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto print:static print:block print:overflow-visible print:bg-white print:p-0"
       onClick={onClose}
     >
+      <style>{`@media print {
+        html, body { height: auto !important; overflow: visible !important; }
+        body > :not(#executive-report-print-root) { display: none !important; }
+      }`}</style>
       {/* Modal Container */}
       <div 
-        className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden my-auto"
+        className="bg-white rounded-xl shadow-2xl border border-slate-200 w-full max-w-4xl max-h-[95vh] flex flex-col overflow-hidden my-auto print:block print:max-h-none print:max-w-none print:overflow-visible print:border-0 print:shadow-none"
         role="dialog"
         aria-modal="true"
         aria-labelledby="executive-report-title"
@@ -206,7 +223,7 @@ export function ExecutiveReportModal({
               </p>
               <div className="flex items-center gap-2 mb-2">
                 <span className="px-2 py-0.5 bg-red-100 text-red-800 text-[10px] font-bold uppercase tracking-wider rounded">
-                  {t("Dôverné / Bezpečnostný audit", "Confidential / Security audit")}
+                  {t("Dôverné / Bezpečnostné hodnotenie", "Confidential / Security assessment")}
                 </span>
                 <span className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold uppercase tracking-wider rounded">
                   OWASP ASVS {ASVS_VERSION} ({targetLevelLabel})
@@ -214,7 +231,7 @@ export function ExecutiveReportModal({
                 <span className={`px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider rounded ${
                   status === "Final" ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
                 }`}>
-                  {t("Stav", "Status")}: {status}
+                  {t("Stav analýzy", "Analysis status")}: {status === "Draft" ? t("Rozpracovaná", "Draft") : status === "Final" ? t("Finálna", "Final") : status === "In Review" ? t("V kontrole", "In review") : status}
                 </span>
               </div>
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -226,9 +243,9 @@ export function ExecutiveReportModal({
             </div>
 
             <div className="text-left sm:text-right text-xs text-slate-500 space-y-0.5 shrink-0">
-              <div>{t("Verzia správy", "Report version")}: <strong className="text-slate-800">v{currentVersion}</strong></div>
+              <div>{t("Aktuálna verzia analýzy", "Current analysis version")}: <strong className="text-slate-800">v{currentVersion}</strong></div>
               <div>{t("Dátum vyhotovenia", "Report date")}: <strong className="text-slate-800">{new Date().toLocaleDateString(locale)}</strong></div>
-              <div>{t("Garant systému", "System owner")}: <strong className="text-slate-800">{businessOwners || t("Interný bezpečnostný tím", "Internal security team")}</strong></div>
+              <div>{t("Garant systému", "System owner")}: <strong className="text-slate-800">{businessOwners || t("Neuvedený", "Not specified")}</strong></div>
             </div>
           </div>
 
@@ -241,12 +258,10 @@ export function ExecutiveReportModal({
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
                 <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{t("Vážené pokrytie ASVS", "Weighted ASVS coverage")}</span>
-                <p className={`text-2xl font-extrabold mt-1 ${
-                  complianceScore >= 80 ? "text-emerald-600" : complianceScore >= 50 ? "text-amber-600" : "text-red-600"
-                }`}>
-                  {complianceScore}%
+                <p className="text-2xl font-extrabold mt-1 text-slate-800">
+                  {coverage.score === null ? "—" : `${coverage.score}%`}
                 </p>
-                <span className="text-[10px] text-slate-400">{t("Partial = 0,5; Pending a N/A sa nezapočítavajú", "Partial = 0.5; Pending and N/A are excluded")}</span>
+                <span className="text-xs text-slate-500">{t("Partial = 0,5; Pending a N/A sú vylúčené", "Partial = 0.5; Pending and N/A excluded")} · {coverage.evaluated} {t("vyhodnotených", "evaluated")}</span>
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
@@ -258,7 +273,7 @@ export function ExecutiveReportModal({
               </div>
 
               <div className="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{t("Otvorené zistenia", "Open findings")}</span>
+                <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wide">{t("Nedostatky ASVS", "ASVS gaps")}</span>
                 <p className="text-2xl font-extrabold text-red-600 mt-1">
                   {missing.length + partial.length}
                 </p>
@@ -275,46 +290,33 @@ export function ExecutiveReportModal({
             </div>
 
             <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600 leading-relaxed">
-              {language === "sk" ? <p>
-                Predložená správa sumarizuje bezpečnostný stav systému <strong>{reportAnalysisName}</strong> voči medzinárodnému štandardu <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> v rozsahu <strong>{targetLevelLabel}</strong>. Z celkového počtu <strong>{totalScoped}</strong> vyhodnocovaných kontrol bolo <strong>{implemented.length}</strong> overených ako implementovaných, <strong>{missing.length + partial.length}</strong> evidovaných ako nedostatky vyžadujúce nápravu a <strong>{na.length}</strong> identifikovaných ako neaplikovateľné na základe aplikačného kontextu a triáže.
-              </p> : <p>
-                This report summarizes the security posture of <strong>{reportAnalysisName}</strong> against <strong>OWASP Application Security Verification Standard {ASVS_VERSION}</strong> at <strong>{targetLevelLabel}</strong>. Of <strong>{totalScoped}</strong> controls in scope, <strong>{implemented.length}</strong> were verified as implemented, <strong>{missing.length + partial.length}</strong> were recorded as gaps requiring remediation, and <strong>{na.length}</strong> were identified as not applicable based on the application context and triage.
-              </p>}
+              <p>{t(`V rozsahu ${targetLevelLabel} je ${totalScoped} požiadaviek: ${implemented.length} označených ako implementované, ${missing.length} chýbajúcich, ${partial.length} čiastočných, ${na.length} N/A a ${coverage.pending} nevyhodnotených.`, `In scope ${targetLevelLabel}: ${totalScoped} requirements, including ${implemented.length} marked implemented, ${missing.length} missing, ${partial.length} partial, ${na.length} N/A and ${coverage.pending} pending.`)}</p>
+              <p className="mt-2">{t("Report používa aktuálne uložené údaje pracovnej verzie, nie zvolený archívny snapshot. Počty nedostatkov ASVS nezohľadňujú stav v registri zistení. Výstup nie je certifikáciou ani oficiálnym potvrdením OWASP.", "This report uses the current saved working data, not the selected archived snapshot. ASVS gap counts do not reflect finding register status. This output is not certification or official OWASP confirmation.")}</p>
+              {data.defaultCount > 0 && <p className="mt-2 font-semibold">{t(`Pre ${data.defaultCount} požiadaviek v rozsahu nebol uložený stav; použitý je predvolený stav ASVS pracovného priestoru (N/A), nie výsledok overenia.`, `${data.defaultCount} in-scope requirements have no saved status; the ASVS workspace default (N/A) is used, not a verification result.`)}</p>}
+              {data.usesDemoThreats && <p className="mt-2 font-semibold">{t("Register hrozieb používa predvolené ukážkové údaje.", "The threat register uses default demonstration data.")}</p>}
+              <p className="mt-2">{t("Texty požiadaviek ASVS sú v angličtine; používateľské údaje a poznámky sa automaticky neprekladajú.", "ASVS requirement text is in English; user data and notes are not translated automatically.")}</p>
+              <p className="mt-2">{t("Pomlčka znamená, že nie je žiadna vyhodnotená požiadavka; nejde o 0 % pokrytie.", "A dash means there are no evaluated requirements; it does not mean 0% coverage.")}</p>
             </div>
           </div>
 
           {/* Section 2: Chapter Breakdown */}
           <div className="mb-8">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-              {t("2. Súlad po kapitolách štandardu (V1 – V17)", "2. Compliance by standard chapter (V1 – V17)")}
+              {t("2. Pokrytie po kapitolách ASVS (V1 – V17)", "2. ASVS coverage by chapter (V1 – V17)")}
             </h2>
 
             <div className="space-y-2">
               {chapterStats.map(stat => (
-                <div key={stat.id} className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/40 flex items-center justify-between gap-4 text-xs">
-                  <div className="w-48 sm:w-60 truncate">
+                <div key={stat.id} className="p-2.5 rounded-lg border border-slate-100 bg-slate-50/40 flex items-center justify-between gap-4 text-xs print:break-inside-avoid">
+                  <div className="min-w-0">
                     <span className="font-bold text-slate-700">V{stat.id}: {stat.name}</span>
                   </div>
-
-                  <div className="flex-1 max-w-xs hidden sm:block">
-                    <div className="w-full bg-slate-200 rounded-full h-2 overflow-hidden flex">
-                      <div 
-                        className={`h-full ${
-                          stat.score >= 80 ? "bg-emerald-500" : stat.score >= 50 ? "bg-amber-500" : "bg-red-500"
-                        }`}
-                        style={{ width: `${stat.score}%` }}
-                      />
-                    </div>
-                  </div>
-
                   <div className="flex items-center gap-3 text-right shrink-0">
-                    <span className="text-[11px] text-slate-400">
-                      {stat.implemented}/{stat.total - stat.na} {t("splnených", "implemented")}
+                    <span className="text-xs text-slate-600">
+                      {stat.implemented}/{stat.total} {t("implementovaných / v rozsahu", "implemented / in scope")} · {stat.evaluated} {t("vyhodnotených", "evaluated")}
                     </span>
-                    <span className={`font-bold w-12 text-right ${
-                      stat.score >= 80 ? "text-emerald-700" : stat.score >= 50 ? "text-amber-700" : "text-red-700"
-                    }`}>
-                      {stat.score}%
+                    <span className="font-bold w-12 text-right text-slate-800">
+                      {stat.score === null ? "—" : `${stat.score}%`}
                     </span>
                   </div>
                 </div>
@@ -322,62 +324,21 @@ export function ExecutiveReportModal({
             </div>
           </div>
 
-          {/* Section 3: Critical Gaps & Findings */}
-          {topGaps.length > 0 && (
-            <div className="mb-8 page-break-inside-avoid">
-              <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">
-                {t("3. Prioritné bezpečnostné nedostatky vyžadujúce nápravu", "3. Priority security gaps requiring remediation")}
-              </h2>
-
-              <div className="border border-slate-200 rounded-xl overflow-hidden">
-                <table className="w-full text-left text-xs border-collapse">
-                  <thead className="bg-slate-100 text-slate-600 font-bold uppercase text-[10px]">
-                    <tr>
-                      <th className="p-2.5 w-20">ID</th>
-                      <th className="p-2.5 w-16 text-center">{t("Stav", "Status")}</th>
-                      <th className="p-2.5">{t("Požiadavka", "Requirement")}</th>
-                      <th className="p-2.5">{t("Zistenie / Odporúčanie", "Finding / Recommendation")}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {topGaps.map(gap => (
-                      <tr key={gap.id} className="hover:bg-slate-50/50">
-                        <td className="p-2.5 font-bold text-slate-800 align-top">{gap.id}</td>
-                        <td className="p-2.5 text-center align-top">
-                          <span className={`px-1.5 py-0.5 text-[9px] font-bold rounded uppercase ${
-                            gap.status === "Missing" ? "bg-red-100 text-red-700" : "bg-amber-100 text-amber-700"
-                          }`}>
-                            {gap.status}
-                          </span>
-                        </td>
-                        <td className="p-2.5 text-slate-700 align-top">
-                          <strong className="block text-slate-800">{gap.title}</strong>
-                          <span className="text-[11px] text-slate-500 line-clamp-2">{gap.description}</span>
-                        </td>
-                        <td className="p-2.5 text-slate-600 text-[11px] align-top">
-                          {gap.notes || t("Vyžaduje implementáciu a dodanie overovacieho dôkazu (unit/integration testy).", "Requires implementation and verification evidence (unit/integration tests).")}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
+          <ExecutiveReportGaps gaps={topGaps} total={missing.length + partial.length} language={language} />
 
           {/* Section 4: Sign-off & Approvals */}
-          <div className="pt-8 border-t-2 border-slate-900 mt-12 page-break-inside-avoid">
+          <div className="pt-8 border-t-2 border-slate-900 mt-12 print:break-inside-avoid">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-6">
-              {t("4. Podpisy & Schválenie auditu", "4. Signatures & audit approval")}
+              {t("4. Podpisy a schválenie", "4. Signatures and approval")}
             </h2>
 
             <div className="grid grid-cols-2 gap-8 text-xs">
               <div className="border border-slate-200 rounded-lg p-4 space-y-4">
-                <span className="text-slate-400 uppercase font-semibold text-[10px] block">{t("Vypracoval bezpečnostný audítor", "Prepared by security auditor")}</span>
+                <span className="text-slate-400 uppercase font-semibold text-[10px] block">{t("Vypracoval", "Prepared by")}</span>
                 <div className="pt-8 border-b border-dashed border-slate-300"></div>
                 <div className="flex justify-between text-slate-600 text-[11px]">
                   <span>{t("Meno", "Name")}: ______________________</span>
-                  <span>{t("Dátum", "Date")}: {new Date().toLocaleDateString(locale)}</span>
+                  <span>{t("Dátum", "Date")}: ______________________</span>
                 </div>
               </div>
 

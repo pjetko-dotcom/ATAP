@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { after, afterEach, beforeEach, test } from "node:test";
 import { MAX_BACKUP_SIZE, restoreBackup, validateBackup } from "./backupRestore";
 import { sanitizeCsvCell } from "./csv";
-import { generateFindingsFromAsvs } from "./findings";
+import { createFindingsCsv, generateFindingsFromAsvs } from "./findings";
 import { calculateAsvsCoverage } from "./asvsMetrics";
 import { computeVersionDiff } from "./versionDiff";
 import { suggestThreatAsvsRequirements } from "./threatAsvs";
@@ -292,6 +292,86 @@ test("exports localized report labels without changing chapter names or project 
   } finally {
     Object.defineProperty(FileSaver, "saveAs", { configurable: true, value: originalSaveAs });
   }
+});
+
+test("spreadsheet exports match the selected scope and regenerate metrics after changes", async () => {
+  const savedBlobs: Blob[] = [];
+  const originalSaveAs = FileSaver.saveAs;
+  Object.defineProperty(FileSaver, "saveAs", {
+    configurable: true,
+    value: (data: Blob | string) => {
+      assert.ok(data instanceof Blob);
+      savedBlobs.push(data);
+    }
+  });
+  try {
+    const { exportASVSToCSV, exportASVSToExcel, getExportRequirements } = await import("./exportToExcel");
+    const requirements = [
+      { ...asvsRequirements[0], level: 1, status: "Implemented" as const },
+      { ...asvsRequirements[1], level: 1, status: "Partial" as const },
+      { ...asvsRequirements[2], level: 2, status: "Missing" as const },
+      { ...asvsRequirements[3], level: 2, status: "N/A" as const },
+      { ...asvsRequirements[4], level: 3, status: "Implemented" as const },
+    ];
+    const opts = { analysisId: "1", targetLevel: 2, onlyGaps: true, language: "en" as const };
+    const { scoped, detail } = getExportRequirements(requirements, opts.targetLevel, true);
+    assert.equal(scoped.length, 4);
+    assert.deepEqual(detail.map(req => req.id), [requirements[1].id, requirements[2].id]);
+
+    exportASVSToCSV(requirements, opts);
+    const csv = await savedBlobs.pop()!.text();
+    assert.ok(csv.includes("\r\n"));
+    assert.ok(csv.includes(requirements[1].id) && csv.includes(requirements[2].id));
+    assert.ok(!csv.includes(requirements[0].id) && !csv.includes(requirements[4].id));
+
+    await exportASVSToExcel(requirements, opts);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(await savedBlobs.pop()!.arrayBuffer());
+    const summary = workbook.getWorksheet("Audit overview")!;
+    const detailSheet = workbook.getWorksheet("AVERT ASVS 5.0 Requirements")!;
+    const threatSheet = workbook.getWorksheet("STRIDE Threat register")!;
+    assert.equal(detailSheet.rowCount, 3);
+    assert.equal(detailSheet.getCell("A2").value, requirements[1].id);
+    assert.equal(detailSheet.getCell("A3").value, requirements[2].id);
+    assert.equal(detailSheet.getRow(2).height, undefined);
+    assert.equal(summary.getCell("B10").value, 4);
+    assert.equal(summary.getCell("B12").value, 2);
+    assert.equal(summary.getCell("C15").value, "50%");
+    assert.equal(threatSheet.rowCount, getInitialThreatsForAnalysis("1").length + 1);
+    const totalThreats = summary.getRows(1, summary.rowCount)!.find(row => row.getCell(1).value === "Total threats")!;
+    assert.equal(totalThreats.getCell(2).value, 4);
+
+    const changed = requirements.map((req, index) => index === 2 ? { ...req, status: "Implemented" as const } : req);
+    const changedThreat = { ...getInitialThreatsForAnalysis("1")[0], status: "Open", likelihood: "Frequently", impact: "Critical", risk: "Critical" };
+    storage.setItem("atap_threats_1", JSON.stringify([changedThreat]));
+    await exportASVSToExcel(changed, opts);
+    const updated = new ExcelJS.Workbook();
+    await updated.xlsx.load(await savedBlobs.pop()!.arrayBuffer());
+    assert.equal(updated.getWorksheet("Audit overview")!.getCell("C15").value, "83%");
+    assert.equal(updated.getWorksheet("AVERT ASVS 5.0 Requirements")!.rowCount, 2);
+    const updatedThreats = updated.getWorksheet("STRIDE Threat register")!;
+    assert.equal(updatedThreats.getCell("G2").value, "Critical");
+    const updatedRiskCount = updated.getWorksheet("Audit overview")!.getRows(1, summary.rowCount)!.find(row => row.getCell(1).value === "Open High / Critical")!;
+    assert.equal(updatedRiskCount.getCell(2).value, 1);
+
+    storage.setItem("atap_threats_1", "[]");
+    await exportASVSToExcel([], { analysisId: "1", language: "en", includeSummary: false, includeRequirements: false });
+    const emptyRegister = new ExcelJS.Workbook();
+    await emptyRegister.xlsx.load(await savedBlobs.pop()!.arrayBuffer());
+    assert.deepEqual(emptyRegister.worksheets.map(sheet => sheet.name), ["STRIDE Threat register"]);
+    assert.equal(emptyRegister.worksheets[0].rowCount, 1);
+  } finally {
+    Object.defineProperty(FileSaver, "saveAs", { configurable: true, value: originalSaveAs });
+  }
+});
+
+test("findings CSV uses the interface language and protects user text", () => {
+  const finding = { id: "F-1", title: "=formula", description: "detail", severity: "High" as const, status: "Closed" as const, asvsRef: "V1.1.1" };
+  const slovak = createFindingsCsv([finding], "sk");
+  const english = createFindingsCsv([finding], "en");
+  assert.match(slovak, /^\uFEFF"ID","Zistenie","Popis","Závažnosť","Stav","Referencia ASVS"/);
+  assert.match(english, /^\uFEFF"ID","Finding","Description","Severity","Status","ASVS Reference"/);
+  assert.ok(slovak.includes("\"'=formula\"") && english.includes("\"Closed\""));
 });
 
 test("generates findings only from current ASVS gaps and preserves matching statuses", () => {

@@ -3,10 +3,8 @@ import { ASVSRequirement, asvsChapters } from "../data/asvsData";
 import { getVerificationGuide } from "./verificationGuide";
 import { sanitizeCsvCell } from "./csv";
 import { calculateAsvsCoverage } from "./asvsMetrics";
-import { summarizeThreats, type Threat } from "./threatModel";
+import { getInitialThreatsForAnalysis, summarizeThreats, type Threat } from "./threatModel";
 import { reportText, type ReportLanguage } from "./reportLanguage";
-
-const { saveAs } = FileSaver;
 
 export interface ExportOptions {
   analysisId?: string;
@@ -18,6 +16,16 @@ export interface ExportOptions {
   includeThreats?: boolean;
   density?: "comfortable" | "compact";
   language?: ReportLanguage;
+}
+
+export function getExportRequirements(
+  requirements: readonly ASVSRequirement[],
+  targetLevel: number | "all",
+  onlyGaps: boolean
+) {
+  const scoped = requirements.filter(r => targetLevel === "all" || r.level <= targetLevel);
+  const detail = onlyGaps ? scoped.filter(r => r.status === "Partial" || r.status === "Missing") : scoped;
+  return { scoped, detail };
 }
 
 function getStoredAnalysisName(analysisId: string | undefined, language: ReportLanguage): string {
@@ -48,6 +56,9 @@ function isThreat(value: unknown): value is Threat {
     typeof threat.title === "string" &&
     typeof threat.description === "string" &&
     typeof threat.stride === "string" &&
+    typeof threat.mitigation === "string" &&
+    ["Exceptionally", "Unlikely", "Probably", "Frequently"].includes(threat.likelihood as string) &&
+    ["Minor", "Moderate", "Major", "Critical"].includes(threat.impact as string) &&
     ["Open", "Mitigated", "Remediated", "Accepted"].includes(threat.status as string) &&
     ["Very Low", "Low", "Medium", "High", "Critical"].includes(threat.risk as string);
 }
@@ -74,15 +85,9 @@ export async function exportASVSToExcel(
   const analysisName = options.analysisName || getStoredAnalysisName(analysisId, language);
   const { default: ExcelJS } = await import("exceljs");
 
-  let scopedReqs = [...requirements];
-  if (targetLevel !== "all") {
-    scopedReqs = scopedReqs.filter(r => r.level <= targetLevel);
-  }
-  const filteredReqs = onlyGaps
-    ? scopedReqs.filter(r => r.status === "Partial" || r.status === "Missing")
-    : scopedReqs;
+  const { scoped: scopedReqs, detail: filteredReqs } = getExportRequirements(requirements, targetLevel, onlyGaps);
 
-  let threats: Threat[] = [];
+  let threats: Threat[] = getInitialThreatsForAnalysis(analysisId);
   if (includeSummary || includeThreats) {
     const savedThreats = localStorage.getItem(`atap_threats_${analysisId}`);
     if (savedThreats) {
@@ -155,6 +160,11 @@ export async function exportASVSToExcel(
   summarySheet.getCell("B7").value = onlyGaps
     ? t("Filter detailu: iba Partial a Missing; súhrn pokrýva celý zvolený rozsah.", "Detail filter: Partial and Missing only; the summary covers the entire selected scope.")
     : t("Detail obsahuje všetky požiadavky vo zvolenom rozsahu.", "Detail includes all requirements in the selected scope.");
+  for (let row = 3; row <= 7; row++) {
+    summarySheet.mergeCells(`B${row}:H${row}`);
+    summarySheet.getCell(`B${row}`).alignment = { vertical: "middle", wrapText: true };
+  }
+  summarySheet.getRow(7).height = 30;
 
   // KPI calculations
   const total = scopedReqs.length;
@@ -179,19 +189,22 @@ export async function exportASVSToExcel(
   });
 
   const kpiData = [
-    [t("Kontroly v rozsahu", "Controls in scope"), total, "100%", t("Požiadavky vo vybranom rozsahu ASVS", "Requirements in the selected ASVS scope")],
+    [t("Kontroly v rozsahu", "Controls in scope"), total, total > 0 ? "100%" : "0%", t("Požiadavky vo vybranom rozsahu ASVS", "Requirements in the selected ASVS scope")],
     [t("Splnené kontroly (Implemented)", "Implemented controls"), implemented, total > 0 ? `${Math.round((implemented / total) * 100)}%` : "0%", t("Plne implementované a overené riadiace prvky", "Fully implemented and verified controls")],
     [t("Identifikované bezpečnostné nedostatky (Gaps)", "Identified security gaps"), gaps, total > 0 ? `${Math.round((gaps / total) * 100)}%` : "0%", t(`Chýbajúce: ${missing}, Čiastočné: ${partial}`, `Missing: ${missing}, Partial: ${partial}`)],
-    [t("Vylúčené z rozsahu (N/A)", "Out of scope (N/A)"), na, total > 0 ? `${Math.round((na / total) * 100)}%` : "0%", t("Nerelevantné technológie alebo funkcie", "Irrelevant technologies or features")],
+    [t("Označené N/A", "Marked N/A"), na, total > 0 ? `${Math.round((na / total) * 100)}%` : "0%", t("N/A nie je dôkaz overenia; skontrolujte odôvodnenie.", "N/A is not evidence of verification; check the justification.")],
     [t("Čakajúce na posúdenie (Pending)", "Pending assessment"), pending, total > 0 ? `${Math.round((pending / total) * 100)}%` : "0%", t("Zatiaľ neoverené požiadavky", "Requirements not yet verified")],
-    [t("Pokrytie ASVS (vážené)", "Weighted ASVS coverage"), t(`${implemented} splnené · ${partial} čiastočné`, `${implemented} implemented · ${partial} partial`), `${coveragePct}%`, t("Implemented + 0,5 × Partial; Pending a N/A sa nezapočítavajú", "Implemented + 0.5 × Partial; Pending and N/A are excluded")]
+    [t("Pokrytie ASVS (vážené)", "Weighted ASVS coverage"), t(`${implemented} splnené · ${partial} čiastočné`, `${implemented} implemented · ${partial} partial`), `${coveragePct}%`, t("(Implemented + 0,5 × Partial) / (Implemented + Partial + Missing); Pending a N/A sa nezapočítavajú", "(Implemented + 0.5 × Partial) / (Implemented + Partial + Missing); Pending and N/A are excluded")]
   ];
 
   kpiData.forEach(row => {
     const addedRow = summarySheet.addRow(row);
     addedRow.getCell(2).alignment = { horizontal: "center" };
     addedRow.getCell(3).alignment = { horizontal: "center" };
+    summarySheet.mergeCells(addedRow.number, 4, addedRow.number, 8);
+    addedRow.getCell(4).alignment = { vertical: "middle", wrapText: true };
   });
+  summarySheet.getRow(15).height = 30;
 
   summarySheet.addRow([]);
   const riskTitleRow = summarySheet.addRow([t("Súhrn STRIDE a rizík", "STRIDE and risk summary")]);
@@ -329,7 +342,7 @@ export async function exportASVSToExcel(
       nist: reqAny.nist || ""
     });
 
-    row.height = density === "compact" ? 22 : 36;
+    if (density === "compact") row.height = 22;
 
     // Alignments
     row.getCell("id").alignment = { vertical: "top", horizontal: "center" };
@@ -379,9 +392,9 @@ export async function exportASVSToExcel(
   };
 
   // -------------------------------------------------------------
-  // 3. Hárok hrozieb (STRIDE Threat Register - ak existujú dáta)
+  // 3. Hárok hrozieb (STRIDE Threat Register)
   // -------------------------------------------------------------
-  if (includeThreats && threats.length > 0) {
+  if (includeThreats) {
     const threatSheet = workbook.addWorksheet(t("STRIDE Register hrozieb", "STRIDE Threat register"), {
       views: [{ state: "frozen", ySplit: 1, showGridLines: true }]
     });
@@ -457,7 +470,7 @@ export async function exportASVSToExcel(
   const cleanFilename = `avert_asvs_5.0_audit_${getSafeExportId(analysisId)}_${new Date().toISOString().slice(0, 10)}.xlsx`;
 
   try {
-    saveAs(blob, cleanFilename);
+    FileSaver.saveAs(blob, cleanFilename);
   } catch (e) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -481,18 +494,12 @@ export function exportASVSToCSV(
     language = "en"
   } = options;
 
-  let filteredReqs = [...requirements];
-  if (targetLevel !== "all") {
-    filteredReqs = filteredReqs.filter(r => r.level <= targetLevel);
-  }
-  if (onlyGaps) {
-    filteredReqs = filteredReqs.filter(r => r.status === "Partial" || r.status === "Missing");
-  }
+  const { detail: filteredReqs } = getExportRequirements(requirements, targetLevel, onlyGaps);
 
   // Helper to prevent CSV / Formula Injection (CWE-1236)
   const header = reportText(language,
-    "ID požiadavky,ID kapitoly,Názov kapitoly,ID sekcie,Názov sekcie,Úroveň,Popis požiadavky,Stav,Dôvod triáže,Poznámky\n",
-    "Requirement ID,Chapter ID,Chapter Name,Section ID,Section Name,Level,Requirement Description,Status,Triage Justification,Notes\n");
+    "ID požiadavky,ID kapitoly,Názov kapitoly,ID sekcie,Názov sekcie,Úroveň,Popis požiadavky,Stav,Dôvod triáže,Poznámky\r\n",
+    "Requirement ID,Chapter ID,Chapter Name,Section ID,Section Name,Level,Requirement Description,Status,Triage Justification,Notes\r\n");
   const csvRows = filteredReqs.map(r => {
     const chapter = asvsChapters.find(c => c.id === r.chapterId);
     return [
@@ -507,14 +514,14 @@ export function exportASVSToCSV(
       sanitizeCsvCell(r.triageReason || ""),
       sanitizeCsvCell(r.notes || ""),
     ].join(",");
-  }).join("\n");
+  }).join("\r\n");
 
   // Include UTF-8 BOM (\uFEFF) so Excel on Windows opens diacritics / special characters correctly
   const blob = new Blob(["\uFEFF" + header + csvRows], { type: "text/csv;charset=utf-8;" });
   const cleanFilename = `avert_asvs_5.0_analysis_${getSafeExportId(analysisId)}_${new Date().toISOString().slice(0, 10)}.csv`;
 
   try {
-    saveAs(blob, cleanFilename);
+    FileSaver.saveAs(blob, cleanFilename);
   } catch (e) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

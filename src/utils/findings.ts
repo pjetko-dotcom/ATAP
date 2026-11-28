@@ -1,4 +1,6 @@
 import { ASVSRequirement } from "../data/asvsData";
+import { sanitizeCsvCell } from "./csv";
+import { reportText, type ReportLanguage } from "./reportLanguage";
 
 export interface Finding {
   id: string;
@@ -7,6 +9,21 @@ export interface Finding {
   severity: "Critical" | "High" | "Medium" | "Low";
   status: "Open" | "In Progress" | "Closed";
   asvsRef: string;
+}
+
+export function createFindingsCsv(findings: readonly Finding[], language: ReportLanguage): string {
+  const headers = [
+    "ID",
+    reportText(language, "Zistenie", "Finding"),
+    reportText(language, "Popis", "Description"),
+    reportText(language, "Závažnosť", "Severity"),
+    reportText(language, "Stav", "Status"),
+    reportText(language, "Referencia ASVS", "ASVS Reference"),
+  ];
+  const rows = findings.map(finding => [
+    finding.id, finding.title, finding.description, finding.severity, finding.status, finding.asvsRef,
+  ].map(sanitizeCsvCell).join(","));
+  return `\uFEFF${headers.map(sanitizeCsvCell).join(",")}\r\n${rows.join("\r\n")}`;
 }
 
 export function generateFindingsFromAsvs(

@@ -96,7 +96,7 @@ Zjednotený vzhľad posuvníkov a slovenská terminológia „zistenia a nedosta
 
 Na stránke exportu možno vybrať slovenčinu alebo angličtinu pre tlačiteľný report, hlavičky Excelu a CSV. Výber nemení uložený projekt. Názvy kapitol a oficiálne požiadavky ASVS zostávajú v angličtine. Používateľské údaje (vrátane poznámok, dôvodov triáže a hrozieb) ani niektoré už uložené automaticky vytvorené texty sa neprekladajú; pri anglickom výstupe ich treba prípadne doplniť v angličtine. Jazyk rozhrania a nápovedy sa týmto výberom nemení.
 
-CSV zachováva rovnaké poradie a význam stĺpcov, ale ich názvy závisia od zvoleného jazyka; integrácie vyžadujúce pôvodné anglické hlavičky majú zvoliť English.
+CSV zachováva rovnaké poradie a význam stĺpcov, ale ich názvy závisia od zvoleného jazyka; integrácie vyžadujúce anglické hlavičky majú zvoliť English. CSV zistení používa jazyk rozhrania, nie samostatný jazyk reportu.
 
 Samostatný prepínač s vlajkou v navigácii mení jazyk rozhrania bez obnovenia stránky a ukladá voľbu v lokálnom úložisku. Prepína sa navigácia, sprievodcovia, pracovný priestor ASVS a triáž, návody na overenie, model architektúry, register hrozieb, zistenia, zálohovanie, verziové dialógy, export aj nápoveda. Názov „ASVS 5.0 Chapters“ a oficiálny obsah ASVS zostávajú v angličtine. Používateľský obsah, názvy uložených zón a historické záznamy sa automaticky neprekladajú; v pôvodnom jazyku môžu zostať aj predtým uložené automaticky vytvorené texty. Rýchly export z ASVS používa jazyk rozhrania, zatiaľ čo stránka reportov má vlastný výber.
 
@@ -113,7 +113,7 @@ Samostatný prepínač s vlajkou v navigácii mení jazyk rozhrania bez obnoveni
 - **Findings & Gap Analysis:** Automatizované porovnanie implementácie voči ASVS 5.0 a detekcia chýbajúcich alebo čiastočných kontrol.
 - **Architecture Model:** Vizuálne modelovanie komponentov, trust zón a dátových tokov s abecedným výberom technológií a protokolov. TLS toky môžu evidovať NIST cipher suite, samostatnú výmenu kľúčov/KEM a odvodený PQC stav návrhu. Kliknutím na šípku sa otvorí editor toku; plátno podporuje posúvanie aj zoom. Voliteľná DFD kontrola poskytuje nezáväzné upozornenia bez blokovania práce. Paralelné spojenia sú vizuálne rozlíšené, prekrytia a prekážky označené a toky cez hranice zón vytvárajú STRIDE návrhy na kontrolu.
 - **Audit Trail & Správa Verzií:** Sledovanie histórie zmien, snapshoty stavov a bezpečný import/export dát do JSON formátu.
-- **Excel & CSV Export:** Excel obsahuje voliteľný súhrn, ASVS požiadavky a STRIDE register (hárok hrozieb sa pridá, ak existujú záznamy); CSV zachováva poradie stĺpcov s hlavičkami vo vybranom jazyku. Vážené pokrytie počíta Partial ako 0,5 a ignoruje Pending/N/A.
+- **Excel & CSV Export:** Excel obsahuje voliteľný súhrn, ASVS požiadavky a STRIDE register (zvolený hárok hrozieb môže byť prázdny). CSV požiadaviek je odlišné od CSV zistení. Vážené pokrytie počíta Partial ako 0,5 a ignoruje Pending/N/A. Exporty sú snímkou údajov; po zmene projektu ich treba vytvoriť znovu.
 - **Reporty a zálohy:** Tlačiteľný PDF report sumarizuje všetkých 17 kapitol ASVS. Ide o výstup aplikácie, nie o certifikáciu ani oficiálne potvrdenie OWASP. JSON zálohy AVERT možno obnoviť aj zo starších záloh ATAP; neobsahujú samostatný zoznam zistení ani ich stavy, ktoré možno exportovať do CSV (CSV nemožno obnoviť ako JSON zálohu).
 
 ### Produktové označenie a kompatibilita

@@ -107,7 +107,7 @@ The optional PostgreSQL connection uses `SQL_HOST`, `SQL_USER`, `SQL_PASSWORD`, 
 
 ## Tests and changes
 
-The current automated suite covers backup validation/rollback, CSV sanitization, CSP behavior, local profile/activity data, findings generation, version diffs, DFD flow geometry/overlaps, and architecture STRIDE synchronization. Add a regression test when changing these utilities. For UI work, also test the affected route and interaction in a browser; a successful TypeScript check alone does not verify user behavior.
+The current automated suite covers backup validation/rollback, CSV sanitization, export scopes and metrics, executive report data and empty states, CSP behavior, local profile/activity data, findings generation, version diffs, DFD flow geometry/overlaps, and architecture STRIDE synchronization. Add a regression test when changing these utilities. For UI work, also test the affected route and interaction in a browser; a successful TypeScript check alone does not verify user behavior.
 
 Keep changes focused. Do not edit generated output under `dist/` or `release/`. Preserve local-storage compatibility and backup import compatibility when changing persisted data shapes.
 
