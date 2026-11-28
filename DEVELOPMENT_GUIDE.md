@@ -57,6 +57,136 @@ Before submitting changes, run `npm run lint`, `npm test`, and `npm run build`. 
 - `PRODUCT_DESIGN_MANUAL.md`, `UX_RECOMMENDATIONS.md`, and `RELEASE_SECURITY_CHECKLIST.md`: product behavior, interaction principles, and release gates.
 - `dist/`, `public/`, and `release/`: generated build output; never edit or commit these as source. `deploy/websupport.htaccess` is the tracked source for the Apache configuration.
 
+## Component map
+
+### 1. Vizuálna mapa vrstiev aplikácie
+
+Schéma zachytáva aktuálny projekt, nie všeobecnú full-stack aplikáciu. Vývojové a build nástroje pripravujú frontend; nie sú jeho súčasťou pri bežnom používaní.
+
+```text
+                         POUŽÍVATEĽ
+                              │
+                              ▼
+             PREHLIADAČ alebo ELECTRON RENDERER
+       ┌─────────────────────────────────────────────┐
+       │ React: komponenty, hooky a používateľské UI  │
+       │ TypeScript/TSX: zdrojový jazyk a typy       │
+       │ Tailwind CSS: utility triedy a štýly        │
+       └──────────────────────┬──────────────────────┘
+                              │ stav a údaje projektu
+                              ▼
+                    localStorage prehliadača
+
+       VÝVOJ A BUILD                         VOLITEĽNÉ SERVEROVÉ API
+ ┌─────────────────────────────┐         ┌─────────────────────────────┐
+ │ Node.js + Vite              │         │ Node.js + Express           │
+ │ dev middleware, HMR, build  │         │ /api/health, /api/analyses  │
+ │ React a Tailwind pluginy    │         │ Drizzle ORM + pg pool       │
+ └─────────────────────────────┘         └──────────────┬──────────────┘
+                                                       │
+                                                       ▼
+                                                  PostgreSQL
+```
+
+Používateľské rozhranie aktuálne ukladá pracovné údaje do `localStorage`, nie do PostgreSQL cez API. Express API je samostatná, obmedzená serverová funkcionalita; samotné spustenie servera preto nevytvorí synchronizovaný viacpoužívateľský pracovný priestor. Pri statickom nasadení na Apache API ani PostgreSQL nie sú súčasťou balíka.
+
+### 2. Kategorizácia technológií
+
+| Kategória | Technológia | Úloha v AVERT | Súbory |
+| --- | --- | --- | --- |
+| Vývoj a build | Vite | Vývojový middleware, HMR a zostavenie frontendu | `vite.config.ts`, `server.ts` |
+| Jazyk a typy | TypeScript | Typy a zdrojový kód frontendu aj backendu; kontrola cez `tsc --noEmit` | `tsconfig.json`, `.ts`, `.tsx` |
+| UI knižnica | React | Komponenty, hooky a aktualizácia rozhrania | `src/main.tsx`, `src/App.tsx`, `src/components/` |
+| Štýly | Tailwind CSS | Utility triedy a generovanie CSS cez Vite plugin | `src/index.css`, `vite.config.ts` |
+| Runtime | Node.js | Spúšťa vývojové nástroje a Express server | `package.json`, `server.ts` |
+| Webový framework | Express | HTTP API, middleware a obsluha webu | `server.ts` |
+| DB klient a ORM | `pg` a Drizzle ORM | Pripojenie, connection pool a databázové dotazy | `src/db/index.ts`, `src/db/schema.ts` |
+| Databáza | PostgreSQL | Perzistencia pre existujúce serverové API | `src/db/schema.ts`, `src/db/migrations/` |
+| Desktop | Electron | Desktopový obal a samostatné lokálne úložisko | `electron/` |
+
+### 3. `.tsx` vs. `.jsx` vs. `.ts` vs. `.js`
+
+| Prípona | Obsahuje JSX | Typické použitie |
+| --- | --- | --- |
+| `.tsx` | Áno | React komponent v TypeScripte |
+| `.jsx` | Áno | React komponent v JavaScripte |
+| `.ts` | Nie | TypeScript logika, typy, utility alebo backend |
+| `.js` | Nie | JavaScript logika alebo konfigurácia |
+
+Ak súbor obsahuje JSX, použite `.tsx` pre TypeScript alebo `.jsx` pre JavaScript. Nasledujúce príklady ilustrujú rozdiel, nejde o súbory projektu:
+
+```tsx
+// UserCard.tsx: komponent obsahuje JSX
+type Props = { name: string };
+
+export function UserCard({ name }: Props) {
+  return <div className="p-4">{name}</div>;
+}
+```
+
+```ts
+// formatName.ts: funkcia bez JSX
+export function formatName(name: string): string {
+  return name.trim();
+}
+```
+
+### 4. Dátový tok: od kliknutia po uloženie
+
+Bežná práca s projektom aktuálne prebieha lokálne:
+
+```text
+Klik v React komponente
+        │
+        ▼
+Handler / hook ──► zmena stavu Reactu ──► aktualizácia UI
+        │                                 (štýly aplikuje prehliadač)
+        ▼
+localStorage prehliadača alebo Electronu
+```
+
+Samostatné Express API má vlastnú cestu k databáze; súčasné pracovné rozhranie naň svoje údaje neukladá:
+
+```text
+HTTP klient ──► Express /api/analyses ──► Drizzle ORM ──► pg ──► PostgreSQL
+                    │                                            │
+                    └────────────── JSON odpoveď ◄───────────────┘
+```
+
+`/api/health` je kontrolný endpoint a databázový dotaz nepotrebuje. API nemá autentifikáciu ani autorizáciu; nevystavujte ho nedôveryhodnej sieti bez ich doplnenia. V produkcii môže Express obsluhovať aj zostavený frontend, zatiaľ čo pri vývoji používa Vite ako middleware, nie ako proxy na samostatný backend.
+
+### 5. Štruktúra projektu
+
+```text
+ATAP/
+├── package.json              npm skripty a závislosti
+├── vite.config.ts            Vite a pluginy React/Tailwind
+├── tsconfig.json             nastavenie TypeScriptu
+├── server.ts                 Express API a Vite middleware
+├── src/
+│   ├── main.tsx              vstupný bod Reactu
+│   ├── App.tsx               koreňové rozhranie a routovanie
+│   ├── index.css             Tailwind import a spoločné štýly
+│   ├── components/           obrazovky a UI komponenty
+│   ├── hooks/                stav pracovného priestoru a analýz
+│   ├── utils/                zálohy, exporty a spoločná logika
+│   └── db/                   Drizzle schéma, pripojenie a migrácie
+├── electron/                 desktopový obal
+└── deploy/                   konfigurácia statického nasadenia
+```
+
+### 6. Závislosti a bezpečnostná hranica
+
+```text
+TypeScript/TSX ──► React komponenty ──► Tailwind triedy a CSS
+Vite + pluginy ──► vývoj a build frontendu
+Express ──► Node.js
+Express ──► Drizzle ORM ──► pg ──► PostgreSQL
+React pracovný priestor ──► localStorage
+```
+
+**Pravidlo:** Ak má frontend pracovať s PostgreSQL, musí na to použiť dôveryhodný backend API, nie priame databázové pripojenie z prehliadača. Databázové prihlasovacie údaje nesmú byť súčasťou kódu ani konfigurácie odosielanej do prehliadača.
+
 ## Data and persistence
 
 The interactive workspace currently persists primarily in browser/Electron `localStorage`, scoped by analysis ID. Browser data is origin-specific; web and Electron data stores are not automatically synchronized.
