@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { after, afterEach, beforeEach, test } from "node:test";
 import { MAX_BACKUP_SIZE, restoreBackup, validateBackup } from "./backupRestore";
 import { sanitizeCsvCell } from "./csv";
@@ -438,6 +439,22 @@ test("uses a stricter production CSP and development-only Vite allowances", () =
   assert.match(developmentPolicy, /ws:\/\/localhost:3000/);
   assert.match(developmentPolicy, /ws:\/\/127\.0\.0\.1:24678/);
   assert.doesNotMatch(getContentSecurityPolicy(false, false), /frame-ancestors/);
+});
+
+test("Apache deployment policy matches the production CSP and blocks identified crawlers before routing", () => {
+  const config = readFileSync(new URL("../../deploy/websupport.htaccess", import.meta.url), "utf8");
+  const csp = config.match(/^Header always set Content-Security-Policy "([^"]+)"$/m)?.[1];
+  assert.equal(csp, `${getContentSecurityPolicy(false, false)}; frame-ancestors 'none'`);
+  assert.match(config, /^Header always set X-Robots-Tag "noindex, nofollow, noarchive"$/m);
+  const userAgentPattern = config.match(/^RewriteCond %\{HTTP_USER_AGENT\} (\([^\n]+\)) \[NC\]$/m)?.[1];
+  assert.ok(userAgentPattern);
+  const bots = new RegExp(userAgentPattern, "i");
+  for (const agent of ["Googlebot", "GPTBot", "ClaudeBot", "ChatGPT-User", "Perplexity-User", "Claude-Web", "BingPreview crawler"]) {
+    assert.match(agent, bots);
+  }
+  assert.doesNotMatch("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/130 Safari/537.36", bots);
+  assert.match(config, /RewriteCond %\{HTTP_USER_AGENT\}[^\n]*\nRewriteRule \^ - \[F,L\]/);
+  assert.ok(config.indexOf("RewriteRule ^ - [F,L]") < config.indexOf("RewriteRule ^assets/ - [L]"));
 });
 
 test("loads only well-formed local activity log entries", () => {

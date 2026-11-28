@@ -144,11 +144,22 @@ Aplikácia sa od verzie 1.0 označuje ako AVERT. Identifikátor Electron `com.at
 
 ## Nasadenie na Websupport
 
-Na počítači s Node.js a npm podľa požiadaviek vyššie spustite `npm ci` a `npm run build:websupport`. Nahrajte **obsah** vygenerovaného `public/` cez SFTP do adresára `avert/` v koreňovom adresári existujúceho webu. Nahrajte aj skrytý súbor `.htaccess`; niektorí SFTP klienti ho štandardne nezobrazujú. `public/` je ignorovaný Gitom a je určený iba pre vygenerovaný web. Build ho automaticky nemaže; pred novým buildom prípadne odstráňte len zastarané vygenerované súbory, nie používateľské dáta. Nastavenia routovania v [`deploy/websupport.htaccess`](./deploy/websupport.htaccess) predpokladajú `/avert/`, Apache s `mod_rewrite` a povolený `.htaccess`.
+Na počítači s Node.js a npm podľa požiadaviek vyššie spustite `npm ci` a `npm run build:websupport`. Nahrajte **obsah** vygenerovaného `public/` cez SFTP do adresára `avert/` v koreňovom adresári existujúceho webu. Nahrajte aj skrytý súbor `.htaccess`; niektorí SFTP klienti ho štandardne nezobrazujú. `public/` je ignorovaný Gitom a je určený iba pre vygenerovaný web. Build ho automaticky nemaže; pred novým buildom prípadne odstráňte len zastarané vygenerované súbory, nie používateľské dáta. Nastavenia v [`deploy/websupport.htaccess`](./deploy/websupport.htaccess) predpokladajú `/avert/`, Apache s `mod_rewrite`, `mod_headers` a povolenými príslušnými direktívami `.htaccess`.
 
 Po nasadení vyskúšajte `https://vaša-doména/avert/`, navigáciu a obnovenie vnorených stránok. Nadradené rewrite pravidlá existujúceho webu môžu vyžadovať výnimku pre `/avert/`. Tento balík neobsahuje Express ani databázový server. Node.js je potrebný na **zostavenie**, nie na prevádzku statických súborov.
 
-Dáta sa ukladajú do prehliadača, nie na hosting; používatelia ani zariadenia ich automaticky nezdieľajú. Pravidelne zálohujte JSON a overujte obnovu. Použite HTTPS a zvážte heslovú ochranu adresára. Skripty ostatných aplikácií na rovnakej doméne môžu pristupovať k rovnakému úložisku; samostatná subdoména poskytuje lepšiu izoláciu, ale vyžaduje iné nastavenie cesty buildu a routovania.
+Apache konfigurácia posiela CSP vrátane zákazu vkladania stránky do rámcov a ďalšie bezpečnostné hlavičky. Hlavička `X-Robots-Tag` žiada neindexovanie a pravidlo vracia HTTP 403 známym robotom podľa `User-Agent`, vrátane bežne identifikovaných AI robotov. Po nasadení overte hlavičky a odpovede servera; lokálny náhľad Vite `.htaccess` nevykonáva.
+
+Pre spolupracujúce roboty doplňte do **existujúceho** súboru `robots.txt` v koreňovom adresári domény (nenahrádzajte jeho ostatné pravidlá):
+
+```text
+User-agent: *
+Disallow: /avert/
+```
+
+`robots.txt` ani blokovanie podľa `User-Agent` nie sú zabezpečením prístupu: robot môže pravidlá ignorovať alebo identitu zmeniť a blokovanie môže zachytiť aj legitímne nástroje. Zakázanie prechádzania navyše nemusí odstrániť už indexované URL. Na ochranu aplikácie nastavte HTTPS a heslovú ochranu adresára; neukladajte citlivé súbory do verejného priečinka.
+
+Dáta sa ukladajú do prehliadača, nie na hosting; používatelia ani zariadenia ich automaticky nezdieľajú. Pravidelne zálohujte JSON a overujte obnovu. Skripty ostatných aplikácií na rovnakej doméne môžu pristupovať k rovnakému úložisku; samostatná subdoména poskytuje lepšiu izoláciu, ale vyžaduje iné nastavenie cesty buildu a routovania.
 
 ---
 
