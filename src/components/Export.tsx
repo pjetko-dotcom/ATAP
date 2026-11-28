@@ -394,7 +394,7 @@ export function Export() {
               </div>
               <h3 className="text-base font-bold text-slate-800 mb-1">{t("JSON záloha a obnova", "JSON Backup & Restore")}</h3>
               <p className="text-xs text-slate-500 mb-4">
-                {t("Obnoviteľná záloha projektu vrátane architektúry, auditného logu a verzií. Neobsahuje samostatný zoznam zistení ani jeho stavy.", "Restorable project backup including architecture, audit log and versions. Excludes the separate findings list and its statuses.")}
+                {t("Obnoviteľná záloha projektu vrátane architektúry, auditného logu, verzií a zoznamu zistení s ich stavmi.", "Restorable project backup including architecture, audit log, versions and the findings list with its statuses.")}
               </p>
 
               <div className="space-y-1.5 mb-6 text-xs text-slate-600">

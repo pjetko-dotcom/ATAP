@@ -95,7 +95,7 @@ Requirements above the target level and those marked `N/A` are excluded. If ther
 - Requirements CSV and findings CSV are distinct, with stable column order and localized headers. Findings CSV follows the interface language; report-page requirements CSV follows the report language. CSV cells are sanitized against spreadsheet formula injection.
 - Reports are snapshots: Excel summary values do not recalculate when workbook cells are edited. Generate a new export after changing project data.
 - Downloaded backup files use AVERT branding, but backup structure identifiers and local storage keys intentionally retain `atap_*` names for compatibility with existing user data and ATAP backups. The Electron `appId` and old `userData` directory are also retained to avoid breaking upgrades.
-- JSON backups and version snapshots do not include the separate saved findings list or its statuses. Findings CSV is a record, not a restorable JSON backup; disclose this limitation in user-facing guidance.
+- JSON backups include the separate saved findings list and its statuses, but historical version snapshots do not. Findings CSV is a record, not a restorable JSON backup; disclose these distinctions in user-facing guidance.
 
 ## Interaction, visual, and accessibility rules
 

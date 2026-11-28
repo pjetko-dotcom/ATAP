@@ -23,7 +23,7 @@ The development server normally listens on `http://localhost:3000`. To run the d
 npm run electron:dev
 ```
 
-Do not copy `node_modules/`, `dist/`, or `release/` between machines. They are generated locally and ignored by Git.
+Do not copy `node_modules/`, `dist/`, `public/`, or `release/` between machines. They are generated locally and ignored by Git.
 
 ## Supported project commands
 
@@ -33,6 +33,7 @@ Do not copy `node_modules/`, `dist/`, or `release/` between machines. They are g
 | `npm run lint` | Type-check the TypeScript project (`tsc --noEmit`). |
 | `npm test` | Run the Node test suite in `src/utils/security.test.ts`. |
 | `npm run build` | Create the production web assets and bundle the Express server into `dist/`. |
+| `npm run build:websupport` | Generate static Apache assets for `/avert/` in `public/`, including `.htaccess`. |
 | `npm run start` | Serve the production build; run `npm run build` first. |
 | `npm run electron:dev` | Run the web dev server and Electron together. |
 | `npm run electron:preview` | Build and open the production renderer in Electron without making installers. |
@@ -54,7 +55,7 @@ Before submitting changes, run `npm run lint`, `npm test`, and `npm run build`. 
 - `electron/`: Electron main process and preload bridge.
 - `contentSecurityPolicy.ts`: shared Content Security Policy construction.
 - `PRODUCT_DESIGN_MANUAL.md`, `UX_RECOMMENDATIONS.md`, and `RELEASE_SECURITY_CHECKLIST.md`: product behavior, interaction principles, and release gates.
-- `dist/` and `release/`: generated build output; never edit or commit these as source.
+- `dist/`, `public/`, and `release/`: generated build output; never edit or commit these as source. `deploy/websupport.htaccess` is the tracked source for the Apache configuration.
 
 ## Data and persistence
 
@@ -91,7 +92,9 @@ Threat metrics use one shared definition: **open** means status `Open`; **open h
 
 Use the JSON backup/restore feature when moving local workspace data between browsers or machines. A production deployment of the Express API is not, by itself, a synchronized multi-user workspace: the React workspace uses local storage, and the API/database integration is limited. The API has no authentication or authorization and must not be exposed to an untrusted network without adding them.
 
-JSON project backups and version snapshots do not contain the separate `atap_findings_<id>` list or its statuses. Export findings as CSV before migration or regeneration when a record is needed; CSV is not a restorable JSON backup.
+JSON project backups include the separate `atap_findings_<id>` list and its statuses; historical version snapshots do not. Export findings as CSV before regeneration when a historical record is needed; CSV is not a restorable JSON backup.
+
+New backups use format 1.1. Import supports 1.0 and 1.1; unknown versions are rejected. Since 1.0 did not store findings, overwriting from it preserves existing findings, while restoring as a new project leaves them absent. Older application versions may not read 1.1. Preserve version-specific validation and restoration semantics when evolving the format.
 
 ## In-app user guide
 
@@ -109,7 +112,7 @@ The optional PostgreSQL connection uses `SQL_HOST`, `SQL_USER`, `SQL_PASSWORD`, 
 
 The current automated suite covers backup validation/rollback, CSV sanitization, export scopes and metrics, executive report data and empty states, CSP behavior, local profile/activity data, findings generation, version diffs, DFD flow geometry/overlaps, and architecture STRIDE synchronization. Add a regression test when changing these utilities. For UI work, also test the affected route and interaction in a browser; a successful TypeScript check alone does not verify user behavior.
 
-Keep changes focused. Do not edit generated output under `dist/` or `release/`. Preserve local-storage compatibility and backup import compatibility when changing persisted data shapes.
+Keep changes focused. Do not edit generated output under `dist/`, `public/`, or `release/`. Preserve local-storage compatibility and backup import compatibility when changing persisted data shapes.
 
 ## Verzia 1.1
 

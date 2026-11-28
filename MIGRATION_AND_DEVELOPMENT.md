@@ -17,7 +17,7 @@ npm run dev
 
 ## What belongs in Git
 
-Commit source code, configuration, lockfiles, product/security documentation, and required source assets/data. The package name and npm lockfile identify the product as `avert-security-assessment-platform` (version `1.1.0`). Do not copy or commit generated dependencies/builds (`node_modules/`, `dist/`, `release/`) or local secrets (`.env`). Check `.gitignore` for the current exclusions. Use `npm ci` to recreate dependencies from the lockfile rather than copying `node_modules` between machines. Before publishing outside the organization, obtain an approved project license and verify redistribution rights for bundled datasets, icons, and other third-party assets; do not infer a license from dependencies or the Electron runtime.
+Commit source code, configuration, lockfiles, product/security documentation, and required source assets/data. The package name and npm lockfile identify the product as `avert-security-assessment-platform`; the version is in `package.json`. Do not copy or commit generated dependencies/builds (`node_modules/`, `dist/`, `public/`, `release/`) or local secrets (`.env`). Check `.gitignore` for the current exclusions. Use `npm ci` to recreate dependencies from the lockfile rather than copying `node_modules` between machines. Before publishing outside the organization, obtain an approved project license and verify redistribution rights for bundled datasets, icons, and other third-party assets; do not infer a license from dependencies or the Electron runtime.
 
 For a move to a new Git host or CI provider, transfer the complete tracked repository and history, configure required secrets in the destination's secret manager, provision supported Node.js/npm versions, then run `npm ci`, `npm run lint`, `npm test`, and `npm run build`. Keep the destination's release signing credentials and deployment settings out of source control. Review the [security checklist](./RELEASE_SECURITY_CHECKLIST.md) before creating artifacts.
 
@@ -25,7 +25,7 @@ For a move to a new Git host or CI provider, transfer the complete tracked repos
 
 Analysis workspaces are stored primarily in browser or Electron `localStorage`; they are not automatically synchronized between browsers, machines, or the web and desktop versions. Use the application's JSON backup/export and restore/import flow to transfer workspace data. Treat backups as sensitive: they may contain architecture, threat, evidence, and activity-log data.
 
-The AVERT rebrand intentionally preserves the Electron `appId` (`com.atap.threatanalysis`), the prior ATAP `userData` directory, `atap_*` local-storage keys, and the JSON backup type `atap_full_backup`. Do not rename these compatibility identifiers without a separate data migration and upgrade plan. AVERT-branded backup downloads continue to accept single-project and archive backups created by ATAP.
+The AVERT rebrand intentionally preserves the Electron `appId` (`com.atap.threatanalysis`), the prior ATAP `userData` directory, `atap_*` local-storage keys, and the JSON backup type `atap_full_backup`. Do not rename these compatibility identifiers without a separate data migration and upgrade plan. Current versions accept legacy 1.0 single-project and archive backups; new 1.1 backups include findings and may not be readable by older application versions.
 
 The activity log and version history are client-side data and can be edited by a user. They are useful for traceability but are not an immutable security audit.
 

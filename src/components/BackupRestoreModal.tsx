@@ -347,7 +347,7 @@ export function BackupRestoreModal({
                     </div>
                     <p className="text-xs text-slate-600 mt-1 font-medium">{currentAnalysisName || t("Tento projekt", "This project")}</p>
                     <p className="text-[11px] text-slate-500 mt-1">
-                      {t("Záloha obsahuje ASVS hodnotenie, architektúru, DFD toky, STRIDE hrozby a históriu verzií.", "The backup includes ASVS assessment, architecture, DFD flows, STRIDE threats and version history.")}
+                      {t("Záloha obsahuje ASVS hodnotenie, architektúru, DFD toky, STRIDE hrozby, zistenia a ich stavy aj históriu verzií.", "The backup includes ASVS assessment, architecture, DFD flows, STRIDE threats, findings and their statuses, and version history.")}
                     </p>
                   </div>
                   <button
@@ -484,6 +484,9 @@ export function BackupRestoreModal({
                         <p className="text-[10px] text-slate-500 mt-0.5">{t("Aktualizuje existujúci projekt rovnakého ID", "Updates an existing project with the same ID")}</p>
                       </label>
                     </div>
+                    <p className="text-xs text-slate-600 mt-2">
+                      {t("Staršie zálohy bez zoznamu zistení ich pri prepísaní nezmenia; nový projekt ich nebude obsahovať.", "Older backups without a findings list leave existing findings unchanged when overwriting; a new project will not contain them.")}
+                    </p>
                   </div>
                 </div>
               )}

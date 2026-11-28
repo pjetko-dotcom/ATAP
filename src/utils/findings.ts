@@ -11,6 +11,17 @@ export interface Finding {
   asvsRef: string;
 }
 
+export function isFinding(value: unknown): value is Finding {
+  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
+  const finding = value as Record<string, unknown>;
+  return typeof finding.id === "string" &&
+    typeof finding.title === "string" &&
+    typeof finding.description === "string" &&
+    ["Critical", "High", "Medium", "Low"].includes(finding.severity as string) &&
+    ["Open", "In Progress", "Closed"].includes(finding.status as string) &&
+    typeof finding.asvsRef === "string";
+}
+
 export function createFindingsCsv(findings: readonly Finding[], language: ReportLanguage): string {
   const headers = [
     "ID",

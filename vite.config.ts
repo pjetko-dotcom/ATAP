@@ -1,15 +1,29 @@
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'node:fs';
 import path from 'path';
 import {defineConfig} from 'vite';
 import { getContentSecurityPolicy } from './contentSecurityPolicy.ts';
 
-export default defineConfig(() => {
+export default defineConfig(({ mode }) => {
+  const websupport = mode === 'websupport';
   return {
-    base: './',
+    base: websupport ? '/avert/' : './',
+    publicDir: false,
+    build: websupport ? { outDir: 'public', emptyOutDir: false } : undefined,
     plugins: [
       react(),
       tailwindcss(),
+      ...(websupport ? [{
+        name: 'avert-apache-config',
+        generateBundle() {
+          this.emitFile({
+            type: 'asset',
+            fileName: '.htaccess',
+            source: readFileSync(path.resolve(import.meta.dirname, 'deploy', 'websupport.htaccess')),
+          });
+        },
+      }] : []),
       {
         name: 'atap-content-security-policy',
         transformIndexHtml(html, context) {

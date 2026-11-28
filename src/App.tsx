@@ -37,10 +37,11 @@ export default function App() {
   const { t, language } = useLanguage();
   const isFileProtocol = typeof window !== 'undefined' && (window.location.protocol === 'file:' || navigator.userAgent.includes('Electron'));
   const RouterComponent = isFileProtocol ? HashRouter : BrowserRouter;
+  const basename = !isFileProtocol && import.meta.env.BASE_URL.startsWith('/') ? import.meta.env.BASE_URL : undefined;
 
   return (
     <ErrorBoundary language={language}>
-      <RouterComponent>
+      <RouterComponent basename={basename}>
         <Suspense fallback={<div role="status" className="flex min-h-screen items-center justify-center bg-slate-50 text-sm text-slate-600">{t("Načítavam stránku...", "Loading page...")}</div>}>
           <Routes>
             <Route path="/" element={<Layout />}>

@@ -7,11 +7,10 @@
  */
 import FileSaver from "file-saver";
 import { reportText, type ReportLanguage } from "./reportLanguage";
-
-const { saveAs } = FileSaver;
+import { isFinding, type Finding } from "./findings";
 
 export interface ProjectBackupData {
-  version: "1.0";
+  version: "1.0" | "1.1";
   exportedAt: string;
   project: Record<string, unknown>;
   asvsReqs?: unknown[];
@@ -21,10 +20,11 @@ export interface ProjectBackupData {
   targetLevel?: number | "all";
   architecture?: Record<string, unknown>;
   threats?: unknown[];
+  findings?: Finding[];
 }
 
 export interface FullBackupArchive {
-  backupFormatVersion: "1.0";
+  backupFormatVersion: "1.0" | "1.1";
   type: "atap_full_backup";
   exportedAt: string;
   projectsCount: number;
@@ -49,9 +49,14 @@ export function getProjectBackupObject(analysisId: string): ProjectBackupData | 
     const targetLevel = localStorage.getItem(`atap_asvs_target_level_${analysisId}`) || null;
     const architecture = JSON.parse(localStorage.getItem(`atap_architecture_${analysisId}`) || "null");
     const threats = JSON.parse(localStorage.getItem(`atap_threats_${analysisId}`) || "null");
+    const rawFindings = localStorage.getItem(`atap_findings_${analysisId}`);
+    const findings: unknown = rawFindings === null ? [] : JSON.parse(rawFindings);
+    if (!isValidFindings(findings) || containsUnsafeKeys(findings)) {
+      throw new Error("Stored findings have an invalid or unsafe format.");
+    }
 
     return {
-      version: "1.0",
+      version: "1.1",
       exportedAt: new Date().toISOString(),
       project,
       asvsReqs: asvsReqs || undefined,
@@ -60,7 +65,8 @@ export function getProjectBackupObject(analysisId: string): ProjectBackupData | 
       context: context || undefined,
       targetLevel: targetLevel ? (targetLevel === "all" ? "all" : parseInt(targetLevel, 10)) : undefined,
       architecture: architecture || undefined,
-      threats: threats || undefined
+      threats: threats || undefined,
+      findings
     };
   } catch (err) {
     console.error("Failed to build project backup object:", err);
@@ -82,7 +88,7 @@ export function exportSingleProjectBackup(analysisId: string): boolean {
   const fileName = `AVERT_backup_${sanitizedName}_v${backup.project.currentVersion || "1.0"}_${new Date().toISOString().split("T")[0]}.json`;
 
   const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json;charset=utf-8" });
-  saveAs(blob, fileName);
+  FileSaver.saveAs(blob, fileName);
   return true;
 }
 
@@ -99,13 +105,12 @@ export function exportAllProjectsBackup(): boolean {
     const projectBackups: ProjectBackupData[] = [];
     for (const a of analyses) {
       const projBackup = getProjectBackupObject(a.id);
-      if (projBackup) {
-        projectBackups.push(projBackup);
-      }
+      if (!projBackup) return false;
+      projectBackups.push(projBackup);
     }
 
     const archive: FullBackupArchive = {
-      backupFormatVersion: "1.0",
+      backupFormatVersion: "1.1",
       type: "atap_full_backup",
       exportedAt: new Date().toISOString(),
       projectsCount: projectBackups.length,
@@ -114,7 +119,7 @@ export function exportAllProjectsBackup(): boolean {
 
     const fileName = `AVERT_full_backup_${projectBackups.length}_projects_${new Date().toISOString().split("T")[0]}.json`;
     const blob = new Blob([JSON.stringify(archive, null, 2)], { type: "application/json;charset=utf-8" });
-    saveAs(blob, fileName);
+    FileSaver.saveAs(blob, fileName);
     return true;
   } catch (err) {
     console.error("Failed to export all projects:", err);
@@ -131,6 +136,7 @@ export interface RestoreResult {
 
 export const MAX_BACKUP_SIZE = 25 * 1024 * 1024;
 const MAX_PROJECTS_PER_BACKUP = 100;
+const MAX_FINDINGS_PER_PROJECT = 10000;
 const PROJECT_STORAGE_SUFFIXES = [
   "asvs_v5",
   "logs_v5",
@@ -160,6 +166,14 @@ function isRecordArray(value: unknown, maxLength: number): value is Record<strin
   return Array.isArray(value) && value.length <= maxLength && value.every(isRecord);
 }
 
+function isValidFindings(value: unknown): value is Finding[] {
+  return Array.isArray(value) && value.length <= MAX_FINDINGS_PER_PROJECT && value.every(isFinding);
+}
+
+function isSupportedVersion(value: unknown): value is "1.0" | "1.1" {
+  return value === "1.0" || value === "1.1";
+}
+
 function getBackupItems(parsed: unknown, language: ReportLanguage): { items: ProjectBackupData[] } | { error: string } {
   const t = (sk: string, en: string) => reportText(language, sk, en);
   if (!isRecord(parsed) || containsUnsafeKeys(parsed)) {
@@ -167,9 +181,9 @@ function getBackupItems(parsed: unknown, language: ReportLanguage): { items: Pro
   }
 
   let candidates: unknown[];
-  if (parsed.type === "atap_full_backup" && parsed.backupFormatVersion === "1.0" && Array.isArray(parsed.projects)) {
+  if (parsed.type === "atap_full_backup" && isSupportedVersion(parsed.backupFormatVersion) && Array.isArray(parsed.projects)) {
     candidates = parsed.projects;
-  } else if (parsed.version === "1.0" && isRecord(parsed.project)) {
+  } else if (parsed.type !== "atap_full_backup" && isSupportedVersion(parsed.version) && isRecord(parsed.project)) {
     candidates = [parsed];
   } else {
     return { error: t("Neplatný formát zálohy. Súbor neobsahuje platnú štruktúru projektu AVERT alebo staršej verzie ATAP.", "Invalid backup format. The file does not contain a valid AVERT or legacy ATAP project structure.") };
@@ -180,8 +194,9 @@ function getBackupItems(parsed: unknown, language: ReportLanguage): { items: Pro
   }
 
   const items: ProjectBackupData[] = [];
+  const projectIds = new Set<string>();
   for (const candidate of candidates) {
-    if (!isRecord(candidate) || candidate.version !== "1.0" || !isRecord(candidate.project)) {
+    if (!isRecord(candidate) || !isSupportedVersion(candidate.version) || !isRecord(candidate.project)) {
       return { error: t("Záloha obsahuje projekt v nepodporovanom formáte.", "The backup contains a project in an unsupported format.") };
     }
 
@@ -194,6 +209,14 @@ function getBackupItems(parsed: unknown, language: ReportLanguage): { items: Pro
       project.name.trim().length > 150
     ) {
       return { error: t("Projekt v zálohe nemá platný identifikátor alebo názov.", "A project in the backup has an invalid ID or name.") };
+    }
+    if (projectIds.has(project.id)) {
+      return { error: t("Záloha obsahuje opakované ID projektu.", "The backup contains duplicate project IDs.") };
+    }
+    projectIds.add(project.id);
+
+    if ((candidate.version === "1.1" || candidate.findings !== undefined) && !isValidFindings(candidate.findings)) {
+      return { error: t("Zistenia v zálohe majú neplatný formát.", "The findings in the backup have an invalid format.") };
     }
 
     if (candidate.asvsReqs !== undefined && !isRecordArray(candidate.asvsReqs, 5000)) {
@@ -323,6 +346,7 @@ export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' =
         [`atap_asvs_target_level_${targetId}`, item.targetLevel],
         [`atap_architecture_${targetId}`, item.architecture],
         [`atap_threats_${targetId}`, item.threats],
+        [`atap_findings_${targetId}`, item.findings],
       ];
       for (const [key, value] of projectData) {
         if (value !== undefined) writes.set(key, JSON.stringify(value));
@@ -367,6 +391,7 @@ export function restoreBackup(jsonString: string, mode: 'new_id' | 'overwrite' =
     // Dispatch update events to reload all workspace hooks and views
     window.dispatchEvent(new Event("storage_workspace_update"));
     window.dispatchEvent(new Event("storage"));
+    window.dispatchEvent(new Event("atap_backup_restored"));
 
     return {
       success: true,

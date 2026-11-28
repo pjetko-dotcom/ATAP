@@ -4,7 +4,7 @@ import { FileText, ShieldAlert, CheckCircle, AlertTriangle, ArrowRight } from "l
 import { asvsRequirements, asvsChapters, ASVSRequirement } from "../data/asvsData";
 import { HelpTooltip } from "./HelpTooltip";
 import FileSaver from "file-saver";
-import { Finding, createFindingsCsv, generateFindingsFromAsvs } from "../utils/findings";
+import { Finding, createFindingsCsv, generateFindingsFromAsvs, isFinding } from "../utils/findings";
 import { useLanguage } from "../context/LanguageContext";
 
 const { saveAs } = FileSaver;
@@ -21,17 +21,6 @@ const statusColors = {
   "In Progress": "bg-yellow-50 text-yellow-700 border border-yellow-200",
   "Closed": "bg-green-50 text-green-700 border border-green-200",
 };
-
-function isFinding(value: unknown): value is Finding {
-  if (typeof value !== "object" || value === null || Array.isArray(value)) return false;
-  const finding = value as Record<string, unknown>;
-  return typeof finding.id === "string" &&
-    typeof finding.title === "string" &&
-    typeof finding.description === "string" &&
-    ["Critical", "High", "Medium", "Low"].includes(finding.severity as string) &&
-    ["Open", "In Progress", "Closed"].includes(finding.status as string) &&
-    typeof finding.asvsRef === "string";
-}
 
 function loadSavedFindings(key: string): Finding[] {
   try {
@@ -78,6 +67,14 @@ export function FindingsAndGaps() {
       });
     }
   }, [findingsStorageKey, findingState.key]);
+
+  useEffect(() => {
+    const reloadFindings = () => {
+      setFindingState({ key: findingsStorageKey, items: loadSavedFindings(findingsStorageKey) });
+    };
+    window.addEventListener("atap_backup_restored", reloadFindings);
+    return () => window.removeEventListener("atap_backup_restored", reloadFindings);
+  }, [findingsStorageKey]);
 
   useEffect(() => {
     if (findingState.key !== findingsStorageKey) return;

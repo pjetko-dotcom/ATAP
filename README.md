@@ -84,6 +84,10 @@ Výsledné inštalačné balíčky a portable súbory nájdete v priečinku `rel
 
 ## 🛡️ Kľúčové Funkcie Platformy
 
+### Verzia 1.3.1
+
+JSON zálohy obsahujú aj zistenia a ich stavy. K dispozícii je samostatný statický build pre Apache v podadresári `/avert/`.
+
 ### Verzia 1.3.0
 
 Dvojjazyčná príručka pre začiatočníkov s prehľadom modelovania hrozieb, STRIDE, analýzy rizík, ASVS, všetkých kapitol ASVS a jednotlivých obrazoviek. Obsahuje odkazy medzi témami, praktický postup a upozornenia na hranice automatických návrhov a zálohovania.
@@ -114,11 +118,11 @@ Samostatný prepínač s vlajkou v navigácii mení jazyk rozhrania bez obnoveni
 - **Architecture Model:** Vizuálne modelovanie komponentov, trust zón a dátových tokov s abecedným výberom technológií a protokolov. TLS toky môžu evidovať NIST cipher suite, samostatnú výmenu kľúčov/KEM a odvodený PQC stav návrhu. Kliknutím na šípku sa otvorí editor toku; plátno podporuje posúvanie aj zoom. Voliteľná DFD kontrola poskytuje nezáväzné upozornenia bez blokovania práce. Paralelné spojenia sú vizuálne rozlíšené, prekrytia a prekážky označené a toky cez hranice zón vytvárajú STRIDE návrhy na kontrolu.
 - **Audit Trail & Správa Verzií:** Sledovanie histórie zmien, snapshoty stavov a bezpečný import/export dát do JSON formátu.
 - **Excel & CSV Export:** Excel obsahuje voliteľný súhrn, ASVS požiadavky a STRIDE register (zvolený hárok hrozieb môže byť prázdny). CSV požiadaviek je odlišné od CSV zistení. Vážené pokrytie počíta Partial ako 0,5 a ignoruje Pending/N/A. Exporty sú snímkou údajov; po zmene projektu ich treba vytvoriť znovu.
-- **Reporty a zálohy:** Tlačiteľný PDF report sumarizuje všetkých 17 kapitol ASVS. Ide o výstup aplikácie, nie o certifikáciu ani oficiálne potvrdenie OWASP. JSON zálohy AVERT možno obnoviť aj zo starších záloh ATAP; neobsahujú samostatný zoznam zistení ani ich stavy, ktoré možno exportovať do CSV (CSV nemožno obnoviť ako JSON zálohu).
+- **Reporty a zálohy:** Tlačiteľný PDF report sumarizuje všetkých 17 kapitol ASVS. Ide o výstup aplikácie, nie o certifikáciu ani oficiálne potvrdenie OWASP. JSON zálohy obsahujú aj samostatný zoznam zistení a ich stavy. CSV zistení slúži na prezeranie, nie na obnovu.
 
 ### Produktové označenie a kompatibilita
 
-Aplikácia sa od verzie 1.0 označuje ako AVERT. Identifikátor Electron `com.atap.threatanalysis`, existujúci priečinok používateľských dát a kľúče `atap_*` v lokálnom úložisku zostávajú zámerne nezmenené, aby sa zachovala inštalácia a používateľské dáta. JSON zálohy si ponechávajú interný typ `atap_full_backup`; preto zostávajú kompatibilné so staršími exportmi a importmi.
+Aplikácia sa od verzie 1.0 označuje ako AVERT. Identifikátor Electron `com.atap.threatanalysis`, existujúci priečinok používateľských dát a kľúče `atap_*` v lokálnom úložisku zostávajú zámerne nezmenené. Aktuálna verzia načíta aj staršie JSON zálohy formátu 1.0, ktoré však zistenia neobsahujú. Pri prepísaní takou zálohou zostanú existujúce zistenia nezmenené; pri obnove ako nový projekt chýbajú. Nové zálohy používajú formát 1.1 a staršie verzie aplikácie ich nemusia načítať.
 
 ---
 
@@ -128,12 +132,23 @@ Aplikácia sa od verzie 1.0 označuje ako AVERT. Identifikátor Electron `com.at
 | :--- | :--- | :--- |
 | `dev` | `npm run dev` | Spustí lokálny dev server na porte 3000 |
 | `build` | `npm run build` | Vytvorí produkčný webový build v `dist/` |
+| `build:websupport` | `npm run build:websupport` | Vytvorí statické súbory a `.htaccess` pre `/avert/` v `public/` |
 | `lint` | `npm run lint` | Skontroluje integritu TypeScript typov (`tsc --noEmit`) |
 | `test` | `npm test` | Spustí testy záloh, exportu, DFD geometrie a STRIDE synchronizácie |
 | `clean` | `npm run clean` | Vyčistí priečinky `dist/`, `server.cjs` a `release/` |
 | `electron:dev` | `npm run electron:dev` | Vývojový režim pre desktop s Vite hot-reloadom |
 | `electron:preview` | `npm run electron:preview` | Otestuje produkčný lokálny build v Electrone |
 | `electron:build` | `npm run electron:build` | Zabalí aplikáciu do `.exe` inštalátora a portable verzie |
+
+---
+
+## Nasadenie na Websupport
+
+Na počítači s Node.js a npm podľa požiadaviek vyššie spustite `npm ci` a `npm run build:websupport`. Nahrajte **obsah** vygenerovaného `public/` cez SFTP do adresára `avert/` v koreňovom adresári existujúceho webu. Nahrajte aj skrytý súbor `.htaccess`; niektorí SFTP klienti ho štandardne nezobrazujú. `public/` je ignorovaný Gitom a je určený iba pre vygenerovaný web. Build ho automaticky nemaže; pred novým buildom prípadne odstráňte len zastarané vygenerované súbory, nie používateľské dáta. Nastavenia routovania v [`deploy/websupport.htaccess`](./deploy/websupport.htaccess) predpokladajú `/avert/`, Apache s `mod_rewrite` a povolený `.htaccess`.
+
+Po nasadení vyskúšajte `https://vaša-doména/avert/`, navigáciu a obnovenie vnorených stránok. Nadradené rewrite pravidlá existujúceho webu môžu vyžadovať výnimku pre `/avert/`. Tento balík neobsahuje Express ani databázový server. Node.js je potrebný na **zostavenie**, nie na prevádzku statických súborov.
+
+Dáta sa ukladajú do prehliadača, nie na hosting; používatelia ani zariadenia ich automaticky nezdieľajú. Pravidelne zálohujte JSON a overujte obnovu. Použite HTTPS a zvážte heslovú ochranu adresára. Skripty ostatných aplikácií na rovnakej doméne môžu pristupovať k rovnakému úložisku; samostatná subdoména poskytuje lepšiu izoláciu, ale vyžaduje iné nastavenie cesty buildu a routovania.
 
 ---
 
